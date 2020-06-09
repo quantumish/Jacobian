@@ -17,13 +17,13 @@ struct edge {
 };
 
 struct node {
-  struct edge * incoming;
-  struct edge * outgoing;
+  struct edge* incoming;
+  struct edge* outgoing;
   float activation;
 };
 
 struct layer {
-  struct node * nodes;
+  struct node* nodes;
   int length;
 };
 
@@ -32,12 +32,12 @@ struct network {
   int length;
 };
 
-float activate (double value) {
+double activate (double value) {
   // Sigmoid
-  value = 1/(1+pow(M_E, -value));
+  return 1/(1+pow(M_E, -value));
 }
 
-struct network initialize (char* path, int inputs, int neurons, int layers, int outputs) {
+struct network initialize (char* path, int inputs, int neurons, int hidden, int outputs) {
   // Read from CSV
   FILE* fptr = fopen(path, "r");
   double data[inputs];
@@ -45,8 +45,8 @@ struct network initialize (char* path, int inputs, int neurons, int layers, int 
 
   // Initialize network
   struct network net;
-  net.layers = malloc((layers + 2) * sizeof(struct layer));
-  net.length = layers + 2;
+  net.layers = malloc((hidden + 2) * sizeof(struct layer));
+  net.length = hidden + 2;
 
   // Initialize input nodes
   net.layers[0].nodes = malloc(inputs * sizeof(struct node));
@@ -56,20 +56,22 @@ struct network initialize (char* path, int inputs, int neurons, int layers, int 
   net.layers[0].length = inputs;
 
   /* // Init hidden layer nodes and output nodes to 0 (will be replaced by feedforward) */
-  for (int i = 1; i < layers; i++) {
+  for (int i = 1; i <= hidden; i++) {
     net.layers[i].nodes = malloc(neurons * sizeof(struct node));
     for (int j = 0; j < neurons; j++) {
       net.layers[i].nodes[j].activation = 0;
     }
     net.layers[i].length = neurons;
+    printf("inside %i\n", net.layers[i].length);
   }
-  net.layers[layers-1].nodes = malloc(outputs * sizeof(struct node));
+  printf("outsidee %i\n", net.layers[0].length);
+  net.layers[hidden-1].nodes = malloc(outputs * sizeof(struct node));
   for (int i = 0; i < outputs; i++) {
-    net.layers[layers-1].nodes[i].activation = 0;
+    net.layers[hidden-1].nodes[i].activation = 0;
   }
-  net.layers[layers-1].length = outputs;
+  net.layers[hidden+1].length = outputs;
 
-  /* // Init edges between layers with random numbers TODO make a function to initialize edges between two layers for the love of God */
+  // Init edges between layers with random numbers TODO make a function to initialize edges between two layers for the love of God
   for (int i = 0; i < inputs; i++) {
     net.layers[0].nodes[i].outgoing = malloc(neurons * sizeof(struct edge));
     for (int j = 0; j < neurons; j++) {
@@ -79,40 +81,47 @@ struct network initialize (char* path, int inputs, int neurons, int layers, int 
       net.layers[1].nodes[j].incoming[i] = connection;
     }
   }
-  for (int i = 0; i < layers-1; i++) {
+  for (int i = 1; i <= hidden; i++) {
     for (int j = 0; j < neurons; j++) {
       net.layers[i].nodes[j].outgoing = malloc(neurons * sizeof(struct edge));
       for (int k = 0; k < neurons; k++) {
+        printf("CHECKCHECKCHECK!?\n");
         net.layers[i+1].nodes[k].outgoing = malloc(neurons * sizeof(struct edge));
+        printf("Checkcheck1\n");
         struct edge connection = {&net.layers[i].nodes[j], &net.layers[i+1].nodes[k], rand()};
+        printf("Checkcheck2\n");
         net.layers[i].nodes[j].outgoing[k] = connection;
+        printf("Checkcheck3\n");
         net.layers[i+1].nodes[k].incoming[j] = connection;
       }
     }
   }
-  for (int i = 0; i < neurons; i++) {
-    net.layers[layers-2].nodes[i].outgoing = malloc(outputs * sizeof(struct edge));
-    for (int j = 0; j < outputs; j++) {
-      net.layers[layers-1].nodes[j].incoming = malloc(neurons * sizeof(struct edge));
-      struct edge connection = {&net.layers[0].nodes[i], &net.layers[1].nodes[j], rand()};
-      net.layers[layers-2].nodes[i].outgoing[j] = connection;
-      net.layers[layers-1].nodes[j].incoming[i] = connection;
-    }
-  }
+  /* for (int i = 0; i < neurons; i++) { */
+  /*   net.layers[hidden].nodes[i].outgoing = malloc(outputs * sizeof(struct edge)); */
+  /*   for (int j = 0; j < outputs; j++) { */
+  /*     net.layers[hidden+1].nodes[j].incoming = 204892141; //malloc(neurons * sizeof(struct edge)); */
+  /*     struct edge connection = {&net.layers[0].nodes[0], &net.layers[1].nodes[0], rand()}; */
+  /*     net.layers[hidden].nodes[i].outgoing[j] = connection; */
+  /*     net.layers[hidden+1].nodes[j].incoming[i] = connection; */
+  /*   } */
+  /* } */
   /* Epic, everything's initialized TODO add biases! */
   return net;
 }
 
 void feedforward(struct network net)
 {
-  for (int i = 1; i < net.length-1; i++) {
+  /* printf("Checkcheck\n"); */
+  for (int i = 1; i < net.length; i++) {
+    /* printf("%i\n", net.layers[i].length); */
     for (int j = 0; j < net.layers[i].length; j++) {
-      double sum;
+      double sum = 0;
       for (int k = 0; k < net.layers[i-1].length; k++) {
-        sum += net.layers[i].nodes[j].incoming->source->activation * net.layers[i].nodes[j].incoming->weight;
+       sum += net.layers[i].nodes[j].incoming->source->activation * net.layers[i].nodes[j].incoming->weight;
       }
+      printf("%f\n", sum);
       net.layers[i].nodes[j].activation = activate(sum);
-      printf("Node %i in layer %i has activation %f", j, i, net.layers[i].nodes[j].activation);
+      printf("Node %i in layer %i has activation %f\n", j, i, net.layers[i].nodes[j].activation);
     }
   }
 }
