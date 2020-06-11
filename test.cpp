@@ -4,31 +4,9 @@
 #include <array>
 #include <cstdlib>
 
-struct Matrix
-{
-public:
-  int rows;
-  int columns;
-  int** contents;
-
-  Matrix(int c, int r, int* vals);
-};
-
-Matrix::Matrix(int c, int r, int* vals)
-{
-  rows = r;
-  columns = c;
-  int row_count = 0;
-  for (int i = 0; i < columns*rows; i++) {
-    contents[row_count][i%4] = vals[i];
-    if ((i+1)%2 == 0) {
-      row_count++;
-    }
-  }
-}
-
 class Node;
 class Edge {
+public:
   Node* source;
   Node* end;
   int weight;
@@ -50,27 +28,51 @@ public:
   int activation;
   int bias;
 
-  Node(int before, int after);
+  Node();
 };
 
-Node::Node(int before, int after)
+Node::Node()
 {
   activation = 0;
   bias = rand();
 }
 
 class Layer {
-  Node* nodes;
+public:
+  std::vector<Node> nodes;
   int length;
+
+  Layer(int len);
 };
 
+Layer::Layer(int len)
+{
+  length = len;
+}
+
 class Network {
-  Layer* layers;
+public:
+  std::vector<Layer> layers;
   int length;
+
+  Network(char* path, int inputs, int hidden, int outputs, int neurons);
 };
+
+Network::Network(char* path, int inputs, int hidden, int outputs, int neurons)
+{
+  fscanf("%s,%s,%s,%s,*s");
+  layers.emplace_back(inputs);
+  layers[0].nodes.emplace_back();
+  for (int i = 0; i < hidden; i++) {
+    layers.emplace_back(neurons);
+    layers[i+1].nodes.emplace_back();
+  }
+  layers.emplace_back(outputs);
+  layers[layers.size()-1].nodes.emplace_back();
+}
+
 
 int main()
 {
-  int bruh[4] = {1,2,3,4};
-  Matrix test (2,2, bruh);
+  Network net ("abc", 4, 2, 2, 5);
 }
