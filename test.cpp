@@ -58,10 +58,8 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
-    (*bias)(0,i) = rand() / double(RAND_MAX);
+    (*bias)(0,i) = 0.001;
   }
-  std::cout << *contents << "\n\n";
-  std::cout << *bias << "\n\n";
 }
 
 Layer::Layer(int batch_sz, int nodes)
@@ -73,21 +71,17 @@ Layer::Layer(int batch_sz, int nodes)
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
-    (*bias)(0,i) = rand() / double(RAND_MAX);
+    (*bias)(0,i) = 0.001;
   }
-  std::cout << *contents << "\n\n";
-  std::cout << *bias << "\n\n";
 }
 
 void Layer::initWeights(Layer next)
 {
   weights = new Eigen::MatrixXd (contents->cols(), next.contents->cols());
-  printf("%i x %i\n", weights->rows(), weights->cols());
   int nodes = weights->cols();
   for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
     (*weights)((int)i / nodes, i%nodes) = rand() / double(RAND_MAX);
   }
-  std::cout << *weights << "\n\n";
 }
 
 class Network {
@@ -98,6 +92,7 @@ public:
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
   void feedforward();
   void activate(Eigen::MatrixXd matrix);
+  void list_net();
 };
 
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
@@ -126,7 +121,7 @@ void Network::activate(Eigen::MatrixXd matrix)
 {
   int nodes = matrix.cols();
   for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    // (matrix)((int)i / nodes, i%nodes) = 
+    // (matrix)((int)i / nodes, i%nodes) =
   }
 }
 
@@ -141,9 +136,17 @@ void Network::feedforward()
   }
 }
 
+void Network::list_net()
+{
+  for (int i = 0; i < length-1; i++) {
+    std::cout << " LAYER " << i << "\n\n" << *layers[i].contents << "\n\n AND BIAS\n" << *layers[i].bias << "\n\n W/ WEIGHTS \n" << *layers[i].weights << "\n\n\n";
+  }
+}
+
 
 int main()
 {
   Network net ("./data_banknote_authentication.txt", 4, 2, 2, 5, 10);
   net.feedforward();
+  net.list_net();
 }
