@@ -133,15 +133,11 @@ void Network::activate(Eigen::MatrixXd matrix)
 void Network::feedforward()
 {
   for (int i = 0; i < length-1; i++) {
-    std::cout << "-----------\nRUN\n\n" << *layers[i].contents << "\n-\n\n";
-    Eigen::MatrixXd product = (*layers[i].contents) * (*layers[i].weights);
-    for (int j = 0; j < product.rows(); j++) {
-      product.row(j) += *layers[i+1].bias;
+    *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
+    for (int j = 0; j < layers[i+1].contents->rows(); j++) {
+      layers[i+1].contents->row(j) += *layers[i+1].bias;
     }
-    activate(product);
-    std::cout << "NEXT\n\n\n" << *layers[i+1].contents << "\n-\n\n";
-    layers[i+1].contents = &product;
-    std::cout << "UPDATE\n\n\n" << *layers[i+1].contents << "\n\n";
+    activate(*layers[i+1].contents);
   }
 }
 
