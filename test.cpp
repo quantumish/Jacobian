@@ -39,15 +39,27 @@ Node::Node()
 
 class Layer {
 public:
-  std::vector<Node> nodes;
-  int length;
+  Eigen::MatrixXd* contents;
+  Eigen::MatrixXd* weights;
 
-  Layer(int len);
+  Layer(int* vals, int rows, int columns);
+  void initWeights(Layer next, int batch_sz);
 };
 
-Layer::Layer(int len)
+Layer::Layer(int* vals, int batch_sz, int nodes)
 {
-  length = len;
+  contents = new Eigen::MatrixXd (batch_sz, nodes);
+  for (int i = 0; i < batch_sz*nodes; i++) {
+    *contents << vals[i];
+  }
+}
+
+void Layer::initWeights(Layer next, int batch_sz)
+{
+  weights = new Eigen::MatrixXd (contents->rows(), next.contents->cols());
+  for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
+    *weights << rand();
+  }
 }
 
 class Network {
@@ -55,24 +67,25 @@ public:
   std::vector<Layer> layers;
   int length;
 
-  Network(char* path, int inputs, int hidden, int outputs, int neurons);
+  Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
 };
 
-Network::Network(char* path, int inputs, int hidden, int outputs, int neurons)
+Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
 {
-  fscanf("%s,%s,%s,%s,*s");
-  layers.emplace_back(inputs);
-  layers[0].nodes.emplace_back();
-  for (int i = 0; i < hidden; i++) {
-    layers.emplace_back(neurons);
-    layers[i+1].nodes.emplace_back();
+  FILE* fptr = fopen(path, "r");
+  int batch[batch_sz * 4];
+  for (int i = 0; i < batch_sz; i++) {
+    fscanf(fptr, "%d,%d,%d,%d,*d", &batch[0+i], &batch[1+i], &batch[2+i], &batch[3+i]);
   }
-  layers.emplace_back(outputs);
-  layers[layers.size()-1].nodes.emplace_back();
+  layers.emplace_back(batch, batch_sz, inputs);
+  // for (int i = 0; i < hidden; i++) {
+  //   layers.emplace_back(neurons);
+  // }
+  // layers.emplace_back(outputs);
 }
 
 
 int main()
 {
-  Network net ("abc", 4, 2, 2, 5);
+  Network net ("../mapreduce/testing.txt", 4, 2, 2, 5, 10);
 }
