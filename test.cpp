@@ -42,6 +42,7 @@ class Layer {
 public:
   Eigen::MatrixXd* contents;
   Eigen::MatrixXd* weights;
+  Eigen::MatrixXd* bias;
 
   Layer(float* vals, int rows, int columns);
   Layer(int rows, int columns);
@@ -55,7 +56,12 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = vals[i];
   }
+  bias = new Eigen::MatrixXd (1, nodes);
+  for (int i = 0; i < nodes; i++) {
+    (*bias)(0,i) = rand() / double(RAND_MAX);
+  }
   std::cout << *contents << "\n\n";
+  std::cout << *bias << "\n\n";
 }
 
 Layer::Layer(int batch_sz, int nodes)
@@ -65,7 +71,12 @@ Layer::Layer(int batch_sz, int nodes)
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = 0;
   }
+  bias = new Eigen::MatrixXd (1, nodes);
+  for (int i = 0; i < nodes; i++) {
+    (*bias)(0,i) = rand() / double(RAND_MAX);
+  }
   std::cout << *contents << "\n\n";
+  std::cout << *bias << "\n\n";
 }
 
 void Layer::initWeights(Layer next)
@@ -124,6 +135,9 @@ void Network::feedforward()
   for (int i = 0; i < length-1; i++) {
     std::cout << "-----------\nRUN\n\n" << *layers[i].contents << "\n-\n\n";
     Eigen::MatrixXd product = (*layers[i].contents) * (*layers[i].weights);
+    for (int j = 0; j < product.rows(); j++) {
+      product.row(j) += *layers[i+1].bias;
+    }
     activate(product);
     std::cout << "NEXT\n\n\n" << *layers[i+1].contents << "\n-\n\n";
     layers[i+1].contents = &product;
