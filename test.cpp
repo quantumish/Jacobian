@@ -2,7 +2,9 @@
 #include "/Users/davidfreifeld/Downloads/eigen-3.3.7/Eigen/Dense"
 #include <vector>
 #include <array>
+#include <iostream>
 #include <cstdlib>
+#include <cstdio>
 
 class Node;
 class Edge {
@@ -42,16 +44,18 @@ public:
   Eigen::MatrixXd* contents;
   Eigen::MatrixXd* weights;
 
-  Layer(int* vals, int rows, int columns);
+  Layer(float* vals, int rows, int columns);
   void initWeights(Layer next, int batch_sz);
 };
 
-Layer::Layer(int* vals, int batch_sz, int nodes)
+Layer::Layer(float* vals, int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXd (batch_sz, nodes);
-  for (int i = 0; i < batch_sz*nodes; i++) {
-    *contents << vals[i];
+  int datalen = batch_sz*nodes;
+  for (int i = 0; i < datalen; i++) {
+    (*contents)((int)i / 4,i%nodes) = vals[i];
   }
+  std::cout << *contents << "\n";
 }
 
 void Layer::initWeights(Layer next, int batch_sz)
@@ -73,11 +77,18 @@ public:
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
 {
   FILE* fptr = fopen(path, "r");
-  int batch[batch_sz * 4];
+  int datalen = batch_sz*inputs;
+  float batch[datalen];
+  char line[1024] = {' '};
   for (int i = 0; i < batch_sz; i++) {
-    fscanf(fptr, "%d,%d,%d,%d,*d", &batch[0+i], &batch[1+i], &batch[2+i], &batch[3+i]);
+    fgets(line, 1024, fptr);
+    sscanf(line, "%f,%f,%f,%f,*f", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)]);
   }
-  layers.emplace_back(batch, batch_sz, inputs);
+  float* batchptr = batch;
+  // for (int i = 0; i < datalen; i++) {
+  //   printf("%f (vs %f) at %x\n", batchptr[i], batch[i], batchptr);
+  // }
+  layers.emplace_back(batchptr, batch_sz, inputs);
   // for (int i = 0; i < hidden; i++) {
   //   layers.emplace_back(neurons);
   // }
@@ -87,5 +98,5 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
 
 int main()
 {
-  Network net ("../mapreduce/testing.txt", 4, 2, 2, 5, 10);
+  Network net ("./data_banknote_authentication.txt", 4, 2, 2, 5, 10);
 }
