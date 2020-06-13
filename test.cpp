@@ -89,7 +89,7 @@ public:
   std::vector<Layer> layers;
   int length;
 
-  int batch_sz;
+  int batch_size;
   std::vector<int> labels;
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
@@ -106,6 +106,7 @@ public:
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
 {
   length = hidden + 2;
+  batch_size = batch_sz;
   FILE* fptr = fopen(path, "r");
   int datalen = batch_sz*inputs;
   float batch[datalen];
@@ -163,16 +164,21 @@ float Network::cost()
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     sum += pow(labels[i] - (*layers[length-1].contents)(i, 0),2);
   }
-  return (1.0/layers[length-1].contents->rows()) * sum;
+  return (1.0/batch_size) * sum;
 }
 
 float Network::gradient(int mode, int layer, int node)
 {
-  float N = batch_sz;
+  float N = batch_size;
   if (mode == 0) {
     for (int i = 0; i < N; i++) {
-      // float x_i =
-      // if ()
+      double label = labels[i];
+      double x_i = (layers[layer].contents->row(i) / layers[layer-1].weights->col(i))(0,0) - label;
+      std::
+      // e_i() = e_i - label;
+      // Eigen::MatrixXd w_i = layers[layer-1].weights->col(i);
+      // Eigen::MatrixXd b = layers[layer].bias;
+      // if (w_i.dot(x_i) + b)
     }
   }
 }
