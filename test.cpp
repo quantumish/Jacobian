@@ -88,16 +88,18 @@ class Network {
 public:
   std::vector<Layer> layers;
   int length;
+
+  int batch_sz;
   std::vector<int> labels;
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
 
-  void activate(Eigen::MatrixXd matrix);
+  Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();
 
   float cost();
-  float gradient();
+  float gradient(int mode, int layer, int node);
   void backpropagate();
 };
 
@@ -125,12 +127,15 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   }
 }
 
-void Network::activate(Eigen::MatrixXd matrix)
+Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
 {
   int nodes = matrix.cols();
   for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    // (matrix)((int)i / nodes, i%nodes) =
+    if ((matrix)((float)i / nodes, i%nodes) < 0) {
+      (matrix)((float)i / nodes, i%nodes) = 0;
+    }
   }
+  return matrix;
 }
 
 void Network::feedforward()
@@ -140,7 +145,7 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       layers[i+1].contents->row(j) += *layers[i+1].bias;
     }
-    activate(*layers[i+1].contents);
+    *layers[i+1].contents = activate(*layers[i+1].contents);
   }
 }
 
@@ -159,6 +164,17 @@ float Network::cost()
     sum += pow(labels[i] - (*layers[length-1].contents)(i, 0),2);
   }
   return (1.0/layers[length-1].contents->rows()) * sum;
+}
+
+float Network::gradient(int mode, int layer, int node)
+{
+  float N = batch_sz;
+  if (mode == 0) {
+    for (int i = 0; i < N; i++) {
+      // float x_i =
+      // if ()
+    }
+  }
 }
 
 int main()
