@@ -88,11 +88,17 @@ class Network {
 public:
   std::vector<Layer> layers;
   int length;
+  std::vector<int> labels;
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
-  void feedforward();
+
   void activate(Eigen::MatrixXd matrix);
+  void feedforward();
   void list_net();
+
+  float cost();
+  float gradient();
+  void backpropagate();
 };
 
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
@@ -101,10 +107,12 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   FILE* fptr = fopen(path, "r");
   int datalen = batch_sz*inputs;
   float batch[datalen];
+  int label;
   char line[1024] = {' '};
   for (int i = 0; i < batch_sz; i++) {
     fgets(line, 1024, fptr);
-    sscanf(line, "%f,%f,%f,%f,*f", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)]);
+    sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
+    labels.push_back(label);
   }
   float* batchptr = batch;
   layers.emplace_back(batchptr, batch_sz, inputs);
@@ -141,12 +149,23 @@ void Network::list_net()
   for (int i = 0; i < length-1; i++) {
     std::cout << " LAYER " << i << "\n\n" << *layers[i].contents << "\n\n AND BIAS\n" << *layers[i].bias << "\n\n W/ WEIGHTS \n" << *layers[i].weights << "\n\n\n";
   }
+  std::cout << " LAYER " << length-1 << "\n\n" << *layers[length-1].contents << "\n\n AND BIAS\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
+float Network::cost()
+{
+  float sum = 0;
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    sum += pow(labels[i] - (*layers[length-1].contents)(i, 0),2);
+  }
+  return (1.0/layers[length-1].contents->rows()) * sum;
+}
 
 int main()
 {
-  Network net ("./data_banknote_authentication.txt", 4, 2, 2, 5, 10);
+  std::cout << "\n\n\n";
+  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 10);
   net.feedforward();
   net.list_net();
+  std::cout << "\nCOST: " << net.cost() << "\n";
 }
