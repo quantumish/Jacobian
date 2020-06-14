@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <fstream>
 #include <random>
 #include <algorithm>
 
@@ -265,36 +266,37 @@ int prep_file(char* path)
   std::mt19937 g(rd());
   std::shuffle(lines.begin(), lines.end(), g);
   fclose(rptr);
-  FILE* wptr = fopen(path, "w");
+  std::ofstream out("./shuffled.txt");
   for (int i = 0; i < lines.size(); i++) {
-    const char *cstr = lines[i].c_str();
-    printf("%s\n", cstr);
-    fwrite(cstr, sizeof(char), 1024, wptr);
+    out << lines[i];
   }
-  fclose(wptr);
   return count;
 }
 
 int main()
 {
-  std::cout << "\n\n\n";
+  // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 1, 1);
-  int cycles = 0;
-  float cost_sum = 0;
-  for (int i = 0; i < 1372; i++) {
-    net.feedforward();
-    net.backpropagate();
-    cost_sum += net.cost();
-    // net.list_net();
-    net.batches++;
-    // std::cout << i << "\n";
-    int exit = net.next_batch();
-    if (exit == -1) {
-      break;
+  Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 0);
+  float epoch_cost = 1000;
+  int epochs = 0;
+  while (epoch_cost > 0) {
+    int linecount = prep_file("./data_banknote_authentication.txt");
+    float cost_sum = 0;
+    for (int i = 0; i < linecount; i++) {
+      net.feedforward();
+      // net.backpropagate();
+      cost_sum += net.cost();
+      // net.list_net();
+      net.batches++;
+      int exit = net.next_batch();
+      if (exit == -1) {
+        break;
+      }
     }
-    cycles++;
+    epoch_cost = 1.0/((float) linecount) * cost_sum;
+    printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
+    epochs++;
   }
-  std::cout << "\n" << 1.0/(1372.0) * cost_sum << "\n";
   net.feedforward();
 }
