@@ -86,6 +86,8 @@ void Layer::initWeights(Layer next)
 
 class Network {
 public:
+  char* fpath;
+
   std::vector<Layer> layers;
   int length;
 
@@ -93,6 +95,7 @@ public:
   Eigen::MatrixXd* labels;
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
+  void update_layer();
 
   Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
   void feedforward();
@@ -101,10 +104,13 @@ public:
   float cost();
   float gradient(int mode, int layer, int node);
   void backpropagate();
+  void next_batch();
+  void test();
 };
 
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
 {
+  fpath = path;
   length = hidden + 2;
   batch_size = batch_sz;
   FILE* fptr = fopen(path, "r");
@@ -133,9 +139,7 @@ Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
 {
   int nodes = matrix.cols();
   for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    // if ((matrix)((float)i / nodes, i%nodes) < 0) {
-    //   (matrix)((float)i / nodes, i%nodes) = 0;
-    // }
+    (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes)));
   }
   return matrix;
 }
@@ -165,48 +169,50 @@ float Network::cost()
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     sum += pow((*labels)(i, 0) - (*layers[length-1].contents)(i, 0),2);
   }
-  return (1.0/batch_size) * sum;
-}
-
-float Network::gradient(int mode, int layer, int node)
-{
-  // float N = batch_size;
-  // if (mode == 0) {
-  //   for (int i = 0; i < N; i++) {
-  //     double label = labels[i];
-  //     double x_i = (layers[layer].contents->row(i) / layers[layer-1].weights->col(i))(0,0) - label;
-  //     std::
-  //     // e_i() = e_i - label;
-  //     // Eigen::MatrixXd w_i = layers[layer-1].weights->col(i);
-  //     // Eigen::MatrixXd b = layers[layer].bias;
-  //     // if (w_i.dot(x_i) + b)
-  //   }
-  // }
+  return (1.0/batch_size) * sum * 100;
 }
 
 void Network::backpropagate()
 {
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  deltas.push_back(((*layers[length-1].contents - *labels).array() * layers[length-1].contents->array()).matrix());
-  std::cout << deltas[0].matrix() << " \n\n\n " << layers[length-2].contents->transpose() << "\n\n\n\n" << deltas[0].matrix().dot(deltas[0]);
-
-
-
-
-
+  Eigen::MatrixXd e = *layers[length-1].contents - *labels;
+  Eigen::MatrixXd D (layers[length-1].contents->rows(), 1);
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    D(i, 0) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
+  }
+  D.asDiagonal();
+  *layers[length-2].weights -= (layers[length-2].contents->transpose() * (D * e));
+  // std::cout << D << " \n * \n " << e << "\n = \n"<< D * e;
+  // deltas.push_back(((*layers[length-1].contents - *labels).array() * layers[length-1].contents->array()).matrix());
+  // std::cout << deltas[0].matrix() << " \n\n\n " << layers[length-2].contents->transpose();// << "\n\n\n\n" << layers[length-2].contents->transpose().dot(deltas[0]);
   // std::cout << deltas[0];
   for (int i = length-2; i >= 0; i--) {
 
   }
 }
 
+void Network::next_batch()
+{
+  fopen(fpath);
+  char line[1024] = {' '};
+  for (int i = 0; i < batch_sz; i++) {
+    fgets(line, 1024, fptr);
+    sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
+    (*labels)(i,0) = label;
+  }
+}
+
 int main()
 {
   std::cout << "\n\n\n";
-  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 10);
-  net.feedforward();
+  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 1);
+  float cost = 1000;
+  for (int i = 0; i < 100; i++) {
+    net.feedforward();
+    net.backpropagate();
+    cost = net.cost();
+    std::cout << net.cost() << "\n";
+  }
   net.list_net();
-  net.backpropagate();
-  std::cout << "\nCOST: " << net.cost() << "\n";
 }
