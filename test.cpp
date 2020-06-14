@@ -92,10 +92,11 @@ public:
   int length;
 
   int batch_size;
+  int batches;
   Eigen::MatrixXd* labels;
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
-  void update_layer();
+  void update_layer(float* vals, int datalen, int index);
 
   Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
   void feedforward();
@@ -104,7 +105,7 @@ public:
   float cost();
   float gradient(int mode, int layer, int node);
   void backpropagate();
-  void next_batch();
+  int next_batch();
   void test();
 };
 
@@ -192,27 +193,62 @@ void Network::backpropagate()
   }
 }
 
-void Network::next_batch()
+void Network::update_layer(float* vals, int datalen, int index)
 {
-  fopen(fpath);
-  char line[1024] = {' '};
-  for (int i = 0; i < batch_sz; i++) {
-    fgets(line, 1024, fptr);
-    sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
-    (*labels)(i,0) = label;
+  for (int i = 0; i < datalen; i++) {
+    (*layers[index].contents)((int)i / layers[index].contents->cols(),i%layers[index].contents->cols()) = vals[i];
   }
+}
+
+int Network::next_batch()
+{
+  FILE* fptr = fopen(fpath, "r");
+  char line[1024] = {' '};
+  int inputs = layers[0].contents->cols();
+  int datalen = batch_size * inputs;
+  float batch[datalen];
+  int label = 100;
+  for (int i = 0; i < batch_size*batches + 1; i++) {
+    fgets(line, 1024, fptr);
+    if (i >= batches) {
+      printf("%s", line);
+      for (int j = 0; j < batch_size; j++) {
+        fgets(line, 1024, fptr);
+        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
+               &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
+               &batch[3 + (j * inputs)], &label);
+        (*labels)(j, 0) = label;
+      }
+    }
+  }
+  float* batchptr = batch;
+  update_layer(batchptr, datalen, 0);
+  return 0;
 }
 
 int main()
 {
   std::cout << "\n\n\n";
   Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 1);
-  float cost = 1000;
-  for (int i = 0; i < 100; i++) {
-    net.feedforward();
-    net.backpropagate();
-    cost = net.cost();
-    std::cout << net.cost() << "\n";
+  int cycles = 0;
+  for (int i = 0; i < 3; i++) {
+    float cost = 1000;
+    for (int j = 0; j < 100; j++) {
+      net.feedforward();
+      net.backpropagate();
+      cost = net.cost();
+    }
+    // std::cout << cycles << '\n';
+    std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
+    // net.list_net();
+    // std::cout << "\n\n\n\n\n\n";
+    net.batches++;
+    int exit = net.next_batch();
+    if (exit == -1) {
+      break;
+    }
+    cycles++;
   }
-  net.list_net();
+  net.feedforward();
+  std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
 }
