@@ -175,21 +175,34 @@ float Network::cost()
 
 void Network::backpropagate()
 {
-  std::vector<Eigen::MatrixXd> gradients;
-  std::vector<Eigen::MatrixXd> deltas;
-  Eigen::MatrixXd e = *layers[length-1].contents - *labels;
-  Eigen::MatrixXd D (layers[length-1].contents->rows(), 1);
-  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    D(i, 0) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
-  }
-  D.asDiagonal();
-  *layers[length-2].weights -= (layers[length-2].contents->transpose() * (D * e));
-  // std::cout << D << " \n * \n " << e << "\n = \n"<< D * e;
-  // deltas.push_back(((*layers[length-1].contents - *labels).array() * layers[length-1].contents->array()).matrix());
-  // std::cout << deltas[0].matrix() << " \n\n\n " << layers[length-2].contents->transpose();// << "\n\n\n\n" << layers[length-2].contents->transpose().dot(deltas[0]);
-  // std::cout << deltas[0];
-  for (int i = length-2; i >= 0; i--) {
+  int N = batch_size;
 
+  std::vector<Eigen::MatrixXd> gradients;
+  std::vector<Eigen::MatrixXd> errors;
+  Eigen::MatrixXd e = *layers[length-1].contents - *labels;
+  Eigen::MatrixXd D (layers[length-1].contents->cols(), layers[length-1].contents->cols());
+  for (int i = 0; i < layers[length-1].contents->cols(); i++) {
+    D(i, i) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
+  }
+  gradients.push_back(layers[length-2].contents->transpose() * (D * e));
+  std::cout << D << "\n\nTHEN\n\n" << layers[length-2].contents->transpose() << "\n\nNEXT\n\n" << e << "\n\nSO\n\n" << gradients[0] << "\n\n\n\n\n";
+  int counter = 0;
+  for (int i = length-2; i >= 0; i--) {
+    Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
+    for (int j = 0; i < layers[i].contents->cols(); j++) {
+      // std::cout << *layers[i].contents << "\n\nAKA\n\n" << (*layers[i].contents)(0,j) << "\n\nTIMES\n\n" << (1 - (*layers[i].contents)(0,j)) << "FOR " << j <<"\n\n\n\n\n";
+      // std::cout << j << "\n\n";
+      if (j >= 5) {
+        break;
+      }
+      D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
+    }
+    std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n\n\n\n\n";
+
+    Eigen::MatrixXd e_l = D_l * (layers[i].weights->transpose() * gradients[counter]);
+    std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
+    gradients.push_back(e_l);
+    counter++;
   }
 }
 
