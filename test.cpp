@@ -3,7 +3,10 @@
 #include <vector>
 #include <array>
 #include <iostream>
+#include <string>
 #include <cstdio>
+#include <random>
+#include <algorithm>
 
 class Node;
 class Edge {
@@ -91,11 +94,12 @@ public:
   std::vector<Layer> layers;
   int length;
 
+  float learning_rate;
   int batch_size;
   int batches;
   Eigen::MatrixXd* labels;
 
-  Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz);
+  Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate);
   void update_layer(float* vals, int datalen, int index);
 
   Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
@@ -109,8 +113,9 @@ public:
   void test();
 };
 
-Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz)
+Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate)
 {
+  learning_rate = rate;
   fpath = path;
   length = hidden + 2;
   batch_size = batch_sz;
@@ -185,24 +190,28 @@ void Network::backpropagate()
     D(i, i) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
   }
   gradients.push_back(layers[length-2].contents->transpose() * (D * e));
-  std::cout << D << "\n\nTHEN\n\n" << layers[length-2].contents->transpose() << "\n\nNEXT\n\n" << e << "\n\nSO\n\n" << gradients[0] << "\n\n\n\n\n";
-  int counter = 0;
-  for (int i = length-2; i >= 0; i--) {
-    Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
-    for (int j = 0; i < layers[i].contents->cols(); j++) {
-      // std::cout << *layers[i].contents << "\n\nAKA\n\n" << (*layers[i].contents)(0,j) << "\n\nTIMES\n\n" << (1 - (*layers[i].contents)(0,j)) << "FOR " << j <<"\n\n\n\n\n";
-      // std::cout << j << "\n\n";
-      if (j >= 5) {
-        break;
-      }
-      D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
-    }
-    std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n\n\n\n\n";
+  // std::cout << D << "\n\nTHEN\n\n" << layers[length-2].contents->transpose() << "\n\nNEXT\n\n" << e << "\n\nSO\n\n" << gradients[0] << "\n\n\n\n\n";
+  // int counter = 0;
+  // for (int i = length-2; i >= 0; i--) {
+  //   Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
+  //   for (int j = 0; i < layers[i].contents->cols(); j++) {
+  //     // std::cout << *layers[i].contents << "\n\nAKA\n\n" << (*layers[i].contents)(0,j) << "\n\nTIMES\n\n" << (1 - (*layers[i].contents)(0,j)) << "FOR " << j <<"\n\n\n\n\n";
+  //     // std::cout << j << "\n\n";
+  //     if (j >= 5) {
+  //       break;
+  //     }
+  //     D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
+  //   }
+  //   std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n\n\n\n\n";
 
-    Eigen::MatrixXd e_l = D_l * (layers[i].weights->transpose() * gradients[counter]);
-    std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
-    gradients.push_back(e_l);
-    counter++;
+  //   Eigen::MatrixXd e_l = D_l * (layers[i].weights->transpose() * gradients[counter]);
+  //   std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
+  //   gradients.push_back(e_l);
+  //   counter++;
+  // }
+  for (int i = 1; i < gradients.size(); i++) {
+    Eigen::MatrixXd gradient = gradients[i];
+    *layers[length-1].weights -= learning_rate * 1.0/N * gradient;
   }
 }
 
@@ -222,9 +231,11 @@ int Network::next_batch()
   float batch[datalen];
   int label = 100;
   for (int i = 0; i < batch_size*batches + 1; i++) {
-    fgets(line, 1024, fptr);
+    if (fgets(line, 1024, fptr)==NULL) {
+      break;
+    }
+    // printf("%s", line);
     if (i >= batches) {
-      printf("%s", line);
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
         sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
@@ -236,32 +247,54 @@ int Network::next_batch()
   }
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
+  fclose(fptr);
   return 0;
+}
+
+int prep_file(char* path)
+{
+  FILE* rptr = fopen(path, "r");
+  char line[1024];
+  std::vector<std::string> lines;
+  int count = 0;
+  while (fgets(line, 1024, rptr) != NULL) {
+    lines.emplace_back(line);
+    count++;
+  }
+  std::random_device rd;
+  std::mt19937 g(rd());
+  std::shuffle(lines.begin(), lines.end(), g);
+  fclose(rptr);
+  FILE* wptr = fopen(path, "w");
+  for (int i = 0; i < lines.size(); i++) {
+    const char *cstr = lines[i].c_str();
+    printf("%s\n", cstr);
+    fwrite(cstr, sizeof(char), 1024, wptr);
+  }
+  fclose(wptr);
+  return count;
 }
 
 int main()
 {
   std::cout << "\n\n\n";
-  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 1);
+  int linecount = prep_file("./data_banknote_authentication.txt");
+  Network net ("./data_banknote_authentication.txt", 4, 2, 1, 5, 1, 1);
   int cycles = 0;
-  for (int i = 0; i < 3; i++) {
-    float cost = 1000;
-    for (int j = 0; j < 100; j++) {
-      net.feedforward();
-      net.backpropagate();
-      cost = net.cost();
-    }
-    // std::cout << cycles << '\n';
-    std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
+  float cost_sum = 0;
+  for (int i = 0; i < 1372; i++) {
+    net.feedforward();
+    net.backpropagate();
+    cost_sum += net.cost();
     // net.list_net();
-    // std::cout << "\n\n\n\n\n\n";
     net.batches++;
+    // std::cout << i << "\n";
     int exit = net.next_batch();
     if (exit == -1) {
       break;
     }
     cycles++;
   }
+  std::cout << "\n" << 1.0/(1372.0) * cost_sum << "\n";
   net.feedforward();
-  std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
 }
