@@ -174,9 +174,9 @@ float Network::cost()
 {
   float sum = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    sum += pow((*labels)(i, 0) - (*layers[length-1].contents)(i, 0),2);
+    sum += pow((*labels)(i, 0)*100 - (*layers[length-1].contents)(i, 0)*100,2);
   }
-  return (1.0/batch_size) * sum * 100;
+  return (1.0/batch_size) * sum;
 }
 
 void Network::backpropagate()
@@ -185,7 +185,7 @@ void Network::backpropagate()
 
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> errors;
-  Eigen::MatrixXd e = *layers[length-1].contents - *labels;
+  Eigen::MatrixXd e = ((*layers[length-1].contents ) - (*labels))*100 * ((*layers[length-1].contents ) - (*labels))*100;
   Eigen::MatrixXd D (layers[length-1].contents->cols(), layers[length-1].contents->cols());
   for (int i = 0; i < layers[length-1].contents->cols(); i++) {
     D(i, i) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
@@ -235,7 +235,6 @@ int Network::next_batch()
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
-    // printf("%s", line);
     if (i >= batches) {
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
@@ -277,16 +276,18 @@ int main()
 {
   // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 0);
+  Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 0.02);
   float epoch_cost = 1000;
   int epochs = 0;
-  while (epoch_cost > 0) {
-    int linecount = prep_file("./data_banknote_authentication.txt");
+  net.batches= 1;
+  while (epochs < 1) {
+    // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount; i++) {
       net.feedforward();
       // net.backpropagate();
       cost_sum += net.cost();
+      std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
       // net.list_net();
       net.batches++;
       int exit = net.next_batch();
@@ -294,6 +295,7 @@ int main()
         break;
       }
     }
+    net.batches=1;
     epoch_cost = 1.0/((float) linecount) * cost_sum;
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
     epochs++;
