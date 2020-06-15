@@ -210,7 +210,7 @@ void Network::backpropagate()
     for (int j = 0; j < layers[i].contents->cols(); j++) {
       D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
     }
-    std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n";
+    // std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n";
 
     Eigen::MatrixXd e_l = D_l * ( gradients[counter] * layers[i].weights->transpose());
     // std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
@@ -220,9 +220,9 @@ void Network::backpropagate()
   for (int i = 1; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
     // printf("%i\n", length-1-i);
-    std::cout << *layers[length-2-i].weights << " \n\n and \n\n " << gradients[i] << "\n\n";
+    // std::cout << *layers[length-2-i].weights << " \n\n and \n\n " << gradients[i] << "\n\n";
     // std::cout <<"YAY?\n";
-    *layers[length-2-i].weights -= (gradients[i]);
+    *layers[length-2-i].weights -= learning_rate * (1.0/N * gradients[i]);
   }
 }
 
@@ -319,12 +319,12 @@ void demo()
 {
   // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 1);
+  Network net ("./shuffled.txt", 4, 2, 1, 4, 1, 1);
   float epoch_cost = 1000;
   int epochs = 0;
   net.batches= 1;
-  while (epochs < 1) {
-    // int linecount = prep_file("./data_banknote_authentication.txt");
+  while (epochs < 500) {
+    int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount; i++) {
       net.feedforward();
@@ -341,7 +341,7 @@ void demo()
     net.batches=1;
     epoch_cost = 1.0/((float) linecount) * cost_sum;
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
-    std::cout << *net.layers[net.length-2].weights << "\n\n";
+    // std::cout << *net.layers[net.length-2].weights << "\n\n";
     epochs++;
   }
   net.test("./test.txt");
