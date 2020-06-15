@@ -188,7 +188,7 @@ void Network::backpropagate()
   Eigen::MatrixXd e = ((*layers[length-1].contents ) - (*labels)) * ((*layers[length-1].contents ) - (*labels));
   Eigen::MatrixXd D (layers[length-1].contents->cols(), layers[length-1].contents->cols());
   for (int i = 0; i < layers[length-1].contents->cols(); i++) {
-    for (int j = 0; j < layers[length - 1].contents->rows(); j++) {
+    for (int j = 0; j < layers[length - 1].contents->cols(); j++) {
       D(j, i) = 0;
     }
   }
@@ -199,31 +199,30 @@ void Network::backpropagate()
   // std::cout << gradients[0] << "\n\n";
   // std::cout << D << "\n\nTHEN\n\n" << layers[length-2].contents->transpose() << "\n\nNEXT\n\n" << e << "\n\nSO\n\n" << gradients[0] << "\n\n\n\n\n";
   int counter = 0;
-  for (int i = length-2; i >= 0; i--) {
+  for (int i = length-2; i >= 1; i--) {
     Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
-    std::cout << i << " Aye!\n";
-    for (int i = 0; i < layers[i].contents->cols(); i++) {
-      for (int j = 0; j < layers[i].contents->rows(); j++) {
-        D_l(j, i) = 0;
+    // std::cout << i << " Aye!\n";
+    for (int j = 0; j < layers[i].contents->cols(); j++) {
+      for (int k = 0; k < layers[i].contents->cols(); k++) {
+        D_l(k, j) = 0;
       }
     }
     for (int j = 0; j < layers[i].contents->cols(); j++) {
-      std::cout << j << "\n\n";
-
       D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
     }
     std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n";
 
     Eigen::MatrixXd e_l = D_l * ( gradients[counter] * layers[i].weights->transpose());
-    std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
+    // std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
     gradients.push_back(e_l);
     counter++;
   }
   for (int i = 1; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    printf("%i\n", length-1-i);
-    std::cout << *layers[length-1-i].weights << " \n\n and \n\n " << gradients[i] << "\n";
-    *layers[length-1-i].weights -= (gradients[i]);
+    // printf("%i\n", length-1-i);
+    std::cout << *layers[length-2-i].weights << " \n\n and \n\n " << gradients[i] << "\n\n";
+    // std::cout <<"YAY?\n";
+    *layers[length-2-i].weights -= (gradients[i]);
   }
 }
 
