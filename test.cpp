@@ -315,7 +315,7 @@ struct int_pair* map (struct str_pair input_pair)
   int epochs = 0;
   net.batches= 1;
 
-  while (epochs < 500) {
+  while (epochs < 10) {
     int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
@@ -337,17 +337,19 @@ struct int_pair* map (struct str_pair input_pair)
   int exit = 0;
   float totalcost = -1;
   while (exit == 0) {
+    FILE* fptr = fopen(input_pair.key, "r");
+    char line[1024] = {' '};
     int inputs = net.layers[0].contents->cols();
     int datalen = net.batch_size * inputs;
     float batch[datalen];
-    std::istringstream f(input_pair.key);
-    std::string line;
     for (int i = 0; i < net.batch_size*rounds + 1; i++) {
-      std::getline(f, line);
+      if (fgets(line, 1024, fptr)==NULL) {
+        exit = -1;
+      }
       if (i >= rounds) {
-        std::cout << line;
         for (int j = 0; j < net.batch_size; j++) {
-          sscanf(line.c_str(), "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)], &(*net.labels)(j));
+          fgets(line, 1024, fptr);
+          sscanf(line, "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)], &(*net.labels)(j));
         }
       }
     }
@@ -360,7 +362,7 @@ struct int_pair* map (struct str_pair input_pair)
       output_pairs[i].key = key;
       output_pairs[i].value = net.cost();
     }
-    output_pairs[net.batch_size].key = '\0';
+    output_pairs[net.batch_size].key = (char*)'\0';
     output_pairs[net.batch_size].value = -1;
     totalcost += net.cost();
     rounds++;
@@ -370,13 +372,25 @@ struct int_pair* map (struct str_pair input_pair)
 
 int_pair* reduce (int_pair* input_pairs)
 {
-  int_pair* output_pairs = new int_pair[2]
-  for (int i = 0; strcmp(input_pairs[i].key, '\0') != 0; i++) {
-    
+  int_pair* output_pairs = new int_pair[2];
+  int keysum = 0;
+  int valsum = 0;
+  for (int i = 0; i < 2; i++) {
+    std::cout << input_pairs[i].key << " and " << strtol(input_pairs[i].key, NULL, 10) << "\n";
+    keysum += strtol(input_pairs[i].key, NULL, 10);
+    valsum += input_pairs[i].value;
   }
+  char* key;
+  std::cout << keysum << " and " << valsum << " are SUMS\n";
+  sprintf(key, "%d", keysum);
+  output_pairs[0].key = key;
+  output_pairs[0].value = valsum;
+  output_pairs[1].key = (char*) '\0';
+  output_pairs[1].value = -1;
+  return output_pairs;
 }
 
-int main()
+int main(int argc, char** argv)
 {
-  // demo();
+  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 2, argv[3]);
 }
