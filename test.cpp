@@ -1,52 +1,12 @@
 // extern "C" void C_library_function(int x, int y);
-#include "/Users/davidfreifeld/Downloads/eigen-3.3.7/Eigen/Dense"
-#include <vector>
-#include <array>
-#include <iostream>
-#include <string>
-#include <cstdio>
-#include <fstream>
-#include <random>
-#include <algorithm>
-
-class Node;
-class Edge {
-public:
-  Node* source;
-  Node* end;
-  int weight;
-
-  Edge(Node* srcaddr, Node* endaddr);
-};
-
-Edge::Edge(Node* srcaddr, Node* endaddr)
-{
-  source = srcaddr;
-  end = endaddr;
-  weight = rand();
-}
-
-class Node {
-public:
-  std::vector<Edge> incoming;
-  std::vector<Edge> outgoing;
-  int activation;
-  int bias;
-
-  Node();
-};
-
-Node::Node()
-{
-  activation = 0;
-  bias = rand();
-}
+#include "test.hpp"
 
 class Layer {
 public:
   Eigen::MatrixXd* contents;
   Eigen::MatrixXd* weights;
   Eigen::MatrixXd* bias;
+  Eigen::MatrixXd* dZ;
 
   Layer(float* vals, int rows, int columns);
   Layer(int rows, int columns);
@@ -77,6 +37,7 @@ Layer::Layer(int batch_sz, int nodes)
   for (int i = 0; i < nodes; i++) {
     (*bias)(0,i) = 0.001;
   }
+  dZ = new Eigen::MatrixXd (batch_sz, nodes);
 }
 
 void Layer::initWeights(Layer next)
@@ -104,6 +65,7 @@ public:
   void update_layer(float* vals, int datalen, int index);
 
   Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
+  Eigen::MatrixXd activate_deriv(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();
 
@@ -151,14 +113,24 @@ Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
   return matrix;
 }
 
+Eigen::MatrixXd Network::activate_deriv(Eigen::MatrixXd matrix)
+{
+  int nodes = matrix.cols();
+  for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
+    (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))) * (1 - 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))));
+  }
+  return matrix;
+}
+
 void Network::feedforward()
 {
   for (int i = 0; i < length-1; i++) {
     *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
-      // layers[i+1].contents->row(j) += *layers[i+1].bias;
+      // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
     *layers[i+1].contents = activate(*layers[i+1].contents);
+    *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
   }
 }
 
@@ -185,45 +157,31 @@ void Network::backpropagate()
 
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> errors;
-  Eigen::MatrixXd e = ((*layers[length-1].contents ) - (*labels)) * ((*layers[length-1].contents ) - (*labels));
-  Eigen::MatrixXd D (layers[length-1].contents->cols(), layers[length-1].contents->cols());
-  for (int i = 0; i < layers[length-1].contents->cols(); i++) {
-    for (int j = 0; j < layers[length - 1].contents->cols(); j++) {
-      D(j, i) = 0;
-    }
-  }
-  for (int i = 0; i < layers[length-1].contents->cols(); i++) {
-    D(i, i) = (*layers[length-1].contents)(0, i) * (1 - (*layers[length-1].contents)(0, i));
-  }
-  gradients.push_back(layers[length-2].contents->transpose() * (D * e));
-  // std::cout << gradients[0] << "\n\n";
+  gradients.push_back(((*layers[length-1].contents ) - (*labels)).cwiseProduct(*layers[length-1].dZ));
   // std::cout << D << "\n\nTHEN\n\n" << layers[length-2].contents->transpose() << "\n\nNEXT\n\n" << e << "\n\nSO\n\n" << gradients[0] << "\n\n\n\n\n";
-  int counter = 0;
-  for (int i = length-2; i >= 1; i--) {
-    Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
-    // std::cout << i << " Aye!\n";
-    for (int j = 0; j < layers[i].contents->cols(); j++) {
-      for (int k = 0; k < layers[i].contents->cols(); k++) {
-        D_l(k, j) = 0;
-      }
-    }
-    for (int j = 0; j < layers[i].contents->cols(); j++) {
-      D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
-    }
-    // std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n";
+  // int counter = 0;
+  // for (int i = length-2; i >= 1; i--) {
+  //   Eigen::MatrixXd D_l (layers[i].contents->cols(), layers[i].contents->cols());
+  //   for (int j = 0; j < layers[i].contents->cols(); j++) {
+  //     for (int k = 0; k < layers[i].contents->cols(); k++) {
+  //       D_l(k, j) = 0;
+  //     }
+  //   }
+  //   for (int j = 0; j < layers[i].contents->cols(); j++) {
+  //     D_l(j, j) = (*layers[i].contents)(0,j) * (1 - (*layers[i].contents)(0,j));
+  //   }
+  //   // std::cout << D_l << "\n\nTHEN\n\n" << layers[i].weights->transpose() << "\n\nNEXT\n\n" << gradients[counter] << "\n\n";
 
-    Eigen::MatrixXd e_l = D_l * ( gradients[counter] * layers[i].weights->transpose());
-    // std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
-    gradients.push_back(e_l);
-    counter++;
-  }
-  for (int i = 1; i < gradients.size(); i++) {
-    Eigen::MatrixXd gradient = gradients[i];
-    // printf("%i\n", length-1-i);
-    // std::cout << *layers[length-2-i].weights << " \n\n and \n\n " << gradients[i] << "\n\n";
-    // std::cout <<"YAY?\n";
-    *layers[length-2-i].weights -= learning_rate * (1.0/N * gradients[i]);
-  }
+  //   Eigen::MatrixXd e_l = D_l * ( gradients[counter] * layers[i].weights->transpose());
+  //   // std::cout << "\n\nSO\n\n" << e_l <<  "\n\n\n\n\n";
+  //   gradients.push_back(e_l);
+  //   counter++;
+  // }
+  // for (int i = 1; i < gradients.size(); i++) {
+  //   Eigen::MatrixXd gradient = gradients[i];
+  //   // std::cout << *layers[length-2-i].weights << " \n\n and \n\n " << gradients[i] << "\n\n";
+  //   *layers[length-2-i].weights -= learning_rate * (1.0/N * gradients[i]);
+  // }
 }
 
 void Network::update_layer(float* vals, int datalen, int index)
@@ -319,19 +277,18 @@ void demo()
 {
   // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./shuffled.txt", 4, 2, 1, 4, 1, 1);
+  Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 1);
   float epoch_cost = 1000;
   int epochs = 0;
   net.batches= 1;
-  while (epochs < 500) {
+  while (epochs < 1) {
     int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
-    for (int i = 0; i < linecount; i++) {
+    for (int i = 0; i < linecount-net.batch_size; i++) {
       net.feedforward();
-      net.backpropagate();
+      // net.backpropagate();
       cost_sum += net.cost();
       // std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
-      // net.list_net();
       net.batches++;
       int exit = net.next_batch();
       if (exit == -1) {
@@ -341,9 +298,9 @@ void demo()
     net.batches=1;
     epoch_cost = 1.0/((float) linecount) * cost_sum;
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
-    // std::cout << *net.layers[net.length-2].weights << "\n\n";
     epochs++;
   }
+  // net.list_net();
   net.test("./test.txt");
   net.feedforward();
 }
