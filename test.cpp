@@ -1,6 +1,10 @@
 // extern "C" void C_library_function(int x, int y);
 #include "test.hpp"
 
+extern "C" {
+  #include "../mapreduce/mapreduce.h"
+}
+
 class Layer {
 public:
   Eigen::MatrixXd* contents;
@@ -129,14 +133,14 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
-    if (i != length-2) {
+    // if (i != length-2) {
       *layers[i+1].contents = activate(*layers[i+1].contents);
       *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
-    }
-    else {
-      *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
-    }
-    list_net();
+    // }
+    // else {
+    //   *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
+    // }
+    // list_net();
   }
 }
 
@@ -281,7 +285,7 @@ void demo()
   // net.backpropagate();
   // std::cout << net.cost() << "\n";
 
-  while (epochs < 50) {
+  while (epochs < 500) {
     int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
@@ -300,11 +304,79 @@ void demo()
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
     epochs++;
   }
-  // net.list_net();
-  net.test("./test.txt");
+}
+
+struct int_pair* map (struct str_pair input_pair)
+{
+  int_pair* output_pairs = new int_pair[1024];
+  int linecount = prep_file("./data_banknote_authentication.txt");
+  Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 1);
+  float epoch_cost = 1000;
+  int epochs = 0;
+  net.batches= 1;
+
+  while (epochs < 500) {
+    int linecount = prep_file("./data_banknote_authentication.txt");
+    float cost_sum = 0;
+    for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
+      net.feedforward();
+      net.backpropagate();
+      cost_sum += net.cost();
+      net.batches++;
+      int exit = net.next_batch();
+      if (exit == -1) {
+        break;
+      }
+    }
+    net.batches=1;
+    epoch_cost = 1.0/((float) linecount) * cost_sum;
+    printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
+    epochs++;
+  }
+  int rounds = 1;
+  int exit = 0;
+  float totalcost = -1;
+  while (exit == 0) {
+    int inputs = net.layers[0].contents->cols();
+    int datalen = net.batch_size * inputs;
+    float batch[datalen];
+    std::istringstream f(input_pair.key);
+    std::string line;
+    for (int i = 0; i < net.batch_size*rounds + 1; i++) {
+      std::getline(f, line);
+      if (i >= rounds) {
+        std::cout << line;
+        for (int j = 0; j < net.batch_size; j++) {
+          sscanf(line.c_str(), "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)], &(*net.labels)(j));
+        }
+      }
+    }
+    float *batchptr = batch;
+    net.update_layer(batchptr, datalen, 0);
+    net.feedforward();
+    for (int i = 0; i < net.batch_size; i++) {
+      char key[1024];
+      sprintf(key, "%i", net.batch_size);
+      output_pairs[i].key = key;
+      output_pairs[i].value = net.cost();
+    }
+    output_pairs[net.batch_size].key = '\0';
+    output_pairs[net.batch_size].value = -1;
+    totalcost += net.cost();
+    rounds++;
+  }
+  return output_pairs;
+}
+
+int_pair* reduce (int_pair* input_pairs)
+{
+  int_pair* output_pairs = new int_pair[2]
+  for (int i = 0; strcmp(input_pairs[i].key, '\0') != 0; i++) {
+    
+  }
 }
 
 int main()
 {
-  demo();
+  // demo();
 }
