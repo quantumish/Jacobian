@@ -129,8 +129,14 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
-    *layers[i+1].contents = activate(*layers[i+1].contents);
-    *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
+    if (i != length-2) {
+      *layers[i+1].contents = activate(*layers[i+1].contents);
+      *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
+    }
+    else {
+      *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
+    }
+    list_net();
   }
 }
 
@@ -255,6 +261,8 @@ void Network::test(char* path)
     update_layer(batchptr, datalen, 0);
     fclose(fptr);
     feedforward();
+    list_net();
+    // std::cout << *layers[length-1].contents << "\n\nvs\n\n" << *labels << "\n\n";
     totalcost += cost();
     rounds++;
   }
@@ -265,18 +273,16 @@ void demo()
 {
   // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 0.5);
+  Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 1);
   float epoch_cost = 1000;
   int epochs = 0;
   net.batches= 1;
-  // for (int i = 0; i < 500; i++) {
-  //   net.feedforward();
-  //   net.backpropagate();
-  //   std::cout << net.cost() << "\n";
-  // }
+  // net.feedforward();
+  // net.backpropagate();
+  // std::cout << net.cost() << "\n";
 
   while (epochs < 50) {
-    // int linecount = prep_file("./data_banknote_authentication.txt");
+    int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
       net.feedforward();
@@ -294,9 +300,8 @@ void demo()
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
     epochs++;
   }
-  net.list_net();
+  // net.list_net();
   net.test("./test.txt");
-  net.feedforward();
 }
 
 int main()
