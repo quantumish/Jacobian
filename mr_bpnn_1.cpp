@@ -30,8 +30,9 @@ struct pair* map (struct pair input_pair)
   int rounds = 1;
   int exit = 0;
   float totalcost = -1;
+  linecount = prep_file((char*)input_pair.key);
+  FILE* fptr = fopen((char*)input_pair.key, "r");
   while (exit == 0) {
-    FILE* fptr = fopen((char*)input_pair.key, "r");
     char line[1024] = {' '};
     int inputs = net.layers[0].contents->cols();
     int datalen = net.batch_size * inputs;
@@ -50,12 +51,14 @@ struct pair* map (struct pair input_pair)
     float *batchptr = batch;
     net.update_layer(batchptr, datalen, 0);
     net.feedforward();
-    for (int i = 0; i < net.batch_size; i++) {
+    for (int i = 0; i < round(linecount / (float) net.batch_size); i++) {
       char* key = new char[1024];
       sprintf(key, "%i", net.batch_size);
       output_pairs[i].key = (void*) key;
-      float cost = net.cost();
-      output_pairs[i].value = (void*) &cost;
+      float* cost = new float;
+      *cost = net.cost();
+      std::cout << *cost << " for " << i << "\n";
+      output_pairs[i].value = cost;
     }
     totalcost += net.cost();
     rounds++;
@@ -69,7 +72,7 @@ pair* reduce (pair* input_pairs)
   int keysum = 0;
   int valsum = 0;
   for (int i = 0; i < 5; i++) {
-    printf("%s %i\n", (char*)input_pairs[i].key, *(int*)input_pairs[i].value);
+    printf("%s %f\n", (char*)input_pairs[i].key, *(float*)input_pairs[i].value);
     keysum += strtol((char*)input_pairs[i].key, NULL, 10);
     valsum += *(int*)input_pairs[i].value;
   }
@@ -86,5 +89,5 @@ pair* reduce (pair* input_pairs)
 
 int main(int argc, char** argv)
 {
-  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
+  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 6, argv[3], strtol(argv[4], NULL, 10));
 }
