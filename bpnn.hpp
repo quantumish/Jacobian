@@ -46,7 +46,6 @@ public:
   void list_net();
 
   float cost();
-  float gradient(int mode, int layer, int node);
   void backpropagate();
   int next_batch();
   void test(char* path);

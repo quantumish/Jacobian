@@ -1,8 +1,8 @@
 #include "bpnn.hpp"
 
-struct int_pair* map (struct str_pair input_pair)
+struct pair* map (struct pair input_pair)
 {
-  int_pair* output_pairs = new int_pair[1024];
+  pair* output_pairs = new pair[1024];
   int linecount = prep_file("./data_banknote_authentication.txt");
   Network net ("./shuffled.txt", 4, 2, 1, 5, 1, 1);
   float epoch_cost = 1000;
@@ -31,7 +31,7 @@ struct int_pair* map (struct str_pair input_pair)
   int exit = 0;
   float totalcost = -1;
   while (exit == 0) {
-    FILE* fptr = fopen(input_pair.key, "r");
+    FILE* fptr = fopen((char*)input_pair.key, "r");
     char line[1024] = {' '};
     int inputs = net.layers[0].contents->cols();
     int datalen = net.batch_size * inputs;
@@ -51,10 +51,11 @@ struct int_pair* map (struct str_pair input_pair)
     net.update_layer(batchptr, datalen, 0);
     net.feedforward();
     for (int i = 0; i < net.batch_size; i++) {
-      char key[1024];
+      char* key = new char[1024];
       sprintf(key, "%i", net.batch_size);
-      output_pairs[i].key = key;
-      output_pairs[i].value = net.cost();
+      output_pairs[i].key = (void*) key;
+      float cost = net.cost();
+      output_pairs[i].value = (void*) &cost;
     }
     totalcost += net.cost();
     rounds++;
@@ -62,28 +63,28 @@ struct int_pair* map (struct str_pair input_pair)
   return output_pairs;
 }
 
-int_pair* reduce (int_pair* input_pairs)
+pair* reduce (pair* input_pairs)
 {
-  int_pair* output_pairs = new int_pair[2];
+  pair* output_pairs = new pair[2];
   int keysum = 0;
   int valsum = 0;
-  for (int i = 0; input_pairs[i].key != NULL; i++) {
-    printf("CHECKPOINT\n");
-    printf("%s\n", input_pairs[i].key);
-    keysum += strtol(input_pairs[i].key, NULL, 10);
-    valsum += input_pairs[i].value;
+  for (int i = 0; i < 5; i++) {
+    printf("%s %i\n", (char*)input_pairs[i].key, *(int*)input_pairs[i].value);
+    keysum += strtol((char*)input_pairs[i].key, NULL, 10);
+    valsum += *(int*)input_pairs[i].value;
   }
   char key[1024];
   std::cout << keysum << " and " << valsum << " are SUMS\n";
   sprintf(key, "%d", keysum);
-  output_pairs[0].key = key;
-  output_pairs[0].value = valsum;
-  output_pairs[1].key = (char*) '\0';
-  output_pairs[1].value = -1;
+  output_pairs[0].key = (void*) key;
+  output_pairs[0].value = &valsum;
+  output_pairs[1].key = (void*) '\0';
+  int nullval = -1;
+  output_pairs[1].value = &nullval;
   return output_pairs;
 }
 
 int main(int argc, char** argv)
 {
-  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 1, argv[3]);
+  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
 }
