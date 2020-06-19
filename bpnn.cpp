@@ -166,11 +166,11 @@ int Network::next_batch(char* path)
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
-  for (int i = 0; i*batch_size < batch_size*(batches + 1); i++) {
+  for (int i = 0; i<= batch_size*batches; i++) {
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
-    if (i*batch_size >= batches) {
+    if (i >= batches*batch_size) {
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
         // printf("%s", line);
@@ -263,7 +263,7 @@ void demo(int total_epochs)
   float epoch_cost = 1000;
   float epoch_accuracy = -1;
   int epochs = 0;
-  net.batches= 1;
+  net.batches= 0;
   // net.feedforward();
   // net.backpropagate();
   // std::cout << net.cost() << "\n";
@@ -274,19 +274,33 @@ void demo(int total_epochs)
     // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     float acc_sum = 0;
-    for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
+    double times[5] = {0};
+    for (int i = 0; i <= linecount-net.batch_size; i+=net.batch_size) {
+      auto feed_begin = std::chrono::high_resolution_clock::now();
       net.feedforward();
+      auto back_begin = std::chrono::high_resolution_clock::now();
       net.backpropagate();
+      auto cost_begin = std::chrono::high_resolution_clock::now();
       cost_sum += net.cost();
       // std::cout << acc_sum << " "<< net.accuracy() << " " << net.batch_size << "\n";
+      auto acc_begin = std::chrono::high_resolution_clock::now();
       acc_sum += net.accuracy();
       // std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
-      net.batches++;
+      auto batch_begin = std::chrono::high_resolution_clock::now();
+
       int exit = net.next_batch(net.fpath);
+      auto loop_end = std::chrono::high_resolution_clock::now();
+      times[0] += std::chrono::duration_cast<std::chrono::nanoseconds>(back_begin - feed_begin).count() / pow(10,9);
+      times[1] += std::chrono::duration_cast<std::chrono::nanoseconds>(cost_begin - back_begin).count() / pow(10,9);
+      times[2] += std::chrono::duration_cast<std::chrono::nanoseconds>(acc_begin - cost_begin).count() / pow(10,9);
+      times[3] += std::chrono::duration_cast<std::chrono::nanoseconds>(batch_begin - acc_begin).count() / pow(10,9);
+      times[4] += std::chrono::duration_cast<std::chrono::nanoseconds>(loop_end - batch_begin).count() / pow(10,9);
+      net.batches++;
       if (exit == -1) {
         break;
       }
     }
+    printf("Avg time spent across %i batches: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch\n", net.batches, times[0]/net.batches, times[1]/net.batches, times[2]/net.batches, times[3]/net.batches, times[4]/net.batches);
     net.batches=1;
     epoch_accuracy = 1.0/((float) linecount/net.batch_size) * acc_sum;
     epoch_cost = 1.0/((float) linecount/net.batch_size) * cost_sum;
