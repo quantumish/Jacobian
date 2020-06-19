@@ -112,7 +112,7 @@ float Network::cost()
 {
   float sum = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    sum += pow((*labels)(i, 0)*100 - (*layers[length-1].contents)(i, 0)*100,2);
+    sum += pow((*labels)(i, 0) - (*layers[length-1].contents)(i, 0),2);
   }
   return (1.0/batch_size) * sum;
 }
@@ -122,7 +122,7 @@ void Network::backpropagate()
   // std::cout << "\nROUND\n\n\n\n\n\n";
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  gradients.push_back(((*layers[length-1].contents) - (*labels)).cwiseProduct(*layers[length-1].dZ));
+  gradients.push_back((((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels)))).cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
@@ -160,7 +160,7 @@ int Network::next_batch()
     if (i >= batches) {
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
-        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
+        sscanf(line, "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)],
                &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
                &batch[3 + (j * inputs)], &label);
         (*labels)(j, 0) = label;
@@ -194,7 +194,7 @@ int prep_file(char* path)
   return count;
 }
 
-void Network::test(char* path)
+float Network::test(char* path)
 {
   int rounds = 1;
   int exit = 0;
@@ -213,7 +213,7 @@ void Network::test(char* path)
       if (i >= rounds) {
         for (int j = 0; j < batch_size; j++) {
           fgets(line, 1024, fptr);
-          sscanf(line, "%f,%f,%f,%f,*i", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)]);
+          sscanf(line, "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)], &(*labels)(j));
         }
       }
     }
@@ -222,11 +222,13 @@ void Network::test(char* path)
     fclose(fptr);
     feedforward();
     list_net();
+    // next_batch();
     // std::cout << *layers[length-1].contents << "\n\nvs\n\n" << *labels << "\n\n";
     totalcost += cost();
     rounds++;
   }
-  std::cout << "TEST COST: " << 1.0/((float) linecount) * totalcost << "\n";
+  // std::cout << "TEST COST: " << 1.0/((float) linecount) * totalcost << "\n";
+  return 1.0/((float) linecount / (float) batches) * totalcost;
 }
 
 void demo()
@@ -241,8 +243,8 @@ void demo()
   // net.backpropagate();
   // std::cout << net.cost() << "\n";
 
-  while (epochs < 500) {
-    int linecount = prep_file("./data_banknote_authentication.txt");
+  while (epochs < 10) {
+    // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
       net.feedforward();
@@ -260,4 +262,6 @@ void demo()
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
     epochs++;
   }
+  net.test("./test.txt");
+  net.list_net();
 }

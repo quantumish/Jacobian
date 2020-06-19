@@ -22,7 +22,6 @@ struct pair* map (struct pair input_pair)
         break;
       }
     }
-    net.batches=1;
     epoch_cost = 1.0/((float) linecount) * cost_sum;
     printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
     epochs++;
@@ -37,7 +36,7 @@ struct pair* map (struct pair input_pair)
     int inputs = net.layers[0].contents->cols();
     int datalen = net.batch_size * inputs;
     float batch[datalen];
-    for (int i = 0; i < net.batch_size*rounds + 1; i++) {
+    for (int i = 0; i <  + 1; i+= net.batch_size) {
       if (fgets(line, 1024, fptr)==NULL) {
         exit = -1;
       }
@@ -51,16 +50,15 @@ struct pair* map (struct pair input_pair)
     float *batchptr = batch;
     net.update_layer(batchptr, datalen, 0);
     net.feedforward();
-    for (int i = 0; i < round(linecount / (float) net.batch_size); i++) {
-      char* key = new char[1024];
-      sprintf(key, "%i", net.batch_size);
-      output_pairs[i].key = (void*) key;
-      float* cost = new float;
-      *cost = net.cost();
-      // std::cout << *cost << " for " << i << "\n";
-      output_pairs[i].value = cost;
-    }
+    char* key = new char[1024];
+    sprintf(key, "%i", net.batch_size);
+    output_pairs[rounds-1].key = (void*) key;
+    float* cost = new float;
+    *cost = net.cost();
+    // std::cout << *cost << " for " << i << "\n";
+    output_pairs[rounds-1].value = cost;
     totalcost += net.cost();
+    net.next_batch();
     rounds++;
   }
   return output_pairs;
@@ -99,7 +97,6 @@ void translate(char* path)
     sscanf(line, "%p %p", &addr1, &addr2);
     sprintf(newline, "%s %f", (char*)addr1, *(float*)addr2);
     int batch_num = strtol((char*)addr1, NULL, 10);
-    printf("fspeijfofselk %i\n", batch_num);
     fprintf(wptr, "%s %f (avg %f)\n",(char*)addr1, *(float*)addr2, ((*(float*)addr2/(float)batch_num)));
   }
   fclose(rptr);
@@ -111,4 +108,5 @@ void translate(char* path)
 int main(int argc, char** argv)
 {
   begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 6, argv[3], strtol(argv[4], NULL, 10));
+  // demo();
 }
