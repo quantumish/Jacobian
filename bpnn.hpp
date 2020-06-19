@@ -48,7 +48,7 @@ public:
   float cost();
   float accuracy();
   void backpropagate();
-  int next_batch();
+  int next_batch(char* path);
   float test(char* path);
 };
 

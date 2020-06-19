@@ -17,7 +17,7 @@ struct pair* map (struct pair input_pair)
       net.backpropagate();
       cost_sum += net.cost();
       net.batches++;
-      int exit = net.next_batch();
+      int exit = net.next_batch(net.fpath);
       if (exit == -1) {
         break;
       }
@@ -58,7 +58,7 @@ struct pair* map (struct pair input_pair)
     // std::cout << *cost << " for " << i << "\n";
     output_pairs[rounds-1].value = cost;
     totalcost += net.cost();
-    net.next_batch();
+    net.next_batch("./test.txt");
     rounds++;
   }
   return output_pairs;
@@ -108,5 +108,5 @@ void translate(char* path)
 int main(int argc, char** argv)
 {
   // begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 6, argv[3], strtol(argv[4], NULL, 10));
-  demo(50);
+  demo(1);
 }

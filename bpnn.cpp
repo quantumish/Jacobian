@@ -121,10 +121,12 @@ float Network::accuracy()
 {
   float correct = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    printf("%lf vs %lf\n", (*labels)(i, 0), (*layers[length-1].contents)(i, 0));
     if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
       correct += 1;
     }
   }
+  // std::cout << (1.0/batch_size) * correct << "\n";
   return (1.0/batch_size) * correct;
 }
 
@@ -156,22 +158,23 @@ void Network::update_layer(float* vals, int datalen, int index)
   }
 }
 
-int Network::next_batch()
+int Network::next_batch(char* path)
 {
-  FILE* fptr = fopen(fpath, "r");
+  FILE* fptr = fopen(path, "r");
   char line[1024] = {' '};
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = 100;
-  for (int i = 0; i < batch_size*batches + 1; i++) {
+  for (int i = 0; i < batch_size*batches + 1; i+=batch_size) {
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
     if (i >= batches) {
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
-        sscanf(line, "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)],
+        // printf("%s", line);
+        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
                &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
                &batch[3 + (j * inputs)], &label);
         (*labels)(j, 0) = label;
@@ -181,6 +184,7 @@ int Network::next_batch()
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   fclose(fptr);
+  // std::cout << *layers[0].contents << "\n\n and \n\n" << *labels;
   return 0;
 }
 
@@ -209,37 +213,22 @@ float Network::test(char* path)
 {
   int rounds = 1;
   int exit = 0;
-  float totalcost = -1;
   int linecount = prep_file(path);
-  while (exit == 0) {
-    FILE* fptr = fopen(fpath, "r");
-    char line[1024] = {' '};
-    int inputs = layers[0].contents->cols();
-    int datalen = batch_size * inputs;
-    float batch[datalen];
-    for (int i = 0; i < batch_size*rounds + 1; i++) {
-      if (fgets(line, 1024, fptr)==NULL) {
-        exit = -1;
-      }
-      if (i >= rounds) {
-        for (int j = 0; j < batch_size; j++) {
-          fgets(line, 1024, fptr);
-          sscanf(line, "%f,%f,%f,%f,%lf", &batch[0 + (j * inputs)], &batch[1 + (j * inputs)], &batch[2 + (j * inputs)], &batch[3 + (j * inputs)], &(*labels)(j));
-        }
-      }
-    }
-    float *batchptr = batch;
-    update_layer(batchptr, datalen, 0);
-    fclose(fptr);
+  float cost_sum = 0;
+  float acc_sum = 0;
+  int finalcount;
+  for (int i = 0; i < linecount-batch_size; i+=batch_size) {
     feedforward();
-    // list_net();
-    // next_batch();
-    // std::cout << *layers[length-1].contents << "\n\nvs\n\n" << *labels << "\n\n";
-    totalcost += cost();
-    rounds++;
+    next_batch("./test");
+    cost_sum += cost();
+    acc_sum += accuracy();
+    finalcount = i;
   }
-  // std::cout << "TEST COST: " << 1.0/((float) linecount) * totalcost << "\n";
-  return 1.0/((float) linecount / (float) batches) * totalcost;
+  // std::cout << *layers[0].contents << "\n\n and \n\n" << *labels;
+  // std::cout << "TEST COST: " << 1.0/((float) linecount) * totalcost << "\n"
+  float chunks = ((float)finalcount/batch_size)+1;
+  // std::cout << acc_sum << " " << chunks << " " << acc_sum/chunks << "\n";
+  return acc_sum/chunks;
 }
 
 void demo(int total_epochs)
@@ -249,6 +238,7 @@ void demo(int total_epochs)
   int linecount = prep_file("./data_banknote_authentication.txt");
   Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 1);
   float epoch_cost = 1000;
+  float epoch_accuracy = -1;
   int epochs = 0;
   net.batches= 1;
   // net.feedforward();
@@ -264,22 +254,23 @@ void demo(int total_epochs)
       net.feedforward();
       net.backpropagate();
       cost_sum += net.cost();
+      // std::cout << acc_sum << " "<< net.accuracy() << " " << net.batch_size << "\n";
       acc_sum += net.accuracy();
       // std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
       net.batches++;
-      int exit = net.next_batch();
+      int exit = net.next_batch(net.fpath);
       if (exit == -1) {
         break;
       }
     }
     net.batches=1;
-    float epoch_accuracy =  1.0/((float) linecount/net.batch_size) * acc_sum;
+    epoch_accuracy = 1.0/((float) linecount/net.batch_size) * acc_sum;
     epoch_cost = 1.0/((float) linecount/net.batch_size) * cost_sum;
     auto ep_end = std::chrono::high_resolution_clock::now();
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9), epoch_cost, epoch_accuracy);
     epochs++;
   }
-  net.test("./test.txt");
+  printf("Test accuracy: %f\n", net.test("./test.txt"));
   // net.list_net();
   auto end = std::chrono::high_resolution_clock::now();
   std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << " ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
