@@ -121,7 +121,7 @@ float Network::accuracy()
 {
   float correct = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    printf("%lf vs %lf\n", (*labels)(i, 0), (*layers[length-1].contents)(i, 0));
+    // printf("%lf vs %lf\n", (*labels)(i, 0), (*layers[length-1].contents)(i, 0));
     if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
       correct += 1;
     }
@@ -165,12 +165,12 @@ int Network::next_batch(char* path)
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
-  int label = 100;
-  for (int i = 0; i < batch_size*batches + 1; i+=batch_size) {
+  int label = -1;
+  for (int i = 0; i*batch_size < batch_size*(batches + 1); i++) {
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
-    if (i >= batches) {
+    if (i*batch_size >= batches) {
       for (int j = 0; j < batch_size; j++) {
         fgets(line, 1024, fptr);
         // printf("%s", line);
@@ -219,7 +219,30 @@ float Network::test(char* path)
   int finalcount;
   for (int i = 0; i < linecount-batch_size; i+=batch_size) {
     feedforward();
-    next_batch("./test");
+    FILE* fptr = fopen(path, "r");
+    char line[1024] = {' '};
+    int inputs = layers[0].contents->cols();
+    int datalen = batch_size * inputs;
+    float batch[datalen];
+    int label = -1;
+    for (float j = 0; j/batch_size <= i; j++) {
+      if (fgets(line, 1024, fptr)==NULL) {
+        break;
+      }
+      if (j >= batches) {
+        for (int k = 0; k < batch_size; k++) {
+          fgets(line, 1024, fptr);
+          // printf("%s", line);
+          sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
+                 &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
+                 &batch[3 + (k * inputs)], &label);
+          (*labels)(k, 0) = label;
+        }
+      }
+    }
+    float* batchptr = batch;
+    update_layer(batchptr, datalen, 0);
+    fclose(fptr);
     cost_sum += cost();
     acc_sum += accuracy();
     finalcount = i;
@@ -245,6 +268,7 @@ void demo(int total_epochs)
   // net.backpropagate();
   // std::cout << net.cost() << "\n";
 
+  printf("Beginning train on %i instances for %i epochs...\n", linecount, total_epochs);
   while (epochs < total_epochs) {
     auto ep_begin = std::chrono::high_resolution_clock::now();
     // int linecount = prep_file("./data_banknote_authentication.txt");
