@@ -57,7 +57,7 @@ struct pair* map (struct pair input_pair)
       output_pairs[i].key = (void*) key;
       float* cost = new float;
       *cost = net.cost();
-      std::cout << *cost << " for " << i << "\n";
+      // std::cout << *cost << " for " << i << "\n";
       output_pairs[i].value = cost;
     }
     totalcost += net.cost();
@@ -70,24 +70,45 @@ pair* reduce (pair* input_pairs)
 {
   pair* output_pairs = new pair[2];
   int keysum = 0;
-  int valsum = 0;
+  float* valsum = new float;
   for (int i = 0; i < 5; i++) {
     printf("%s %f\n", (char*)input_pairs[i].key, *(float*)input_pairs[i].value);
     keysum += strtol((char*)input_pairs[i].key, NULL, 10);
-    valsum += *(int*)input_pairs[i].value;
+    *valsum += *(float*)input_pairs[i].value;
   }
-  char key[1024];
-  std::cout << keysum << " and " << valsum << " are SUMS\n";
+  char* key = new char[1024];
+  // std::cout << keysum << " and " << *valsum << " are SUMS\n";
   sprintf(key, "%d", keysum);
   output_pairs[0].key = (void*) key;
-  output_pairs[0].value = &valsum;
+  output_pairs[0].value = valsum;
   output_pairs[1].key = (void*) '\0';
   int nullval = -1;
   output_pairs[1].value = &nullval;
   return output_pairs;
 }
 
+void translate(char* path)
+{
+  FILE* rptr = fopen(path, "r");
+  FILE* wptr = fopen("./translated", "w");
+  char* line = new char[MAXLINE];
+  char* newline = new char[MAXLINE];
+  while (fgets(line, MAXLINE, rptr) != NULL) {
+    void* addr1;
+    void* addr2;
+    sscanf(line, "%p %p", &addr1, &addr2);
+    sprintf(newline, "%s %f", (char*)addr1, *(float*)addr2);
+    int batch_num = strtol((char*)addr1, NULL, 10);
+    printf("fspeijfofselk %i\n", batch_num);
+    fprintf(wptr, "%s %f (avg %f)\n",(char*)addr1, *(float*)addr2, ((*(float*)addr2/(float)batch_num)));
+  }
+  fclose(rptr);
+  fclose(wptr);
+  free(newline);
+  free(line);
+}
+
 int main(int argc, char** argv)
 {
-  begin(argv[2], map, reduce, strtol(argv[1], NULL, 10), 6, argv[3], strtol(argv[4], NULL, 10));
+  begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 6, argv[3], strtol(argv[4], NULL, 10));
 }
