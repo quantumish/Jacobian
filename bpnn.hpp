@@ -46,10 +46,11 @@ public:
   void list_net();
 
   float cost();
+  float accuracy();
   void backpropagate();
   int next_batch();
-  int test(char* path);
+  float test(char* path);
 };
 
-void demo();
+void demo(int total_epochs);
 int prep_file(char* path);

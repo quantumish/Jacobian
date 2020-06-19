@@ -1,4 +1,5 @@
 #include "bpnn.hpp"
+#include <ctime>
 
 Layer::Layer(float* vals, int batch_sz, int nodes)
 {
@@ -96,7 +97,6 @@ void Network::feedforward()
     // else {
     //   *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
     // }
-    // list_net();
   }
 }
 
@@ -115,6 +115,17 @@ float Network::cost()
     sum += pow((*labels)(i, 0) - (*layers[length-1].contents)(i, 0),2);
   }
   return (1.0/batch_size) * sum;
+}
+
+float Network::accuracy()
+{
+  float correct = 0;
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
+      correct += 1;
+    }
+  }
+  return (1.0/batch_size) * correct;
 }
 
 void Network::backpropagate()
@@ -221,7 +232,7 @@ float Network::test(char* path)
     update_layer(batchptr, datalen, 0);
     fclose(fptr);
     feedforward();
-    list_net();
+    // list_net();
     // next_batch();
     // std::cout << *layers[length-1].contents << "\n\nvs\n\n" << *labels << "\n\n";
     totalcost += cost();
@@ -231,8 +242,9 @@ float Network::test(char* path)
   return 1.0/((float) linecount / (float) batches) * totalcost;
 }
 
-void demo()
+void demo(int total_epochs)
 {
+  auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
   int linecount = prep_file("./data_banknote_authentication.txt");
   Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 1);
@@ -243,13 +255,16 @@ void demo()
   // net.backpropagate();
   // std::cout << net.cost() << "\n";
 
-  while (epochs < 10) {
+  while (epochs < total_epochs) {
+    auto ep_begin = std::chrono::high_resolution_clock::now();
     // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
+    float acc_sum = 0;
     for (int i = 0; i < linecount-net.batch_size; i+=net.batch_size) {
       net.feedforward();
       net.backpropagate();
       cost_sum += net.cost();
+      acc_sum += net.accuracy();
       // std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
       net.batches++;
       int exit = net.next_batch();
@@ -258,10 +273,14 @@ void demo()
       }
     }
     net.batches=1;
-    epoch_cost = 1.0/((float) linecount) * cost_sum;
-    printf("EPOCH %i: Cost is %f for %i instances.\n", epochs, epoch_cost, linecount);
+    float epoch_accuracy =  1.0/((float) linecount/net.batch_size) * acc_sum;
+    epoch_cost = 1.0/((float) linecount/net.batch_size) * cost_sum;
+    auto ep_end = std::chrono::high_resolution_clock::now();
+    printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9), epoch_cost, epoch_accuracy);
     epochs++;
   }
   net.test("./test.txt");
-  net.list_net();
+  // net.list_net();
+  auto end = std::chrono::high_resolution_clock::now();
+  std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << " ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
 }
