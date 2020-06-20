@@ -5,7 +5,7 @@ struct pair* map (struct pair input_pair)
   char* path = new char[100];
   path = (char*)input_pair.key;
   int linecount = prep_file(path);
-  Network* net = new Network (path, 4, 2, 1, 5, 1, 1);  
+  Network* net = new Network (path, 4, 2, 1, 5, 10, 1);  
   auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
   float epoch_cost = 1000;
@@ -17,11 +17,11 @@ struct pair* map (struct pair input_pair)
   // std::cout << net.cost() << "\n";
 
   printf("Beginning train on %i instances for %i epochs...\n", linecount, 50);
-  while (epochs < 50) {
+  while (epochs < 1) {
     auto ep_begin = std::chrono::high_resolution_clock::now();
     float cost_sum = 0;
     float acc_sum = 0;
-    // int linecount = prep_file("./data_banknote_authentication.txt");
+    int linecount = prep_file("./data_banknote_authentication.txt");
     double times[5] = {0};
     for (int i = 0; i <= linecount-net->batch_size; i+=net->batch_size) {
       auto feed_begin = std::chrono::high_resolution_clock::now();
@@ -32,6 +32,9 @@ struct pair* map (struct pair input_pair)
       cost_sum += net->cost();
       // std::cout << acc_sum << " "<< net.accuracy() << " " << net.batch_size << "\n";
       auto acc_begin = std::chrono::high_resolution_clock::now();
+      if (i < 1*net->batch_size) {
+        printf("Batch accuracy: %f\n", net->accuracy());
+      }
       acc_sum += net->accuracy();
       // std::cout << net.cost() << " as it is " << net.labels[0] << " vs " << *net.layers[net.length-1].contents << "\n";
       auto batch_begin = std::chrono::high_resolution_clock::now();
@@ -104,5 +107,6 @@ void translate(char* path)
 
 int main(int argc, char** argv)
 {
-  begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
+  // begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
+  demo(50);
 }

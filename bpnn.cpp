@@ -120,12 +120,15 @@ float Network::cost()
 float Network::accuracy()
 {
   float correct = 0;
+  int total = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    // printf("%lf vs %lf\n", (*labels)(i, 0), (*layers[length-1].contents)(i, 0));
     if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
+      // printf("Correct!\n");
       correct += 1;
     }
+    total = i;
   }
+  // printf("CORRECT: %f/%i\n", correct, batch_size);
   // std::cout << (1.0/batch_size) * correct << "\n";
   return (1.0/batch_size) * correct;
 }
@@ -300,12 +303,15 @@ void demo(int total_epochs)
         break;
       }
     }
-    printf("Avg time spent across %i batches: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch\n", net.batches, times[0]/net.batches, times[1]/net.batches, times[2]/net.batches, times[3]/net.batches, times[4]/net.batches);
-    net.batches=1;
     epoch_accuracy = 1.0/((float) linecount/net.batch_size) * acc_sum;
     epoch_cost = 1.0/((float) linecount/net.batch_size) * cost_sum;
     auto ep_end = std::chrono::high_resolution_clock::now();
-    printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9), epoch_cost, epoch_accuracy);
+    double epochtime = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9);
+    printf("───\nEpoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
+    printf("Avg time spent across %i batches: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch.\n", net.batches, times[0]/net.batches, times[1]/net.batches, times[2]/net.batches, times[3]/net.batches, times[4]/net.batches);
+    printf("Time spent across epoch: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch, %lf other.\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
+
+    net.batches=1;
     epochs++;
   }
   printf("Test accuracy: %f\n", net.test("./test.txt"));
