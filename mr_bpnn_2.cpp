@@ -19,9 +19,9 @@ struct pair* map (struct pair input_pair)
   printf("Beginning train on %i instances for %i epochs...\n", linecount, 50);
   while (epochs < 50) {
     auto ep_begin = std::chrono::high_resolution_clock::now();
-    // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     float acc_sum = 0;
+    // int linecount = prep_file("./data_banknote_authentication.txt");
     double times[5] = {0};
     for (int i = 0; i <= linecount-net->batch_size; i+=net->batch_size) {
       auto feed_begin = std::chrono::high_resolution_clock::now();
@@ -56,12 +56,12 @@ struct pair* map (struct pair input_pair)
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, 50, (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9), epoch_cost, epoch_accuracy);
     epochs++;
   }
-  struct pair* output = new struct pair[2];
-  output[0].key = path;
+  struct pair* output = new struct pair;
+  char* key = new char[100];
+  strcpy(key, path);
+  output[0].key = key;
   output[0].value = net;
-  
-  output[1].key = 0x0;
-  output[1].value = 0x0;
+  printf("%p %p VALS\n", output[0].key, output[0].value);
   return output;
 }
 
@@ -69,15 +69,14 @@ struct pair* reduce (struct pair* input_pairs)
 {
   printf("%p %p VALS\n", input_pairs[0].key, input_pairs[0].value);
   struct pair* output = new struct pair[6];  
-  for (int i = 0; i < 2; i++) {
-    // Network net = *(Network*)input_pairs[i].value;
-    // float* cost = new float;
-    // *cost = net.test("./test.txt");
-    // output[i].key = input_pairs[i].key;
-    // output[i].value = cost;
+  for (int i = 0; input_pairs[i].key != 0x0; i++) {
+    Network net = *(Network*)input_pairs[i].value;
+    float* acc = new float;
+    *acc = net.test("./test.txt");
+    output[i].key = input_pairs[i].key;
+    output[i].value = acc;
+    printf("%s %f\n", (char*)output[i].key, *(float*)output[i].value);
   }
-  output[5].key = 0x0;
-  output[5].value = 0x0;
   return output;
 }
 
@@ -93,7 +92,7 @@ void translate(char* path)
     sscanf(line, "%p %p", &addr1, &addr2);
     sprintf(newline, "%s %f", (char*)addr1, *(float*)addr2);
     int batch_num = strtol((char*)addr1, NULL, 10);
-    fprintf(wptr, "%s %f",(char*)addr1, *(float*)addr2);
+    fprintf(wptr, "%s %f\n",(char*)addr1, *(float*)addr2);
   }
   fclose(rptr);
   fclose(wptr);
@@ -101,7 +100,9 @@ void translate(char* path)
   free(line);
 }
 
+
+
 int main(int argc, char** argv)
 {
-  begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 2, argv[3], strtol(argv[4], NULL, 10));
+  begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
 }
