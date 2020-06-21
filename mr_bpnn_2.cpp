@@ -3,9 +3,11 @@
 struct pair* map (struct pair input_pair)
 {
   char* path = new char[100];
-  path = (char*)input_pair.key;
-  int linecount = prep_file(path, "./shuffled.txt");
-  Network* net = new Network (path, 4, 2, 1, 5, 10, 1);  
+  strcpy(path, (char*)input_pair.key);
+  strcat(path, "_shuf");
+  printf("%s and %s\n", path, (char*)input_pair.key);
+  int linecount = prep_file((char*)input_pair.key, path);
+  Network* net = new Network (path, 4, 2, 1, 5, 10, 2);  
   auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
   float epoch_cost = 1000;
@@ -104,8 +106,8 @@ void translate(char* path)
 int main(int argc, char** argv)
 {
   auto prog_begin = std::chrono::high_resolution_clock::now();
-  //begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
-  demo(50);
+  prep_file(argv[2], "./shuffled");
+  begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
   auto prog_end = std::chrono::high_resolution_clock::now();
   std::cout << "Time: " <<  std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count() / pow(10,9) << "\n";
 
