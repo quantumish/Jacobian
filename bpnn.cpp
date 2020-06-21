@@ -52,7 +52,6 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   char line[1024] = {' '};
   for (int i = 0; i < batch_size; i++) {
     fgets(line, 1024, fptr);
-    std::cout << "Read line: " << line;
     sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
     (*labels)(i,0) = label;
   }
@@ -69,6 +68,7 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   for (int i = 0; i < hidden+1; i++) {
     layers[i].initWeights(layers[i+1]);
   }
+  batches = 1;
   // std::cout << "Initial batch of:\n" << *layers[0].contents << "\nwith labels\n" << *labels;
 }
 
@@ -176,21 +176,17 @@ int Network::next_batch(char* path)
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
-  std::cout << "Batch start line is " << batch_size*batches << "\n";
-  for (int i = batch_size; i<= batch_size*batches; i+=batch_size) {
+
+  for (int i = 1; i < batch_size*(batches+1); i++) {
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
     if (i >= batches*batch_size) {
-      for (int j = 0; j < batch_size; j++) {
-        fgets(line, 1024, fptr);
-        // printf("%s", line);
-        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
-               &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
-               &batch[3 + (j * inputs)], &label);
-        (*labels)(j, 0) = label;
-      }
-      break;
+      int j = i - (batches*batch_size);
+      sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
+              &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
+              &batch[3 + (j * inputs)], &label);
+      (*labels)(j, 0) = label;
     }
   }
   float* batchptr = batch;
@@ -231,7 +227,7 @@ float Network::test(char* path)
   float cost_sum = 0;
   float acc_sum = 0;
   int finalcount;
-  for (int i = batch_size; i < linecount; i+=batch_size) {
+  for (int i = 0; i < linecount; i+=batch_size) {
     feedforward();
     FILE* fptr = fopen("./testshuffled", "r");
     char line[1024] = {' '};
@@ -239,13 +235,12 @@ float Network::test(char* path)
     int datalen = batch_size * inputs;
     float batch[datalen];
     int label = -1;
-    for (float j = 0; j/batch_size <= i; j++) {
+    for (int j = 1; j < batch_size*((i/batch_size)+1); j++) {
       if (fgets(line, 1024, fptr)==NULL) {
         break;
       }
-      for (int k = 0; k < batch_size; k++) {
-        fgets(line, 1024, fptr);
-        // printf("%s", line);
+      if (i >= batches*batch_size) {
+        int k = i - ((i/batch_size)*batch_size);
         sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
                 &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
                 &batch[3 + (k * inputs)], &label);
@@ -275,7 +270,6 @@ void demo(int total_epochs)
   float epoch_cost = 1000;
   float epoch_accuracy = -1;
   int epochs = 0;
-  net.batches= 1;
 
   printf("Beginning train on %i instances for %i epochs...\n", linecount, total_epochs);
   while (epochs < total_epochs) {
