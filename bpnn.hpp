@@ -53,4 +53,4 @@ public:
 };
 
 void demo(int total_epochs);
-int prep_file(char* path);
+int prep_file(char* path, char* out_path);

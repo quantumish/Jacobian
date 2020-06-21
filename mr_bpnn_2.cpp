@@ -4,7 +4,7 @@ struct pair* map (struct pair input_pair)
 {
   char* path = new char[100];
   path = (char*)input_pair.key;
-  int linecount = prep_file(path);
+  int linecount = prep_file(path, "./shuffled.txt");
   Network* net = new Network (path, 4, 2, 1, 5, 10, 1);  
   auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
@@ -21,7 +21,7 @@ struct pair* map (struct pair input_pair)
     auto ep_begin = std::chrono::high_resolution_clock::now();
     float cost_sum = 0;
     float acc_sum = 0;
-    int linecount = prep_file("./data_banknote_authentication.txt");
+    // int linecount = prep_file("./data_banknote_authentication.txt", "./shuffled.txt");
     double times[5] = {0};
     for (int i = 0; i <= linecount-net->batch_size; i+=net->batch_size) {
       auto feed_begin = std::chrono::high_resolution_clock::now();
@@ -108,5 +108,5 @@ void translate(char* path)
 int main(int argc, char** argv)
 {
   // begin(argv[2], map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
-  demo(50);
+  demo(1);
 }

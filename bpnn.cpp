@@ -41,28 +41,35 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
 {
   learning_rate = rate;
   fpath = path;
+  // std::cout << "Initialized path to " << fpath << "\n";
   length = hidden + 2;
   batch_size = batch_sz;
-  FILE* fptr = fopen(path, "r");
+  FILE* fptr = fopen(fpath, "r");
   int datalen = batch_sz*inputs;
   float batch[datalen];
-  labels = new Eigen::MatrixXd (batch_sz, 1);
+  labels = new Eigen::MatrixXd (batch_size, 1);
   int label;
   char line[1024] = {' '};
-  for (int i = 0; i < batch_sz; i++) {
+  for (int i = 0; i < batch_size; i++) {
     fgets(line, 1024, fptr);
+    std::cout << "Read line: " << line;
     sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
     (*labels)(i,0) = label;
   }
   float* batchptr = batch;
-  layers.emplace_back(batchptr, batch_sz, inputs);
+  // std::cout << "Dumping batch contents...\n";
+  // for (int i = 0; i < batch_size*4; i++) {
+  //   std::cout << batch[i] << "\n";
+  // }
+  layers.emplace_back(batchptr, batch_size, inputs);
   for (int i = 0; i < hidden; i++) {
-    layers.emplace_back(batch_sz, neurons);
+    layers.emplace_back(batch_size, neurons);
   }
-  layers.emplace_back(batch_sz, outputs);
+  layers.emplace_back(batch_size, outputs);
   for (int i = 0; i < hidden+1; i++) {
     layers[i].initWeights(layers[i+1]);
   }
+  // std::cout << "Initial batch of:\n" << *layers[0].contents << "\nwith labels\n" << *labels;
 }
 
 Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
@@ -169,7 +176,8 @@ int Network::next_batch(char* path)
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
-  for (int i = 0; i<= batch_size*batches; i++) {
+  std::cout << "Batch start line is " << batch_size*batches << "\n";
+  for (int i = batch_size; i<= batch_size*batches; i+=batch_size) {
     if (fgets(line, 1024, fptr)==NULL) {
       break;
     }
@@ -182,16 +190,18 @@ int Network::next_batch(char* path)
                &batch[3 + (j * inputs)], &label);
         (*labels)(j, 0) = label;
       }
+      break;
     }
   }
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   fclose(fptr);
-  // std::cout << *layers[0].contents << "\n\n and \n\n" << *labels;
+  std::cout << "Next batch of:\n" << *layers[0].contents << "\nwith labels\n" << *labels << "\n";
+
   return 0;
 }
 
-int prep_file(char* path)
+int prep_file(char* path, char* out_path)
 {
   FILE* rptr = fopen(path, "r");
   char line[1024];
@@ -205,10 +215,11 @@ int prep_file(char* path)
   std::mt19937 g(rd());
   std::shuffle(lines.begin(), lines.end(), g);
   fclose(rptr);
-  std::ofstream out("./shuffled.txt");
+  std::ofstream out(out_path);
   for (int i = 0; i < lines.size(); i++) {
     out << lines[i];
   }
+  out.close();
   return count;
 }
 
@@ -216,13 +227,13 @@ float Network::test(char* path)
 {
   int rounds = 1;
   int exit = 0;
-  int linecount = prep_file(path);
+  int linecount = prep_file(path, "./testshuffled");
   float cost_sum = 0;
   float acc_sum = 0;
   int finalcount;
-  for (int i = 0; i < linecount-batch_size; i+=batch_size) {
+  for (int i = batch_size; i < linecount; i+=batch_size) {
     feedforward();
-    FILE* fptr = fopen(path, "r");
+    FILE* fptr = fopen("./testshuffled", "r");
     char line[1024] = {' '};
     int inputs = layers[0].contents->cols();
     int datalen = batch_size * inputs;
@@ -232,15 +243,13 @@ float Network::test(char* path)
       if (fgets(line, 1024, fptr)==NULL) {
         break;
       }
-      if (j >= batches) {
-        for (int k = 0; k < batch_size; k++) {
-          fgets(line, 1024, fptr);
-          // printf("%s", line);
-          sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
-                 &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
-                 &batch[3 + (k * inputs)], &label);
-          (*labels)(k, 0) = label;
-        }
+      for (int k = 0; k < batch_size; k++) {
+        fgets(line, 1024, fptr);
+        // printf("%s", line);
+        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
+                &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
+                &batch[3 + (k * inputs)], &label);
+        (*labels)(k, 0) = label;
       }
     }
     float* batchptr = batch;
@@ -261,15 +270,12 @@ void demo(int total_epochs)
 {
   auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
-  int linecount = prep_file("./data_banknote_authentication.txt");
-  Network net ("./shuffled.txt", 4, 2, 1, 5, 10, 1);
+  int linecount = prep_file("./extra.txt", "./shuffled.txt");
+  Network net ("./shuffled.txt", 4, 1, 1, 5, 10, 1);
   float epoch_cost = 1000;
   float epoch_accuracy = -1;
   int epochs = 0;
-  net.batches= 0;
-  // net.feedforward();
-  // net.backpropagate();
-  // std::cout << net.cost() << "\n";
+  net.batches= 1;
 
   printf("Beginning train on %i instances for %i epochs...\n", linecount, total_epochs);
   while (epochs < total_epochs) {
@@ -317,5 +323,5 @@ void demo(int total_epochs)
   printf("Test accuracy: %f\n", net.test("./test.txt"));
   // net.list_net();
   auto end = std::chrono::high_resolution_clock::now();
-  std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << " ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
+  std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << "ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
 }
