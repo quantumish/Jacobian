@@ -42,6 +42,7 @@ public:
 
   Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
   Eigen::MatrixXd activate_deriv(Eigen::MatrixXd matrix);
+  Eigen::MatrixXd init_ones(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();
 

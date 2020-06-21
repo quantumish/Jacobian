@@ -76,7 +76,12 @@ Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
 {
   int nodes = matrix.cols();
   for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes)));
+    if ((matrix)((float)i / nodes, i%nodes) > 0) {
+      (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes)));
+    }
+    else {
+      (matrix)((float)i / nodes, i%nodes) = 0;
+    }
   }
   return matrix;
 }
@@ -85,7 +90,12 @@ Eigen::MatrixXd Network::activate_deriv(Eigen::MatrixXd matrix)
 {
   int nodes = matrix.cols();
   for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))) * (1 - 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))));
+    if ((matrix)((float)i / nodes, i%nodes) > 0) {
+      (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))) * (1 - 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))));
+    }
+    else {
+      (matrix)((float)i / nodes, i%nodes) = 0;
+    }
   }
   return matrix;
 }
@@ -97,13 +107,8 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
-    // if (i != length-2) {
     *layers[i+1].contents = activate(*layers[i+1].contents);
     *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
-    // }
-    // else {
-    //   *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
-    // }
   }
 }
 
@@ -281,7 +286,7 @@ void demo(int total_epochs)
     // int linecount = prep_file("./data_banknote_authentication.txt");
     float cost_sum = 0;
     float acc_sum = 0;
-    double times[5] = {0};
+    // double times[5] = {0};
     for (int i = 0; i <= linecount-net.batch_size; i+=net.batch_size) {
       // auto feed_begin = std::chrono::high_resolution_clock::now();
       net.feedforward();
@@ -317,8 +322,8 @@ void demo(int total_epochs)
     net.batches=1;
     epochs++;
   }
+  net.list_net();
   printf("Test accuracy: %f\n", net.test("./test.txt"));
-  // net.list_net();
   auto end = std::chrono::high_resolution_clock::now();
   std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << "ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
 }
