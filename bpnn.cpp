@@ -134,9 +134,9 @@ float Network::accuracy()
   float correct = 0;
   int total = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    printf("%i vs %f\n", (int)(*labels)(i, 0), (*layers[length-1].contents)(i, 0));
+    //    printf("%i vs %f\n", (int)(*labels)(i, 0), (*layers[length-1].contents)(i, 0));
     if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
-      printf("Correct!\n");
+      //printf("Correct!\n");
       correct += 1;
     }
     total = i;
@@ -152,8 +152,6 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels)));
-  error = error.cwiseProduct(((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels))));
-  error = error.cwiseProduct(((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels))));
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -272,7 +270,6 @@ float Network::test(char* path)
 
 void demo(int total_epochs)
 {
-  auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
   int linecount = prep_file("./extra.txt", "./shuffled.txt");
   Network net ("./shuffled.txt", 4, 1, 1, 5, 10, 1);
@@ -324,6 +321,4 @@ void demo(int total_epochs)
   }
   net.list_net();
   printf("Test accuracy: %f\n", net.test("./test.txt"));
-  auto end = std::chrono::high_resolution_clock::now();
-  std::cout <<std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() << "ns aka " << (double) std::chrono::duration_cast<std::chrono::nanoseconds>(end-begin).count() / pow(10,9) << "s" << std::endl;
 }
