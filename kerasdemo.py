@@ -12,6 +12,7 @@
 import time
 # import tensorflow
 from numpy import loadtxt
+import keras
 from keras.models import Sequential
 from keras.layers import Dense
 init = time.time()
@@ -25,13 +26,14 @@ model = Sequential()
 model.add(Dense(4, input_dim=4, activation='sigmoid'))
 model.add(Dense(5, activation='sigmoid'))
 model.add(Dense(5, activation='sigmoid'))
-model.add(Dense(1, activation='sigmoid'))
+model.add(Dense(1, activation='relu'))
 # compile the keras model
-model.compile(loss='mse', optimizer='sgd', metrics=['accuracy'])
+opt = keras.optimizers.SGD(lr=1)
+model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
 # fit the keras model on the dataset
-model.fit(X, y, epochs=50, batch_size=10)
+model.fit(X, y, epochs=50, batch_size=1)
 # evaluate the keras model
 _, accuracy = model.evaluate(X, y)
 print('Accuracy: %.2f' % (accuracy*100))
-end = time.time();
-print(end-init);
+end = time.time()
+print(end-init)

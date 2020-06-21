@@ -98,8 +98,8 @@ void Network::feedforward()
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
     // if (i != length-2) {
-      *layers[i+1].contents = activate(*layers[i+1].contents);
-      *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
+    *layers[i+1].contents = activate(*layers[i+1].contents);
+    *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
     // }
     // else {
     //   *layers[i + 1].dZ = (layers[i + 1].dZ->array() +  1).matrix();
@@ -129,8 +129,9 @@ float Network::accuracy()
   float correct = 0;
   int total = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    printf("%i vs %f\n", (int)(*labels)(i, 0), (*layers[length-1].contents)(i, 0));
     if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
-      // printf("Correct!\n");
+      printf("Correct!\n");
       correct += 1;
     }
     total = i;
@@ -145,7 +146,10 @@ void Network::backpropagate()
   // std::cout << "\nROUND\n\n\n\n\n\n";
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  gradients.push_back((((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels)))).cwiseProduct(*layers[length-1].dZ));
+  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels)));
+  error = error.cwiseProduct(((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels))));
+  error = error.cwiseProduct(((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels))));
+  gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
