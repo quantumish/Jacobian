@@ -125,6 +125,6 @@ int main(int argc, char** argv)
 
 PYBIND11_MODULE(mrbpnn, m) {
     m.doc() = "pybind11 example plugin"; // optional module docstring
-
-    m.def("add", &benchmark, "A function which times the BPNN", py::arg("epochs"));
+    
+    m.def("benchmark", &benchmark, "A function which times the BPNN", py::arg("epochs"));
 }
