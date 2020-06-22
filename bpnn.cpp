@@ -152,7 +152,7 @@ void Network::backpropagate()
   // std::cout << "\nROUND\n\n\n\n\n\n";
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels)).cwiseProduct(((*layers[length-1].contents) - (*labels)));
+  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));//.cwiseProduct(((*layers[length-1].contents) - (*labels)));
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
