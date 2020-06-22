@@ -37,6 +37,7 @@ void Layer::initWeights(Layer next)
   }
 }
 
+// Testing 123
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate)
 {
   learning_rate = rate;
@@ -175,6 +176,7 @@ void Network::update_layer(float* vals, int datalen, int index)
   }
 }
 
+// LSP is cool
 int Network::next_batch(char* path)
 {
   FILE* fptr = fopen(path, "r");
@@ -199,7 +201,6 @@ int Network::next_batch(char* path)
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   fclose(fptr);
-
   return 0;
 }
 
@@ -242,11 +243,13 @@ float Network::test(char* path)
     int datalen = batch_size * inputs;
     float batch[datalen];
     int label = -1;
+    printf("End line is %i\n", batch_size*((i/batch_size)+1));
     for (int j = 1; j < batch_size*((i/batch_size)+1); j++) {
       if (fgets(line, 1024, fptr)==NULL) {
         break;
       }
-      if (i >= batches*batch_size) {
+      printf("End line is %i\n", batch_size*((i/batch_size)+1));
+      if (i >= (i/batch_size)*batch_size) {
         int k = i - ((i/batch_size)*batch_size);
         sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
                 &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
@@ -257,6 +260,7 @@ float Network::test(char* path)
     float* batchptr = batch;
     update_layer(batchptr, datalen, 0);
     fclose(fptr);
+    std::cout << "Batch is: \n"<< *layers[0].contents << "\n and labels \n" <<  *labels << "\n";
     cost_sum += cost();
     acc_sum += accuracy();
     finalcount = i;
@@ -319,6 +323,13 @@ void demo(int total_epochs)
     net.batches=1;
     epochs++;
   }
-  net.list_net();
-  printf("Test accuracy: %f\n", net.test("./test.txt"));
+  
+  // float newvals[4] = {0};
+  // FILE* new = fopen("./predict.txt", "r");
+  // fscanf(new, "%f, %f, %f, %f", &newvals[0], &newvals[1], &newvals[2], &newvals[3]);
+  // net.update_layer(newvals, 4, 0);
+  // net.feedforward();
+  // net.list_net();
+  //net.list_net();
+  //  printf("Test accuracy: %f\n", net.test("./test.txt"));
 }
