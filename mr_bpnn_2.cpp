@@ -1,4 +1,6 @@
+#include <pybind11/pybind11.h>
 #include "bpnn.hpp"
+namespace py = pybind11;
 
 struct pair* map (struct pair input_pair)
 {
@@ -101,16 +103,28 @@ void translate(char* path)
   free(line);
 }
 
-
+double benchmark(int epochs)
+{
+    auto prog_begin = std::chrono::high_resolution_clock::now();
+    demo(epochs);
+    auto prog_end = std::chrono::high_resolution_clock::now();
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count();
+}
 
 int main(int argc, char** argv)
 {
   auto prog_begin = std::chrono::high_resolution_clock::now();
-  prep_file(argv[2], "./shuffled");
-  //begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
+  //prep_file(argv[2], "./shuffled");
+  //begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10)py);
   demo(50);
   auto prog_end = std::chrono::high_resolution_clock::now();
   std::cout << "Time: " <<  std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count() / pow(10,9) << "\n";
 
   // demo(50);
+}
+
+PYBIND11_MODULE(mrbpnn, m) {
+    m.doc() = "pybind11 example plugin"; // optional module docstring
+
+    m.def("add", &benchmark, "A function which times the BPNN", py::arg("epochs"));
 }
