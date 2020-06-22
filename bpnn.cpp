@@ -298,8 +298,7 @@ void demo(int total_epochs)
 
     net.batches=1;
     epochs++;
-  }
-  
+  }  
   // float newvals[4] = {0};
   // FILE* new = fopen("./predict.txt", "r");
   // fscanf(new, "%f, %f, %f, %f", &newvals[0], &newvals[1], &newvals[2], &newvals[3]);

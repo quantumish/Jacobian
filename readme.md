@@ -11,10 +11,10 @@ Coming soon: A detailed rundown of the speed of "ML in Parallel" vs popular mach
 As of now, a demo of a neural network with feedforward and backpropagation is available (as well as a Keras demo for reference). **Note: You'll need to add the `mapreduce` archive file to the project directory, which can be found [here](https://github.com/richardfeynmanrocks/mapreduce).**
 
 ### Sequential
-Build and run the sequential demo with the following commands:
+See the sequential demo by including the header file in you project, calling `demo`, and building/running with the following commands:
 ```
-g++ mr_bpnn_2.cpp bpnn.cpp mapreduce.a -O2 -o bpnn -std=c++11 -w
-./bpnn NUM_PARALLEL_NETWORKS PATH_TO_DATA YOUR_PUBLIC_IP 1
+g++ YOUR_FILE bpnn.cpp mapreduce.a -O2 -o bpnn -std=c++11 -w
+./bpnn
 ```
 
 ### Parallel

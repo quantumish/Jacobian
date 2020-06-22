@@ -107,10 +107,7 @@ int main(int argc, char** argv)
 {
   auto prog_begin = std::chrono::high_resolution_clock::now();
   prep_file(argv[2], "./shuffled");
-  //begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
-  demo(50);
+  begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
   auto prog_end = std::chrono::high_resolution_clock::now();
   std::cout << "Time: " <<  std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count() / pow(10,9) << "\n";
-
-  // demo(50);
 }
