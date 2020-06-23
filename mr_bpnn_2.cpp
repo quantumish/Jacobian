@@ -2,20 +2,42 @@
 #include "bpnn.hpp"
 namespace py = pybind11;
 
-struct pair* map (struct pair input_pair)
+class ParallelNetwork
+{
+public:
+  Network* net;
+  int total_epochs;
+  int instances;
+  
+  ParallelNetwork(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate);
+  struct pair* map (struct pair input_pair);
+  struct pair* reduce (struct pair* input_pairs);
+  void translate(char* path);
+  double start();
+};
+
+ParallelNetwork::ParallelNetwork(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate, int epochs)
+{
+  char* newpath = new char[100];
+  strcpy(newpath, net->fpath);
+  strcat(newpath, "_shuf");
+  int linecount = prep_file(net->fpath, newpath);
+  total_epochs = epochs;
+  Network* net = new Network (path, inputs, hidden, outputs, neurons, batch_sz, rate);
+  
+}
+
+struct pair* ParallelNetwork::map (struct pair input_pair)
 {
   char* path = new char[100];
   strcpy(path, (char*)input_pair.key);
   strcat(path, "_shuf");
-  printf("%s and %s\n", path, (char*)input_pair.key);
   int linecount = prep_file((char*)input_pair.key, path);
-  Network* net = new Network (path, 4, 2, 1, 5, 10, 2);  
   auto begin = std::chrono::high_resolution_clock::now();
   // std::cout << "\n\n\n";
   float epoch_cost = 1000;
   float epoch_accuracy = -1;
   int epochs = 0;
-  int total_epochs = 50;
   net->batches= 0;
   // net.feedforward();
   // net.backpropagate();
@@ -70,7 +92,7 @@ struct pair* map (struct pair input_pair)
   return output;
 }
 
-struct pair* reduce (struct pair* input_pairs)
+struct pair* ParallelNetwork::reduce (struct pair* input_pairs)
 {
   struct pair* output = new struct pair[6];  
   for (int i = 0; input_pairs[i].key != 0x0; i++) {
@@ -83,7 +105,7 @@ struct pair* reduce (struct pair* input_pairs)
   return output;
 }
 
-void translate(char* path)
+void ParallelNetwork::translate(char* path)
 {
   FILE* rptr = fopen(path, "r");
   FILE* wptr = fopen("./translated", "w");
@@ -111,20 +133,38 @@ double benchmark(int epochs)
     return std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count();
 }
 
-int main(int argc, char** argv)
+double ParalellNetwork::start(int mappers, int reducers, char* ip)
 {
+  char* newpath = new char[100];
+  strcpy(newpath, net->fpath);
+  strcat(newpath, "_shuf");
+  int linecount = prep_file(net->fpath, newpath);
   auto prog_begin = std::chrono::high_resolution_clock::now();
-  //prep_file(argv[2], "./shuffled");
-  //begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10)py);
-  demo(50);
+  begin("./shuffled", map, reduce, translate, mappers, 1, ip, reducers);
   auto prog_end = std::chrono::high_resolution_clock::now();
-  std::cout << "Time: " <<  std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count() / pow(10,9) << "\n";
-
-  // demo(50);
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count();
 }
 
 PYBIND11_MODULE(mrbpnn, m) {
     m.doc() = "pybind11 example plugin"; // optional module docstring
     
-    m.def("benchmark", &benchmark, "A function which times the BPNN", py::arg("epochs"));
+    m.def("benchmark", &benchmark, "A function which times the sequential BPNN", py::arg("epochs"));
+    py::class_<Network>(m, "Network")
+      .def(py::init<char*, int, int, int, int, int, float>())
+      .def("feedforward", &Network::feedforward)
+      .def("backpropagate", &Network::backpropagate)
+      .def("list_net", &Network::list_net)
+      .def("cost", &Network::cost)
+      .def("accuracy", &Network::accuracy)
+      .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
+      .def("next_batch", &Network::next_batch, py::arg("path"));
+    py::class_<ParalellNetwork>(m, "Network")
+      .def(py::init<char*, int, int, int, int, int, float>())
+      .def("feedforward", &Network::feedforward)
+      .def("backpropagate", &Network::backpropagate)
+      .def("list_net", &Network::list_net)
+      .def("cost", &Network::cost)
+      .def("accuracy", &Network::accuracy)
+      .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
+      .def("next_batch", &Network::next_batch, py::arg("path"));
 }
