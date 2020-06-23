@@ -27,7 +27,7 @@ public:
 
 class Network {
 public:
-  char* fpath;
+  FILE* data;
   int instances;
 
   std::vector<Layer> layers;
@@ -50,7 +50,7 @@ public:
   float cost();
   float accuracy();
   void backpropagate();
-  int next_batch(char* path);
+  int next_batch();
   float test(char* path);
   void train(int total_epochs);
 };

@@ -42,17 +42,16 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
 {
   learning_rate = rate;
   instances = prep_file(path, "./shuffled.txt");
-  fpath = "./shuffled.txt";
   length = hidden + 2;
   batch_size = batch_sz;
-  FILE* fptr = fopen(fpath, "r");
+  data = fopen("./shuffled.txt", "r");
   int datalen = batch_sz*inputs;
   float batch[datalen];
   labels = new Eigen::MatrixXd (batch_size, 1);
   int label;
   char line[1024] = {' '};
   for (int i = 0; i < batch_size; i++) {
-    fgets(line, 1024, fptr);
+    fgets(line, 1024, data);
     sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
     (*labels)(i,0) = label;
   }
@@ -164,30 +163,26 @@ void Network::update_layer(float* vals, int datalen, int index)
   }
 }
 
-int Network::next_batch(char* path)
+int Network::next_batch()
 {
-  FILE* fptr = fopen(path, "r");
   char line[1024] = {' '};
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
 
-  for (int i = 1; i < batch_size*(batches+1); i++) {
-    if (fgets(line, 1024, fptr)==NULL) {
+  for (int i = 0; i < batch_size; i++) {
+    if (fgets(line, 1024, data)==NULL) {
       break;
     }
-    if (i >= batches*batch_size) {
-      int j = i - (batches*batch_size);
-      sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (j * inputs)],
-              &batch[1 + (j * inputs)], &batch[2 + (j * inputs)],
-              &batch[3 + (j * inputs)], &label);
-      (*labels)(j, 0) = label;
-    }
+    sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (i * inputs)],
+           &batch[1 + (i * inputs)], &batch[2 + (i * inputs)],
+           &batch[3 + (i * inputs)], &label);
+    (*labels)(i, 0) = label;
   }
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
-  fclose(fptr);
+  //  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
   return 0;
 }
 
@@ -269,7 +264,7 @@ void Network::train(int total_epochs)
       cost_sum += cost();
       acc_sum += accuracy();
       if (i != instances-batch_size) { // Don't try to advance batch on final batch.
-        next_batch(fpath);
+        next_batch();
       }      batches++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
@@ -308,7 +303,7 @@ void demo(int total_epochs)
       auto batch_begin = std::chrono::high_resolution_clock::now();
 
       if (i != linecount-net.batch_size) { // Don't try to advance batch on final batch.
-        net.next_batch(net.fpath);
+        net.next_batch();
       }
       auto loop_end = std::chrono::high_resolution_clock::now();
       times[0] += std::chrono::duration_cast<std::chrono::nanoseconds>(back_begin - feed_begin).count() / pow(10,9);

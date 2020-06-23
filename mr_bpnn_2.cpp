@@ -42,7 +42,7 @@ struct pair* map (struct pair input_pair)
       // auto batch_begin = std::chrono::high_resolution_clock::now();
 
       if (i != linecount-net->batch_size) { // Don't try to advance batch on final batch.
-        net->next_batch(net->fpath);
+        net->next_batch();
       }
       net->batches++;
       // auto loop_end = std::chrono::high_resolution_clock::now();
@@ -124,6 +124,6 @@ PYBIND11_MODULE(mrbpnn, m) {
     .def("cost", &Network::cost)
     .def("accuracy", &Network::accuracy)
     .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
-    .def("next_batch", &Network::next_batch, py::arg("path"))
+    .def("next_batch", &Network::next_batch)
     .def("train", &Network::train, py::arg("epochs"));
 }
