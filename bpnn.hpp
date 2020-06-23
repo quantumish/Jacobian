@@ -7,6 +7,7 @@ extern "C" {
 #include <vector>
 #include <array>
 #include <iostream>
+#include <fstream>
 #include <string>
 #include <cstdio>
 #include <fstream>
@@ -27,7 +28,8 @@ public:
 
 class Network {
 public:
-  FILE* data;
+  std::filebuf data;
+  std::istream* stream;
   int instances;
 
   std::vector<Layer> layers;

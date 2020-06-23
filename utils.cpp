@@ -1,5 +1,7 @@
 #include <iostream>
+#include <fstream>
 #include <cstdlib>
+#include <ctime>
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
@@ -33,7 +35,30 @@ static uintmax_t wc(char const *fname)
     return lines;
 }
 
+int istreamtest () {
+  std::filebuf fb;
+  if (fb.open ("extra.txt",std::ios::in))
+  {
+    std::istream is(&fb);
+    char fchar = '-';
+    
+    const int MAX_LENGTH = 1024;
+    char* line = new char[MAX_LENGTH];
+    auto get_begin = std::chrono::high_resolution_clock::now();
+    int i = 0;
+    auto get_end = std::chrono::high_resolution_clock::now();
+    while (is.getline(line, MAX_LENGTH) && strlen(line) > 0 && i < 10) {
+      auto get_end = std::chrono::high_resolution_clock::now();
+      std::cout << line << "\n";
+      i++;
+    }
+    std::cout << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() << "\n";
+    fb.close();
+  }
+  return 0;
+}
+
 int main()
 {
-  wc("./shuffled.txt");
+  istreamtest();
 }

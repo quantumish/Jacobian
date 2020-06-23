@@ -74,9 +74,8 @@ struct pair* reduce (struct pair* input_pairs)
 {
   struct pair* output = new struct pair[6];  
   for (int i = 0; input_pairs[i].key != 0x0; i++) {
-    Network net = *(Network*)input_pairs[i].value;
     float* acc = new float;
-    *acc = net.test("./test.txt");
+    *acc = ((Network*)input_pairs[i].value)->test("./test.txt");
     output[i].key = input_pairs[i].key;
     output[i].value = acc;
   }

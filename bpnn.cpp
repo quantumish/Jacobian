@@ -44,14 +44,16 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   instances = prep_file(path, "./shuffled.txt");
   length = hidden + 2;
   batch_size = batch_sz;
-  data = fopen("./shuffled.txt", "r");
+  data.open("./shuffled.txt", std::ios::in);
+  std::istream is (&data);
+  stream = &is;
   int datalen = batch_sz*inputs;
   float batch[datalen];
   labels = new Eigen::MatrixXd (batch_size, 1);
   int label;
   char line[1024] = {' '};
   for (int i = 0; i < batch_size; i++) {
-    fgets(line, 1024, data);
+    stream->getline(line, 1024);
     sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
     (*labels)(i,0) = label;
   }
@@ -65,6 +67,7 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
     layers[i].initWeights(layers[i+1]);
   }
   batches = 1;
+  std::cout << "Batch is: " << *layers[0].contents << "\n";
 }
 
 Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
@@ -171,21 +174,25 @@ int Network::next_batch()
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
+  auto scan_begin = std::chrono::high_resolution_clock::now();
+  auto set_begin = std::chrono::high_resolution_clock::now();
   auto get_begin = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < batch_size; i++) {
-    if (fgets(line, 1024, data)==NULL) {
+    if (stream->getline(line, 1024) && strlen(line)>0) {
       break;
     }
+    scan_begin = std::chrono::high_resolution_clock::now();
     sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (i * inputs)],
            &batch[1 + (i * inputs)], &batch[2 + (i * inputs)],
            &batch[3 + (i * inputs)], &label);
+    set_begin = std::chrono::high_resolution_clock::now();
     (*labels)(i, 0) = label;
   }
   auto get_end = std::chrono::high_resolution_clock::now();
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   auto update_end = std::chrono::high_resolution_clock::now();
-  std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() / pow(10,9) << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() / pow(10,9) << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() / pow(10,9) << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() / pow(10,9) << "\n";
+  std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(scan_begin - get_begin).count() << " SCAN " << std::chrono::duration_cast<std::chrono::nanoseconds>(set_begin - scan_begin).count() << " SET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - set_begin).count() << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() << "\n";
   //  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
   return 0;
 }
@@ -280,7 +287,8 @@ void Network::train(int total_epochs)
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
     batches=1;
     epochs++;
-    rewind(data);
+    stream->clear();
+    stream->seekg(0);
   }
 }
 
@@ -328,7 +336,8 @@ void demo(int total_epochs)
     printf("Time spent across epoch: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch, %lf other.\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
     net.batches=1;
     epochs++;
-    rewind(net.data);
+    net.stream->clear();
+    net.stream->seekg(0);
   }  
   // float newvals[4] = {0};
   // FILE* new = fopen("./predict.txt", "r");
@@ -338,4 +347,4 @@ void demo(int total_epochs)
   // net.list_net();
   //net.list_net();
   //  printf("Test accuracy: %f\n", net.test("./test.txt"));
-}
+ }
