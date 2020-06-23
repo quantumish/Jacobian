@@ -165,12 +165,13 @@ void Network::update_layer(float* vals, int datalen, int index)
 
 int Network::next_batch()
 {
+  auto init_begin = std::chrono::high_resolution_clock::now();
   char line[1024] = {' '};
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
-
+  auto get_begin = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < batch_size; i++) {
     if (fgets(line, 1024, data)==NULL) {
       break;
@@ -180,8 +181,11 @@ int Network::next_batch()
            &batch[3 + (i * inputs)], &label);
     (*labels)(i, 0) = label;
   }
+  auto get_end = std::chrono::high_resolution_clock::now();
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
+  auto update_end = std::chrono::high_resolution_clock::now();
+  std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() / pow(10,9) << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() / pow(10,9) << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() / pow(10,9) << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() / pow(10,9) << "\n";
   //  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
   return 0;
 }
@@ -254,6 +258,7 @@ void Network::train(int total_epochs)
   float epoch_accuracy = -1;
   int epochs = 0;
   printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
+  double batch_time = 0;
   while (epochs < total_epochs) {
     auto ep_begin = std::chrono::high_resolution_clock::now();
     float cost_sum = 0;
@@ -265,7 +270,8 @@ void Network::train(int total_epochs)
       acc_sum += accuracy();
       if (i != instances-batch_size) { // Don't try to advance batch on final batch.
         next_batch();
-      }      batches++;
+      }
+      batches++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
@@ -274,6 +280,7 @@ void Network::train(int total_epochs)
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
     batches=1;
     epochs++;
+    rewind(data);
   }
 }
 
@@ -301,8 +308,7 @@ void demo(int total_epochs)
       auto acc_begin = std::chrono::high_resolution_clock::now();
       acc_sum += net.accuracy();
       auto batch_begin = std::chrono::high_resolution_clock::now();
-
-      if (i != linecount-net.batch_size) { // Don't try to advance batch on final batch.
+      if (i != linecount-net.batch_size) {
         net.next_batch();
       }
       auto loop_end = std::chrono::high_resolution_clock::now();
@@ -320,9 +326,9 @@ void demo(int total_epochs)
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
     printf("Avg time spent across %i batches: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch.\n", net.batches, times[0]/net.batches, times[1]/net.batches, times[2]/net.batches, times[3]/net.batches, times[4]/net.batches);
     printf("Time spent across epoch: %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc, %lf on next batch, %lf other.\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
-
     net.batches=1;
     epochs++;
+    rewind(net.data);
   }  
   // float newvals[4] = {0};
   // FILE* new = fopen("./predict.txt", "r");
