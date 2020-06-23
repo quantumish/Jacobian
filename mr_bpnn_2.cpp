@@ -1,4 +1,6 @@
+#include <pybind11/pybind11.h>
 #include "bpnn.hpp"
+namespace py = pybind11;
 
 struct pair* map (struct pair input_pair)
 {
@@ -101,13 +103,27 @@ void translate(char* path)
   free(line);
 }
 
-
-
-int main(int argc, char** argv)
+double benchmark(int epochs)
 {
   auto prog_begin = std::chrono::high_resolution_clock::now();
-  prep_file(argv[2], "./shuffled");
-  begin("./shuffled", map, reduce, translate, strtol(argv[1], NULL, 10), 1, argv[3], strtol(argv[4], NULL, 10));
+  demo(epochs);
   auto prog_end = std::chrono::high_resolution_clock::now();
-  std::cout << "Time: " <<  std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count() / pow(10,9) << "\n";
+  return std::chrono::duration_cast<std::chrono::nanoseconds>(prog_end-prog_begin).count();
+}
+
+
+PYBIND11_MODULE(mrbpnn, m) {
+  m.doc() = "pybind11 example plugin"; // optional module docstring
+  
+  m.def("benchmark", &benchmark, "A function which times the BPNN", py::arg("epochs"));
+  py::class_<Network>(m, "Network")
+    .def(py::init<char*, int, int, int, int, int, float>())
+    .def("feedforward", &Network::feedforward)
+    .def("backpropagate", &Network::backpropagate)
+    .def("list_net", &Network::list_net)
+    .def("cost", &Network::cost)
+    .def("accuracy", &Network::accuracy)
+    .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
+    .def("next_batch", &Network::next_batch, py::arg("path"))
+    .def("train", &Network::train, py::arg("epochs"));
 }

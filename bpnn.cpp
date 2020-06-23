@@ -41,7 +41,8 @@ void Layer::initWeights(Layer next)
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate)
 {
   learning_rate = rate;
-  fpath = path;
+  instances = prep_file(path, "./shuffled.txt");
+  fpath = "./shuffled.txt";
   length = hidden + 2;
   batch_size = batch_sz;
   FILE* fptr = fopen(fpath, "r");
@@ -250,6 +251,35 @@ float Network::test(char* path)
   }
   float chunks = ((float)finalcount/batch_size)+1;
   return acc_sum/chunks;
+}
+
+void Network::train(int total_epochs)
+{
+  float epoch_cost = 1000;
+  float epoch_accuracy = -1;
+  int epochs = 0;
+  printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
+  while (epochs < total_epochs) {
+    auto ep_begin = std::chrono::high_resolution_clock::now();
+    float cost_sum = 0;
+    float acc_sum = 0;
+    for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+      feedforward();
+      backpropagate();
+      cost_sum += cost();
+      acc_sum += accuracy();
+      if (i != instances-batch_size) { // Don't try to advance batch on final batch.
+        next_batch(fpath);
+      }      batches++;
+    }
+    epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
+    epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
+    auto ep_end = std::chrono::high_resolution_clock::now();
+    double epochtime = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9);
+    printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
+    batches=1;
+    epochs++;
+  }
 }
 
 void demo(int total_epochs)

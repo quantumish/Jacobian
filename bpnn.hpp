@@ -28,6 +28,7 @@ public:
 class Network {
 public:
   char* fpath;
+  int instances;
 
   std::vector<Layer> layers;
   int length;
@@ -51,6 +52,7 @@ public:
   void backpropagate();
   int next_batch(char* path);
   float test(char* path);
+  void train(int total_epochs);
 };
 
 void demo(int total_epochs);

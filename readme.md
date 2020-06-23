@@ -1,4 +1,3 @@
-
 # ML in Parallel
 
 ## About
@@ -28,7 +27,17 @@ g++ mr_bpnn_2.cpp bpnn.cpp mapreduce.a -O2 -o bpnn -std=c++11 -w
 Compare these demonstrations with a sample Keras demo by running `python kerasdemo.py`
 
 ## Usage
-As of now "ML in Parallel" is not fit for usage inside code.
-However:
-- Initial prototype code is being cleaned up so as to make it more usable.
-- Python bindings with `pybind11` are in development for improved usage.
+As of now "ML in Parallel" is not fully fit for usage inside code.
+
+### Python Bindings
+This feature is largely experimental but is the preferred way to demo as of now.
+
+1. Install both the C++ end of pybind11 and the python end.
+2. Build with `make` or the much uglier alternative:
+```
+c++ -w -O2 -Wall -shared -std=c++11 -undefined dynamic_lookup `python3 -m pybind11 --includes` mr_bpnn_2.cpp bpnn.cpp mapreduce.a -o mrbpnn`python3-config --extension-suffix`
+```
+3. Copy the `mrbpnn.cpython-37m-darwin.so` file into your personal project directory.
+4. Import `mrbpnn` from your Python code and use it.
+5. Profit.
+
