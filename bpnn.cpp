@@ -1,4 +1,5 @@
 #include "bpnn.hpp"
+#include "utils.hpp"
 #include <ctime>
 
 Layer::Layer(float* vals, int batch_sz, int nodes)
@@ -37,7 +38,6 @@ void Layer::initWeights(Layer next)
   }
 }
 
-// Testing 123
 Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate)
 {
   learning_rate = rate;
@@ -64,35 +64,11 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   for (int i = 0; i < hidden+1; i++) {
     layers[i].initWeights(layers[i+1]);
   }
+  for (int i = 0; i < hidden+2; i++) {
+    layers[i].activation = &sigmoid;
+    layers[i].activation_deriv = &sigmoid_deriv;
+  }
   batches = 1;
-}
-
-Eigen::MatrixXd Network::activate(Eigen::MatrixXd matrix)
-{
-  int nodes = matrix.cols();
-  for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    if ((matrix)((float)i / nodes, i%nodes) > 0) {
-      (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes)));
-    }
-    else {
-      (matrix)((float)i / nodes, i%nodes) = 0;
-    }
-  }
-  return matrix;
-}
-
-Eigen::MatrixXd Network::activate_deriv(Eigen::MatrixXd matrix)
-{
-  int nodes = matrix.cols();
-  for (int i = 0; i < (matrix.rows()*matrix.cols()); i++) {
-    if ((matrix)((float)i / nodes, i%nodes) > 0) {
-      (matrix)((float)i / nodes, i%nodes) = 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))) * (1 - 1.0/(1+exp(-(matrix)((float)i / nodes, i%nodes))));
-    }
-    else {
-      (matrix)((float)i / nodes, i%nodes) = 0;
-    }
-  }
-  return matrix;
 }
 
 void Network::feedforward()
@@ -102,8 +78,8 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
-    *layers[i+1].contents = activate(*layers[i+1].contents);
-    *layers[i+1].dZ = activate_deriv(*layers[i+1].contents);
+    *layers[i+1].contents = (*layers[i+1]->activation)(*layers[i+1].contents);
+    *layers[i+1].dZ = (*layers[i+1]->activate_deriv)(*layers[i+1].contents);
   }
 }
 

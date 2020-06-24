@@ -2,10 +2,21 @@
 #include <fstream>
 #include <cstdlib>
 #include <ctime>
+#include <cmath>
 #include <cstdio>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
+
+double sigmoid(double x)
+{
+  return 1.0/(1+exp(-x));
+}
+
+double sigmoid_deriv(double x)
+{
+  return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));
+}
 
 static uintmax_t wc(char const *fname)
 {

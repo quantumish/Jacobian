@@ -1,3 +1,6 @@
+#ifndef BPNN_H
+#define BPNN_H
+
 #include "/Users/davidfreifeld/Downloads/eigen-3.3.7/Eigen/Dense"
 
 extern "C" {
@@ -19,6 +22,8 @@ public:
   Eigen::MatrixXd* weights;
   Eigen::MatrixXd* bias;
   Eigen::MatrixXd* dZ;
+  double (*activation)(double);
+  double (*activation_deriv)(double);
 
   Layer(float* vals, int rows, int columns);
   Layer(int rows, int columns);
@@ -41,8 +46,6 @@ public:
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate);
   void update_layer(float* vals, int datalen, int index);
 
-  Eigen::MatrixXd activate(Eigen::MatrixXd matrix);
-  Eigen::MatrixXd activate_deriv(Eigen::MatrixXd matrix);
   Eigen::MatrixXd init_ones(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();
@@ -57,3 +60,5 @@ public:
 
 void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
+
+#endif /* MODULE_H */
