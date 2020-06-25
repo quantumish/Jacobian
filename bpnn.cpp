@@ -13,7 +13,9 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
-    (*bias)(0,i) = 0.001;
+    for (int j = 0; j < batch_sz; j++) {
+      (*bias)(j,i) = 0.001;
+    }
   }
 }
 
@@ -108,9 +110,7 @@ void Network::feedforward()
   }
   for (int i = 0; i < length-1; i++) {
     *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
-    for (int j = 0; j < layers[i+1].contents->rows(); j++) {
-      // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
-    }
+    *layers[i+1].contents += *layers[i+1].bias;
   }
   for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
@@ -162,13 +162,14 @@ void Network::backpropagate()
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    deltas.push_back((*layers[i-1].contents).transpose() * gradients[counter]);
+    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()));
+    deltas.push_back((gradients[counter].cwiseProduct(*layers[i].dZ)));
     counter++;
   }
   for (int i = 1; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    *layers[length-2-i].weights -= learning_rate * (deltas[i]);
+    *layers[length-2-i].weights -= learning_rate * (deltas[i] * *layers[i-1].contents).transpose());
+    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
   }
 }
 
