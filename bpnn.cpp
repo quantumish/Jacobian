@@ -1,6 +1,7 @@
 #include "bpnn.hpp"
 #include "utils.hpp"
 #include <ctime>
+#include <random>
 
 Layer::Layer(float* vals, int batch_sz, int nodes)
 {
@@ -41,8 +42,12 @@ void Layer::init_weights(Layer next)
 {
   weights = new Eigen::MatrixXd (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
+  int n = contents->cols() + next.contents->cols();
+  std::normal_distribution<float> d(0,sqrt(1.0/n));
   for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
-    (*weights)((int)i / nodes, i%nodes) = rand() / double(RAND_MAX);
+    std::random_device rd;
+    std::mt19937 gen(rd()); 
+    (*weights)((int)i / nodes, i%nodes) = d(gen);
   }
 }
 
