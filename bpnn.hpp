@@ -27,7 +27,7 @@ public:
 
   Layer(int rows, int columns);
   Layer(float* vals, int rows, int columns);
-  void initWeights(Layer next);
+  void init_weights(Layer next);
 };
 
 class Network {
@@ -39,11 +39,14 @@ public:
   int length;
 
   float learning_rate;
+  float bias_lr;
   int batch_size;
   int batches;
   Eigen::MatrixXd* labels;
 
-  Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate);
+  Network(char* path, int batch_sz, float learn_rate, float bias_rate);
+  void add_layer(int nodes, char* activation);
+  void initialize();
   void update_layer(float* vals, int datalen, int index);
   void set_activation(int index, char* activation);
   

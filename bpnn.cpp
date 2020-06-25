@@ -46,37 +46,22 @@ void Layer::initWeights(Layer next)
   }
 }
 
-Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate)
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
 {
-  learning_rate = rate;
+  learning_rate = learn_rate;
+  bias_lr = bias_rate;
   instances = prep_file(path, "./shuffled.txt");
-  length = hidden + 2;
+  length = 0;
   batch_size = batch_sz;
   data = fopen("./shuffled.txt", "r");
-  int datalen = batch_sz*inputs;
-  float batch[datalen];
-  labels = new Eigen::MatrixXd (batch_size, 1);
-  int label;
-  char line[1024] = {' '};
-  for (int i = 0; i < batch_size; i++) {
-    fgets(line, 1024, data);
-    sscanf(line, "%f,%f,%f,%f,%i", &batch[0+(i*inputs)], &batch[1+(i*inputs)], &batch[2+(i*inputs)], &batch[3+(i*inputs)], &label);
-    (*labels)(i,0) = label;
-  }
-  float* batchptr = batch;
-  layers.emplace_back(batchptr, batch_size, inputs);
-  for (int i = 0; i < hidden; i++) {
-    layers.emplace_back(batch_size, neurons);
-  }
-  layers.emplace_back(batch_size, outputs);
-  for (int i = 0; i < hidden+1; i++) {
-    layers[i].initWeights(layers[i+1]);
-  }
-  for (int i = 0; i < hidden+2; i++) {
-    layers[i].activation = &resig;
-    layers[i].activation_deriv = &resig_deriv;
-  }
-  batches = 1;
+  batches = 0;
+}
+
+void add_layer(int nodes, char* activation)
+{
+  length++;
+  layers.push_back(batch_size, nodes);
+  set_activation(length-1, activation);
 }
 
 void Network::set_activation(int index, char* name)
@@ -98,7 +83,8 @@ void Network::set_activation(int index, char* name)
     layers[index].activation_deriv = &resig_deriv;
   }
   else {
-    std::cout << "Warning! Incorrect activation specified. Ignoring...\n";
+    std::cout << "Warning! Incorrect activation specified. Exiting...\n";
+    exit(1);
   }
 }
 
