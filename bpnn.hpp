@@ -45,7 +45,8 @@ public:
 
   Network(char* path, int inputs, int hidden, int outputs, int neurons, int batch_sz, float rate);
   void update_layer(float* vals, int datalen, int index);
-
+  void set_activation(int index, char* activation);
+  
   Eigen::MatrixXd init_ones(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();

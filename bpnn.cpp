@@ -75,6 +75,29 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
   batches = 1;
 }
 
+void Network::set_activation(int index, char* name)
+{
+  if (strcmp(name, "sigmoid") == 0) {
+    layers[index].activation = &sigmoid;
+    layers[index].activation_deriv = &sigmoid_deriv;
+  }
+  else if (strcmp(name, "linear") == 0) {
+    layers[index].activation = &linear;
+    layers[index].activation_deriv = &linear_deriv;
+  }
+  else if (strcmp(name, "relu") == 0) {
+    layers[index].activation = &relu;
+    layers[index].activation_deriv = &relu_deriv;
+  }
+  else if (strcmp(name, "resig") == 0) {
+    layers[index].activation = &resig;
+    layers[index].activation_deriv = &resig_deriv;
+  }
+  else {
+    std::cout << "Warning! Incorrect activation specified. Ignoring...\n";
+  }
+}
+
 void Network::feedforward()
 {
   for (int j = 0; j < layers[0].contents->rows(); j++) {
