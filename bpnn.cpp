@@ -11,10 +11,10 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
     (*contents)((int)i / nodes,i%nodes) = vals[i];
     (*dZ)((int)i / nodes,i%nodes) = 0;
   }
-  bias = new Eigen::MatrixXd (1, nodes);
+  bias = new Eigen::MatrixXd (batch_sz, nodes);
   for (int i = 0; i < nodes; i++) {
     for (int j = 0; j < batch_sz; j++) {
-      (*bias)(j,i) = 0.001;
+      (*bias)(j, i) = 0.001;
     }
   }
 }
@@ -28,9 +28,11 @@ Layer::Layer(int batch_sz, int nodes)
     (*contents)((int)i / nodes,i%nodes) = 0;
     (*dZ)((int)i / nodes,i%nodes) = 0;
   }
-  bias = new Eigen::MatrixXd (1, nodes);
+  bias = new Eigen::MatrixXd (batch_sz, nodes);
   for (int i = 0; i < nodes; i++) {
-    (*bias)(0,i) = 0.001;
+    for (int j = 0; j < batch_sz; j++) {
+      (*bias)(j, i) = 0.001;
+    }
   }
   dZ = new Eigen::MatrixXd (batch_sz, nodes);
 }
@@ -155,21 +157,31 @@ float Network::accuracy()
 
 void Network::backpropagate()
 {
+  printf("Entering?\n");
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
+  //  std::cout << *labels << "\n" << *layers[length-1].contents << "\n\n\n";
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
+  //  std::cout << error << "\n" << *layers[length-1].dZ << "\n\n\n";
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()));
+    std::cout << gradients[counter] << "\n" << *layers[i].dZ << "\n?\n\n";
     deltas.push_back((gradients[counter].cwiseProduct(*layers[i].dZ)));
+    printf("Test?\n");
     counter++;
   }
   for (int i = 1; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    *layers[length-2-i].weights -= learning_rate * (deltas[i] * *layers[i-1].contents).transpose());
-    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
+    printf("Test2?\n");
+    std::cout << deltas[i] << "\n\n" << layers[i-1].contents->transpose() << " " << i-1 << " " <<length-2-i <<"\n";
+    *layers[length-2-i].weights -= learning_rate * (layers[i-1].contents->transpose()*deltas[i]);
+    printf("Test2.5?\n");
+    std::cout << deltas[i] << "\n\n" << *layers[length-2-i].bias << "(layer "<<  length-2-i << " cuz " << length << " - 2 - " << i << ")\n";
+    //    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
+    printf("Test3?\n");
   }
 }
 
