@@ -77,6 +77,12 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
 
 void Network::feedforward()
 {
+  for (int j = 0; j < layers[0].contents->rows(); j++) {
+    for (int k = 0; k < layers[0].contents->cols(); k++) {
+      (*layers[0].dZ)(j,k) = (*layers[0].activation_deriv)((*layers[0].contents)(j,k));
+      (*layers[0].contents)(j,k) = (*layers[0].activation)((*layers[0].contents)(j,k));
+    }
+  }
   for (int i = 0; i < length-1; i++) {
     *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
@@ -86,15 +92,12 @@ void Network::feedforward()
   for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
       for (int k = 0; k < layers[i].contents->cols(); k++) {
-        //        std::cout << *layers[i].contents << "\n\n\n" <<  j << " " << k << " vs " << layers[i].contents->rows() << " " << layers[i].contents->cols() << "\n";
-        std::cout << (*layers[i].contents)(j,k) << " --> ";
         (*layers[i].dZ)(j,k) = (*layers[i].activation_deriv)((*layers[i].contents)(j,k));
         (*layers[i].contents)(j,k) = (*layers[i].activation)((*layers[i].contents)(j,k));
-        std::cout << (*layers[i].contents)(j,k) << "\n";
       }
     }
   }
-  std::cout << "\n\nDONE\n\n";
+  //  std::cout << "\n\nDONE\n\n";
 }
 
 void Network::list_net()
