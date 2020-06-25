@@ -9,7 +9,7 @@ int main()
   net.set_activation(2, "sigmoid");
   net.set_activation(3, "resig");
   //  net.list_net();
-  net.train(1);
+  net.train(50);
   //  net.list_net();
   //char line[1024];
   //net.stream->getline(line, 1024);

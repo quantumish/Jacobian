@@ -157,7 +157,7 @@ float Network::accuracy()
 
 void Network::backpropagate()
 {
-  printf("Entering?\n");
+  //  printf("Entering?\n");
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
   //  std::cout << *labels << "\n" << *layers[length-1].contents << "\n\n\n";
@@ -168,20 +168,20 @@ void Network::backpropagate()
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()));
-    std::cout << gradients[counter] << "\n" << *layers[i].dZ << "\n?\n\n";
+    //    std::cout << gradients[counter] << "\n" << *layers[i].dZ << "\n?\n\n";
     deltas.push_back((gradients[counter].cwiseProduct(*layers[i].dZ)));
-    printf("Test?\n");
+    //    printf("Test?\n");
     counter++;
   }
   for (int i = 1; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    printf("Test2?\n");
-    std::cout << deltas[i] << "\n\n" << layers[i-1].contents->transpose() << " " << i-1 << " " <<length-2-i <<"\n";
-    *layers[length-2-i].weights -= learning_rate * (layers[i-1].contents->transpose()*deltas[i]);
-    printf("Test2.5?\n");
-    std::cout << deltas[i] << "\n\n" << *layers[length-2-i].bias << "(layer "<<  length-2-i << " cuz " << length << " - 2 - " << i << ")\n";
+    //    printf("Test2?\n");
+    //std::cout << deltas[i] << "\n\n" << layers[i-1].contents->transpose() << "\n\n" << *layers[length-2-i].weights << " " << i-1 << " " <<length-2-i <<"\n";
+    *layers[i-1].weights -= learning_rate * (layers[i-1].contents->transpose()*deltas[i]);
+    //    printf("Test2.5?\n");
+    //std::cout << deltas[i] << "\n\n" << *layers[length-2-i].bias << "(layer "<<  length-2-i << " cuz " << length << " - 2 - " << i << ")\n";
     //    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
-    printf("Test3?\n");
+    //    printf("Test3?\n");
   }
 }
 
