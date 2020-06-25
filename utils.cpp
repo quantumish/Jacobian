@@ -68,8 +68,3 @@ int istreamtest () {
   }
   return 0;
 }
-
-int main()
-{
-  istreamtest();
-}

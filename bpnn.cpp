@@ -8,6 +8,7 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
   int datalen = batch_sz*nodes;
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = vals[i];
+    (*dZ)((int)i / nodes,i%nodes) = vals[i];
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
@@ -78,8 +79,15 @@ void Network::feedforward()
     for (int j = 0; j < layers[i+1].contents->rows(); j++) {
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
-    *layers[i+1].contents = (*layers[i+1]->activation)(*layers[i+1].contents);
-    *layers[i+1].dZ = (*layers[i+1]->activate_deriv)(*layers[i+1].contents);
+  }
+  for (int i = 0; i < length; i++) {
+    for (int j = 0; j < layers[i].contents->rows(); j++) {
+      for (int k = 0; k < layers[i].contents->cols(); k++) {
+        std::cout << *layers[i].contents << "\n\n\n" <<  j << " " << k << " vs " << layers[i].contents->rows() << " " << layers[i].contents->cols() << "\n";
+        //        (*layers[i].contents)(j,k) = 1;//(*layers[i].activation)((*layers[i].contents)(j,k));
+        //(*layers[i].dZ)(j,k) = 0;//(*layers[i].activation_deriv)((*layers[i].dZ)(j,k));
+      }
+    }
   }
 }
 
