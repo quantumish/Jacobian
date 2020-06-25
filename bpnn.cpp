@@ -173,11 +173,13 @@ void Network::backpropagate()
     //    printf("Test?\n");
     counter++;
   }
-  for (int i = 1; i < gradients.size(); i++) {
+  for (int i = 0; i < gradients.size(); i++) {
     Eigen::MatrixXd gradient = gradients[i];
     //    printf("Test2?\n");
-    //std::cout << deltas[i] << "\n\n" << layers[i-1].contents->transpose() << "\n\n" << *layers[length-2-i].weights << " " << i-1 << " " <<length-2-i <<"\n";
-    *layers[i-1].weights -= learning_rate * (layers[i-1].contents->transpose()*deltas[i]);
+    std::cout << "Batch sz: " << batch_size << "\n";
+    std::cout << "Comparing " << length-3-i << " " <<length-2-i << " " << i << "\n";
+    std::cout << deltas[i] << "DELTABOVE\n\n" << layers[length-2-i].contents->transpose() << "X_T\n\n" << *layers[length-2-i].weights << "WEIGHT2\n\n"; 
+    *layers[length-2-i].weights -= learning_rate * (layers[length-2-i].contents->transpose()*deltas[i]);
     //    printf("Test2.5?\n");
     //std::cout << deltas[i] << "\n\n" << *layers[length-2-i].bias << "(layer "<<  length-2-i << " cuz " << length << " - 2 - " << i << ")\n";
     //    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
