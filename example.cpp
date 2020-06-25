@@ -3,13 +3,13 @@
 
 int main()
 {
-  Network net ("./extra.txt", 4, 3, 1, 2, 10, 1);
+  Network net ("./extra.txt", 4, 1, 1, 5, 10, 5);
   net.set_activation(0, "linear");
   net.set_activation(1, "sigmoid");
   net.set_activation(2, "sigmoid");
   net.set_activation(3, "resig");
   //  net.list_net();
-  net.train(1);
+  net.train(50);
   //  net.list_net();
   //char line[1024];
   //net.stream->getline(line, 1024);
