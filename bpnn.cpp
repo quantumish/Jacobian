@@ -5,10 +5,11 @@
 Layer::Layer(float* vals, int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXd (batch_sz, nodes);
+  dZ = new Eigen::MatrixXd (batch_sz, nodes);
   int datalen = batch_sz*nodes;
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = vals[i];
-    (*dZ)((int)i / nodes,i%nodes) = vals[i];
+    (*dZ)((int)i / nodes,i%nodes) = 0;
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
@@ -19,9 +20,11 @@ Layer::Layer(float* vals, int batch_sz, int nodes)
 Layer::Layer(int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXd (batch_sz, nodes);
+  dZ = new Eigen::MatrixXd (batch_sz, nodes);
   int datalen = batch_sz*nodes;
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = 0;
+    (*dZ)((int)i / nodes,i%nodes) = 0;
   }
   bias = new Eigen::MatrixXd (1, nodes);
   for (int i = 0; i < nodes; i++) {
@@ -66,8 +69,8 @@ Network::Network(char* path, int inputs, int hidden, int outputs, int neurons, i
     layers[i].initWeights(layers[i+1]);
   }
   for (int i = 0; i < hidden+2; i++) {
-    layers[i].activation = &sigmoid;
-    layers[i].activation_deriv = &sigmoid_deriv;
+    layers[i].activation = &resig;
+    layers[i].activation_deriv = &resig_deriv;
   }
   batches = 1;
 }
@@ -80,15 +83,18 @@ void Network::feedforward()
       // layers[i+1].contents->row(j) += *layers[i+1].bias; TODO ADD ME BACK!
     }
   }
-  for (int i = 0; i < length; i++) {
+  for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
       for (int k = 0; k < layers[i].contents->cols(); k++) {
-        std::cout << *layers[i].contents << "\n\n\n" <<  j << " " << k << " vs " << layers[i].contents->rows() << " " << layers[i].contents->cols() << "\n";
-        //        (*layers[i].contents)(j,k) = 1;//(*layers[i].activation)((*layers[i].contents)(j,k));
-        //(*layers[i].dZ)(j,k) = 0;//(*layers[i].activation_deriv)((*layers[i].dZ)(j,k));
+        //        std::cout << *layers[i].contents << "\n\n\n" <<  j << " " << k << " vs " << layers[i].contents->rows() << " " << layers[i].contents->cols() << "\n";
+        std::cout << (*layers[i].contents)(j,k) << " --> ";
+        (*layers[i].dZ)(j,k) = (*layers[i].activation_deriv)((*layers[i].contents)(j,k));
+        (*layers[i].contents)(j,k) = (*layers[i].activation)((*layers[i].contents)(j,k));
+        std::cout << (*layers[i].contents)(j,k) << "\n";
       }
     }
   }
+  std::cout << "\n\nDONE\n\n";
 }
 
 void Network::list_net()
@@ -169,7 +175,7 @@ int Network::next_batch()
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   auto update_end = std::chrono::high_resolution_clock::now();
-  std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() / pow(10,9) << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() / pow(10,9) << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() / pow(10,9) << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() / pow(10,9) << "\n";
+  //std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() / pow(10,9) << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() / pow(10,9) << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() / pow(10,9) << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() / pow(10,9) << "\n";
   //  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
   return 0;
 }

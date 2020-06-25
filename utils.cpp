@@ -18,6 +18,40 @@ double sigmoid_deriv(double x)
   return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));
 }
 
+double resig(double x)
+{
+  if (x > 0) return 1.0/(1+exp(-x));
+  else return 0;
+}
+
+double resig_deriv(double x)
+{
+  if (x > 0) return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));
+  else return 0;
+}
+
+double linear(double x)
+{
+  return x;
+}
+
+double linear_deriv(double x)
+{
+  return 1;
+}
+
+double relu(double x)
+{
+  if (x > 0) return x;
+  else return 0;
+}
+
+double relu_deriv(double x)
+{
+  if (x > 0) return 1;
+  else return 0;
+}
+
 static uintmax_t wc(char const *fname)
 {
     static const auto BUFFER_SIZE = 16*1024;

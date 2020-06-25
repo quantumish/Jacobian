@@ -25,8 +25,8 @@ public:
   double (*activation)(double);
   double (*activation_deriv)(double);
 
-  Layer(float* vals, int rows, int columns);
   Layer(int rows, int columns);
+  Layer(float* vals, int rows, int columns);
   void initWeights(Layer next);
 };
 
