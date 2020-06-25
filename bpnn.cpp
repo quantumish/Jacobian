@@ -66,6 +66,7 @@ void Network::add_layer(int nodes, char* activation)
 
 void Network::initialize()
 {
+  labels = new Eigen::MatrixXd (batch_size,layers[length-1].contents->cols());
   for (int i = 0; i < length-1; i++) {
     layers[i].init_weights(layers[i+1]);
   }
@@ -115,7 +116,6 @@ void Network::feedforward()
       }
     }
   }
-  //  std::cout << "\n\nDONE\n\n";
 }
 
 void Network::list_net()
@@ -150,33 +150,21 @@ float Network::accuracy()
 
 void Network::backpropagate()
 {
-  //  printf("Entering?\n");
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  //  std::cout << *labels << "\n" << *layers[length-1].contents << "\n\n\n";
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
-  //  std::cout << error << "\n" << *layers[length-1].dZ << "\n\n\n";
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    //std::cout << gradients[counter] << "\n" << layers[i-1].contents->transpose() << " " << counter << "\n?\n\n";
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    //    printf("Test2?\n");
-    // std::cout << "Batch sz: " << batch_size << "\n";
-    //std::cout << "Comparing " << length-3-i << " " <<length-2-i << " " << i << "\n";
-    //std::cout << deltas[i] << "DELTABOVE\n\n" << layers[length-2-i].contents->transpose() << "X_T\n\n" << *layers[length-2-i].weights << "WEIGHT2\n\n" << gradients[i] << "GRAD\n\n"; 
     *layers[length-2-i].weights -= learning_rate * deltas[i];
-    *layers[length-1-i].bias -= learning_rate * gradients[i];
-    //    printf("Test2.5?\n");
-    //std::cout << deltas[i] << "\n\n" << *layers[length-2-i].bias << "(layer "<<  length-2-i << " cuz " << length << " - 2 - " << i << ")\n";
-    //    *layers[length-2-i].bias -= learning_rate * (deltas[i]);
-    //    printf("Test3?\n");
+    *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
 
@@ -288,13 +276,13 @@ void Network::train(int total_epochs)
     float cost_sum = 0;
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+      if (i != instances-batch_size) { // Don't try to advance batch on final batch.
+        next_batch();
+      }
       feedforward();
       backpropagate();
       cost_sum += cost();
       acc_sum += accuracy();
-      if (i != instances-batch_size) { // Don't try to advance batch on final batch.
-        next_batch();
-      }
       batches++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
