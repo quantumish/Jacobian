@@ -45,11 +45,30 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
   batches = 0;
 }
 
-void Network::add_layer(int nodes, char* activation)
+void Network::add_layer(int nodes, char* name)
 {
   length++;
   layers.emplace_back(batch_size, nodes);
-  set_activation(length-1, activation);
+  if (strcmp(name, "sigmoid") == 0) {
+    layers[length-1].activation = sigmoid;
+    layers[length-1].activation_deriv = sigmoid_deriv;
+  }
+  else if (strcmp(name, "linear") == 0) {
+    layers[length-1].activation = linear;
+    layers[length-1].activation_deriv = linear_deriv;
+  }
+  else if (strcmp(name, "relu") == 0) {
+    layers[length-1].activation = rectifier(linear);
+    layers[length-1].activation_deriv = rectifier(linear_deriv);
+  }
+  else if (strcmp(name, "resig") == 0) {
+    layers[length-1].activation = rectifier(sigmoid);
+    layers[length-1].activation_deriv = rectifier(sigmoid_deriv);
+  }
+  else {
+    std::cout << "Warning! Incorrect activation specified. Exiting...\n\nIf this is coming up and you don't know why, try defining your own activation function.\n";
+    exit(1);
+  }
 }
 
 void Network::initialize()
@@ -60,28 +79,10 @@ void Network::initialize()
   }
 }
 
-void Network::set_activation(int index, char* name)
+void Network::set_activation(int index, std::function<double(double)> custom, std::function<double(double)> custom_deriv)
 {
-  if (strcmp(name, "sigmoid") == 0) {
-    layers[index].activation = sigmoid;
-    layers[index].activation_deriv = sigmoid_deriv;
-  }
-  else if (strcmp(name, "linear") == 0) {
-    layers[index].activation = linear;
-    layers[index].activation_deriv = linear_deriv;
-  }
-  else if (strcmp(name, "relu") == 0) {
-    layers[index].activation = rectifier(linear);
-    layers[index].activation_deriv = rectifier(linear_deriv);
-  }
-  else if (strcmp(name, "resig") == 0) {
-    layers[index].activation = rectifier(sigmoid);
-    layers[index].activation_deriv = rectifier(sigmoid_deriv);
-  }
-  else {
-    std::cout << "Warning! Incorrect activation specified. Exiting...\n";
-    exit(1);
-  }
+  layers[index].activation = custom;
+  layers[index].activation_deriv = custom_deriv;
 }
 
 void Network::feedforward()

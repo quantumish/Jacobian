@@ -48,7 +48,7 @@ public:
   void add_layer(int nodes, char* activation);
   void initialize();
   void update_layer(float* vals, int datalen, int index);
-  void set_activation(int index, char* activation);
+  void set_activation(int index, std::function<double(double)> custom, std::function<double(double)> custom_deriv);
   
   Eigen::MatrixXd init_ones(Eigen::MatrixXd matrix);
   void feedforward();
