@@ -22,9 +22,9 @@ public:
   Eigen::MatrixXd* weights;
   Eigen::MatrixXd* bias;
   Eigen::MatrixXd* dZ;
-  double (*activation)(double);
-  double (*activation_deriv)(double);
-
+  std::function<double(double)> activation;
+  std::function<double(double)> activation_deriv;
+  
   Layer(int rows, int columns);
   Layer(float* vals, int rows, int columns);
   void init_weights(Layer next);

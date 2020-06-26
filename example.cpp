@@ -1,6 +1,16 @@
 #include "bpnn.hpp"
 #include "utils.hpp"
 
+double lecun_tanh(double x)
+{
+  return 1.7159 * tanh((2.0/3) * x);
+}
+
+double lecun_tanh_deriv(double x)
+{
+  return 1.14393 * pow(sech(2.0/3 * x),2);
+}
+
 int main()
 {
   Network net ("./data_banknote_authentication.txt", 10, 0.01, 0.001);

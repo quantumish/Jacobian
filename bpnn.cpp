@@ -63,20 +63,20 @@ void Network::initialize()
 void Network::set_activation(int index, char* name)
 {
   if (strcmp(name, "sigmoid") == 0) {
-    layers[index].activation = &sigmoid;
-    layers[index].activation_deriv = &sigmoid_deriv;
+    layers[index].activation = sigmoid;
+    layers[index].activation_deriv = sigmoid_deriv;
   }
   else if (strcmp(name, "linear") == 0) {
-    layers[index].activation = &linear;
-    layers[index].activation_deriv = &linear_deriv;
+    layers[index].activation = linear;
+    layers[index].activation_deriv = linear_deriv;
   }
   else if (strcmp(name, "relu") == 0) {
-    layers[index].activation = &(rectifier(linear));
-    layers[index].activation_deriv = &(rectifier(linear_deriv));
+    layers[index].activation = rectifier(linear);
+    layers[index].activation_deriv = rectifier(linear_deriv);
   }
   else if (strcmp(name, "resig") == 0) {
-    layers[index].activation = &resig;
-    layers[index].activation_deriv = &resig_deriv;
+    layers[index].activation = rectifier(sigmoid);
+    layers[index].activation_deriv = rectifier(sigmoid_deriv);
   }
   else {
     std::cout << "Warning! Incorrect activation specified. Exiting...\n";
@@ -88,8 +88,8 @@ void Network::feedforward()
 {
   for (int j = 0; j < layers[0].contents->rows(); j++) {
     for (int k = 0; k < layers[0].contents->cols(); k++) {
-      (*layers[0].dZ)(j,k) = (*layers[0].activation_deriv)((*layers[0].contents)(j,k));
-      (*layers[0].contents)(j,k) = (*layers[0].activation)((*layers[0].contents)(j,k));
+      (*layers[0].dZ)(j,k) = layers[0].activation_deriv((*layers[0].contents)(j,k));
+      (*layers[0].contents)(j,k) = layers[0].activation((*layers[0].contents)(j,k));
     }
   }
   for (int i = 0; i < length-1; i++) {
@@ -99,8 +99,8 @@ void Network::feedforward()
   for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
       for (int k = 0; k < layers[i].contents->cols(); k++) {
-        (*layers[i].dZ)(j,k) = (*layers[i].activation_deriv)((*layers[i].contents)(j,k));
-        (*layers[i].contents)(j,k) = (*layers[i].activation)((*layers[i].contents)(j,k));
+        (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
+        (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
       }
     }
   }

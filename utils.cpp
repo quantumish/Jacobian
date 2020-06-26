@@ -4,49 +4,38 @@
 #include <ctime>
 #include <cmath>
 #include <cstdio>
-#include <functional>
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
 
-inline double sigmoid(double x)
+double sigmoid(double x)
 {
   return 1.0/(1+exp(-x));
 }
 
-inline double sigmoid_deriv(double x)
+double sigmoid_deriv(double x)
 {
   return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));
 }
 
-inline double linear(double x)
+double linear(double x)
 {
   return x;
 }
 
-inline double linear_deriv(double x)
+double linear_deriv(double x)
 {
   return 1;
 }
 
-std::function<double(double)> rectifier(double (*activation)(double), x)
+std::function<double(double)> rectifier(double (*activation)(double))
 {
-  auto rectified = [](double x) -> double
+  auto rectified = [activation](double x) -> double
   { 
     if (x > 0) return (*activation)(x);
     else return 0; 
   };
-  return rectified
-}
-
-double rectifier_deriv(double (*activation_deriv)(double), x)
-{
-  auto rectified = [](double x) -> double
-  { 
-    if (x > 0) return (*activation_deriv)(x);
-    else return 0; 
-  };
-  return rectified
+  return rectified;
 }
 
 static uintmax_t wc(char const *fname)
