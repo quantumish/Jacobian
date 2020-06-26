@@ -8,11 +8,11 @@ public:
   std::function<pair*(pair*)> reduce;
   std::function<void(char*)> translate;
   
-  NetworkArray(char* configuration, std::function<pair*(pair*)> setup, int epochs);
+  NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs);
   void start_array(char* data, int m, int length, char* ip, int r);
 };
 
-NetworkArray::NetworkArray(char* configuration, std::function<pair*(pair*)> setup, int epochs)
+NetworkArray::NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs)
 {
   map = [setup, epochs](pair input_pair) -> pair*
   {
@@ -21,7 +21,7 @@ NetworkArray::NetworkArray(char* configuration, std::function<pair*(pair*)> setu
     strcat(path, "_shuf");
     int linecount = prep_file((char*)input_pair.key, path);
     Network* net = setup();
-    net.train(epochs);
+    net->train(epochs);
     struct pair* output = new struct pair;
     char* key = new char[100];
     strcpy(key, path);
@@ -29,7 +29,7 @@ NetworkArray::NetworkArray(char* configuration, std::function<pair*(pair*)> setu
     output[0].value = net;
     return output;
   };
-  reduce = (pair* input_pairs) -> pair*
+  reduce = [](pair* input_pairs) -> pair*
   {
     struct pair* output = new struct pair[6];  
     for (int i = 0; input_pairs[i].key != 0x0; i++) {
@@ -40,10 +40,10 @@ NetworkArray::NetworkArray(char* configuration, std::function<pair*(pair*)> setu
     }
     return output;
   };
-  translate = (char* path) -> void
+  translate = [](char* path) -> void
   {
     FILE* rptr = fopen(path, "r");
-    FI()LE* wptr = fopen("./translated", "w");
+    FILE* wptr = fopen("./translated", "w");
     char* line = new char[MAXLINE];
     char* newline = new char[MAXLINE];
     while (fgets(line, MAXLINE, rptr) != NULL) {
@@ -63,7 +63,7 @@ NetworkArray::NetworkArray(char* configuration, std::function<pair*(pair*)> setu
 
 void NetworkArray::start_array(char* data, int m, int length, char* ip, int r)
 {
-  begin(data, map, reduce, m, length, ip, r);
+  begin(data, map, reduce, translate, m, length, ip, r);
 }
 
 Network* setup()
