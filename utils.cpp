@@ -66,14 +66,8 @@ uintmax_t wc(char const *fname)
           exit(1);
         if (!bytes_read)
           break;
-        char* prevp;
         for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p) {
-          if (lines > 1) {
-            for (in i = 0; p+i < prevp; i++) {
-              printf("START%sEND\n", p+i);
-            }
-          }
-          prevp = p;
+          printf("START%sEND\n", p);
           ++lines;
         }
     }
