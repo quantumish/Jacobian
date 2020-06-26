@@ -23,9 +23,6 @@ double lecun_tanh_deriv(double x) {return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);}
 double tanh(double x) {return tanh(x);} // For sake of symmetry.
 double tanh_deriv(double x) {return pow(1.0/cosh(x),2);}
 
-double logit(double x) {return log(x/(1-x));}
-double logit_deriv(double x) {return 1/(pow(x,2)-x);}
-
 double step(double x)
 {
   if (x > 0) return 1;
@@ -50,7 +47,7 @@ std::function<double(double)> rectifier(double (*activation)(double))
   return rectified;
 }
 
-static uintmax_t wc(char const *fname)
+uintmax_t wc(char const *fname)
 {
     static const auto BUFFER_SIZE = 16*1024;
     int fd = open(fname, O_RDONLY);
@@ -58,7 +55,7 @@ static uintmax_t wc(char const *fname)
       exit(1);
 
     /* Advise the kernel of our access pattern.  */
-    //    posix_fadvise(fd, 0, 0, 1);  // FDADVICE_SEQUENTIAL
+    //posix_fadvise(fd, 0, 0, 1);  // FDADVICE_SEQUENTIAL
 
     char buf[BUFFER_SIZE + 1];
     uintmax_t lines = 0;
@@ -69,10 +66,16 @@ static uintmax_t wc(char const *fname)
           exit(1);
         if (!bytes_read)
           break;
-
-        for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p)
-          printf("Line? %s END\n", buf);
+        char* prevp;
+        for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p) {
+          if (lines > 1) {
+            for (in i = 0; p+i < prevp; i++) {
+              printf("START%sEND\n", p+i);
+            }
+          }
+          prevp = p;
           ++lines;
+        }
     }
 
     return lines;

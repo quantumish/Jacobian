@@ -57,21 +57,17 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation = linear;
     layers[length-1].activation_deriv = linear_deriv;
   }
-  if (strcmp(name, "step") == 0) {
+  else if (strcmp(name, "step") == 0) {
     layers[length-1].activation = step;
     layers[length-1].activation_deriv = step_deriv;
   }
-  if (strcmp(name, "bipolar") == 0) {
+  else if (strcmp(name, "bipolar") == 0) {
     layers[length-1].activation = bipolar;
     layers[length-1].activation_deriv = bipolar_deriv;
   }
-  if (strcmp(name, "lecun_tanh") == 0) {
+  else if (strcmp(name, "lecun_tanh") == 0) {
     layers[length-1].activation = lecun_tanh;
     layers[length-1].activation_deriv = lecun_tanh_deriv;
-  }
-  if (strcmp(name, "logit") == 0) {
-    layers[length-1].activation = logit;
-    layers[length-1].activation_deriv = logit_deriv;
   }
   else if (strcmp(name, "relu") == 0) {
     layers[length-1].activation = rectifier(linear);

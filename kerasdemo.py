@@ -23,7 +23,7 @@ def lecun_tanh(x):
 
 init = time.time()
 # load the dataset
-dataset = loadtxt('extra.txt', delimiter=',')
+dataset = loadtxt('data_banknote_authentication.txt', delimiter=',')
 # split into input (X) and output (y) variables
 X = dataset[:,0:4]
 y = dataset[:,4]
@@ -33,7 +33,7 @@ model.add(Dense(4, input_dim=4, activation='linear'))
 model.add(Dense(5, activation=lecun_tanh))
 model.add(Dense(1, activation='sigmoid'))
 # compile the keras model
-opt = keras.optimizers.SGD(lr=0.01)
+opt = keras.optimizers.SGD(lr=0.0155)
 model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
 # fit the keras model on the dataset
 initend = time.time()

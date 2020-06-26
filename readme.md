@@ -1,7 +1,7 @@
 # ML in Parallel
 
 ## About
-"ML in Parallel" (better name pending) is a work-in-progress machine learning library written in C++ designed to run quickly and in parallel. Parallelization is achieved by utilizing Google's powerful MapReduce framework with [a custom implementation in C](https://github.com/richardfeynmanrocks/mapreduce), and the compiled nature of C++/C as well as the optimizations enabled by gcc's O2 layer enable further speedups. On the same benchmark task (of running a small neural network for 50 epochs on a specified dataset) "ML in Parallel" can run up to 45x faster than a simple Keras program. Python bindings are being developed for this network to allow similar ease of usage to Keras while maintaining the enhanced speed.
+"ML in Parallel" (better name pending) is a work-in-progress machine learning library written in C++ designed to run quickly and in parallel. Parallelization is achieved by utilizing Google's powerful MapReduce framework with [a custom implementation in C](https://github.com/richardfeynmanrocks/mapreduce), and the compiled nature of C++/C as well as the optimizations enabled by gcc's O2 layer enable further speedups. On the same benchmark task (of running a small neural network for 50 epochs on a specified dataset) In some preliminary benchmarks "ML in Parallel" has ran up to 50x faster than a simple Keras program. This library is also easily accessible
 
 ## Benchmark Info
 Coming soon: A detailed rundown of the speed of "ML in Parallel" vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.

@@ -3,11 +3,10 @@ import numpy
 import time
 
 init = time.time()
-net = mrbpnn.Network("./data_banknote_authentication.txt", 10, 0.0155, 0.0155);
+net = mrbpnn.Network("./data_banknote_authentication.txt", 10, 0.0155, 0.03);
 net.add_layer(4, "linear");
-net.add_layer(5, "sigmoid");
-net.set_activation(1, lecun_tanh, lecun_tanh_deriv);
-net.add_layer(1, "sigmoid");
+net.add_layer(5, "lecun_tanh");
+net.add_layer(1, "resig");
 net.initialize();
 initend = time.time()
 net.train(50);
