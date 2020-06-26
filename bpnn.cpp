@@ -3,23 +3,6 @@
 #include <ctime>
 #include <random>
 
-Layer::Layer(float* vals, int batch_sz, int nodes)
-{
-  contents = new Eigen::MatrixXd (batch_sz, nodes);
-  dZ = new Eigen::MatrixXd (batch_sz, nodes);
-  int datalen = batch_sz*nodes;
-  for (int i = 0; i < datalen; i++) {
-    (*contents)((int)i / nodes,i%nodes) = vals[i];
-    (*dZ)((int)i / nodes,i%nodes) = 0;
-  }
-  bias = new Eigen::MatrixXd (batch_sz, nodes);
-  for (int i = 0; i < nodes; i++) {
-    for (int j = 0; j < batch_sz; j++) {
-      (*bias)(j, i) = 0.001;
-    }
-  }
-}
-
 Layer::Layer(int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXd (batch_sz, nodes);
@@ -32,7 +15,7 @@ Layer::Layer(int batch_sz, int nodes)
   bias = new Eigen::MatrixXd (batch_sz, nodes);
   for (int i = 0; i < nodes; i++) {
     for (int j = 0; j < batch_sz; j++) {
-      (*bias)(j, i) = 0.001;
+      (*bias)(j, i) = 0;
     }
   }
   dZ = new Eigen::MatrixXd (batch_sz, nodes);
@@ -88,8 +71,8 @@ void Network::set_activation(int index, char* name)
     layers[index].activation_deriv = &linear_deriv;
   }
   else if (strcmp(name, "relu") == 0) {
-    layers[index].activation = &relu;
-    layers[index].activation_deriv = &relu_deriv;
+    layers[index].activation = &(rectifier(linear));
+    layers[index].activation_deriv = &(rectifier(linear_deriv));
   }
   else if (strcmp(name, "resig") == 0) {
     layers[index].activation = &resig;
