@@ -87,16 +87,19 @@ void Network::set_activation(int index, std::function<double(double)> custom, st
 
 void Network::feedforward()
 {
+  //auto early_activ_begin = std::chrono::high_resolution_clock::now();
   for (int j = 0; j < layers[0].contents->rows(); j++) {
     for (int k = 0; k < layers[0].contents->cols(); k++) {
       (*layers[0].dZ)(j,k) = layers[0].activation_deriv((*layers[0].contents)(j,k));
       (*layers[0].contents)(j,k) = layers[0].activation((*layers[0].contents)(j,k));
     }
   }
+  //auto mul_begin = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < length-1; i++) {
     *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
     *layers[i+1].contents += *layers[i+1].bias;
   }
+  //auto activ_begin = std::chrono::high_resolution_clock::now();
   for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
       for (int k = 0; k < layers[i].contents->cols(); k++) {
@@ -105,6 +108,11 @@ void Network::feedforward()
       }
     }
   }
+  //auto feed_end = std::chrono::high_resolution_clock::now();
+  //double early_activ = std::chrono::duration_cast<std::chrono::nanoseconds>(mul_begin - early_activ_begin).count() / pow(10,9);
+  //double mul = std::chrono::duration_cast<std::chrono::nanoseconds>(activ_begin - mul_begin).count() / pow(10,9);
+  //double activ = std::chrono::duration_cast<std::chrono::nanoseconds>(feed_end - activ_begin).count() / pow(10,9);
+  //printf("%lf on early activation, %lf on multiply, %lf on rest of activation\n", early_activ, mul, activ);
 }
 
 void Network::list_net()
@@ -264,14 +272,26 @@ void Network::train(int total_epochs)
     auto ep_begin = std::chrono::high_resolution_clock::now();
     float cost_sum = 0;
     float acc_sum = 0;
+    double times[5] = {0};
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+      auto batch_begin = std::chrono::high_resolution_clock::now();
       if (i != instances-batch_size) { // Don't try to advance batch on final batch.
         next_batch();
       }
+      auto feed_begin = std::chrono::high_resolution_clock::now();
       feedforward();
+      auto back_begin = std::chrono::high_resolution_clock::now();
       backpropagate();
+      auto cost_begin = std::chrono::high_resolution_clock::now();
       cost_sum += cost();
+      auto acc_begin = std::chrono::high_resolution_clock::now();
       acc_sum += accuracy();
+      auto loop_end = std::chrono::high_resolution_clock::now();
+      times[0] += std::chrono::duration_cast<std::chrono::nanoseconds>(feed_begin - batch_begin).count() / pow(10,9);
+      times[1] += std::chrono::duration_cast<std::chrono::nanoseconds>(back_begin - feed_begin).count() / pow(10,9);
+      times[2] += std::chrono::duration_cast<std::chrono::nanoseconds>(cost_begin - back_begin).count() / pow(10,9);
+      times[3] += std::chrono::duration_cast<std::chrono::nanoseconds>(acc_begin - cost_begin).count() / pow(10,9);
+      times[4] += std::chrono::duration_cast<std::chrono::nanoseconds>(loop_end - acc_begin).count() / pow(10,9);
       batches++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
@@ -279,6 +299,8 @@ void Network::train(int total_epochs)
     auto ep_end = std::chrono::high_resolution_clock::now();
     double epochtime = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9);
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
+    printf("Avg time spent across %i batches: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n", batches, times[0]/batches, times[1]/batches, times[2]/batches, times[3]/batches, times[4]/batches);
+    printf("Time spent across epoch: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
     batches=1;
     epochs++;
     rewind(data);

@@ -36,9 +36,10 @@ model.add(Dense(1, activation='sigmoid'))
 opt = keras.optimizers.SGD(lr=0.01)
 model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
 # fit the keras model on the dataset
+initend = time.time()
 model.fit(X, y, epochs=50, batch_size=10)
 # evaluate the keras model
-_, accuracy = model.evaluate(X, y)
-print('Accuracy: %.2f' % (accuracy*100))
+#_, accuracy = model.evaluate(X, y)
+#print('Accuracy: %.2f' % (accuracy*100))
 end = time.time()
-print(end-init)
+print("%s: init %s" % (end-init, initend-init))

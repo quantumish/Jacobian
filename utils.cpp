@@ -28,6 +28,12 @@ double linear_deriv(double x)
   return 1;
 }
 
+//double lecun_tanh(double x) {return 1.7159 * tanh((2.0/3) * x);}
+//double lecun_tanh_deriv(double x)
+//{
+//  return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);
+//}
+
 std::function<double(double)> rectifier(double (*activation)(double))
 {
   auto rectified = [activation](double x) -> double
