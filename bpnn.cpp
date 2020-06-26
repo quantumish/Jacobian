@@ -57,6 +57,22 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation = linear;
     layers[length-1].activation_deriv = linear_deriv;
   }
+  if (strcmp(name, "step") == 0) {
+    layers[length-1].activation = step;
+    layers[length-1].activation_deriv = step_deriv;
+  }
+  if (strcmp(name, "bipolar") == 0) {
+    layers[length-1].activation = bipolar;
+    layers[length-1].activation_deriv = bipolar_deriv;
+  }
+  if (strcmp(name, "lecun_tanh") == 0) {
+    layers[length-1].activation = lecun_tanh;
+    layers[length-1].activation_deriv = lecun_tanh_deriv;
+  }
+  if (strcmp(name, "logit") == 0) {
+    layers[length-1].activation = logit;
+    layers[length-1].activation_deriv = logit_deriv;
+  }
   else if (strcmp(name, "relu") == 0) {
     layers[length-1].activation = rectifier(linear);
     layers[length-1].activation_deriv = rectifier(linear_deriv);
@@ -300,7 +316,7 @@ void Network::train(int total_epochs)
     double epochtime = (double) std::chrono::duration_cast<std::chrono::nanoseconds>(ep_end-ep_begin).count() / pow(10,9);
     printf("Epoch %i/%i - time %f - cost %f - acc %f\n", epochs+1, total_epochs, epochtime, epoch_cost, epoch_accuracy);
     printf("Avg time spent across %i batches: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n", batches, times[0]/batches, times[1]/batches, times[2]/batches, times[3]/batches, times[4]/batches);
-    printf("Time spent across epoch: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
+    printf("Time spent across epoch: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
     batches=1;
     epochs++;
     rewind(data);

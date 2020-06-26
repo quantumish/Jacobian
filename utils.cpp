@@ -8,31 +8,37 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-double sigmoid(double x)
-{
-  return 1.0/(1+exp(-x));
-}
+// A bunch of hardcoded activation functions. Avoids much of the slowness of custom functions.
+// Although the std::function makes it not the fastest way, the functionality is worth it.
+// Yes, these functions may be a frustrating to read but they're just equations and I want to conserve space.
+double sigmoid(double x) {return 1.0/(1+exp(-x));}
+double sigmoid_deriv(double x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));}
 
-double sigmoid_deriv(double x)
-{
-  return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));
-}
+double linear(double x) {return x;}
+double linear_deriv(double x) {return 1;}
 
-double linear(double x)
-{
-  return x;
-}
+double lecun_tanh(double x) {return 1.7159 * tanh((2.0/3) * x);}
+double lecun_tanh_deriv(double x) {return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);}
 
-double linear_deriv(double x)
-{
-  return 1;
-}
+double tanh(double x) {return tanh(x);} // For sake of symmetry.
+double tanh_deriv(double x) {return pow(1.0/cosh(x),2);}
 
-//double lecun_tanh(double x) {return 1.7159 * tanh((2.0/3) * x);}
-//double lecun_tanh_deriv(double x)
-//{
-//  return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);
-//}
+double logit(double x) {return log(x/(1-x));}
+double logit_deriv(double x) {return 1/(pow(x,2)-x);}
+
+double step(double x)
+{
+  if (x > 0) return 1;
+  else return 0;
+}
+double step_deriv(double x) {return 0;}
+
+double bipolar(double x)
+{
+  if (x > 0) return 1;
+  else return -1;
+}
+double bipolar_deriv(double x) {return 0;}
 
 std::function<double(double)> rectifier(double (*activation)(double))
 {
