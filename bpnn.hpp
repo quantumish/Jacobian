@@ -20,6 +20,7 @@ public:
   Eigen::MatrixXd* weights;
   Eigen::MatrixXd* bias;
   Eigen::MatrixXd* dZ;
+  Eigen::MatrixXd* prev_update;
   std::function<double(double)> activation;
   std::function<double(double)> activation_deriv;
   
