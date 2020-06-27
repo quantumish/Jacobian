@@ -62,9 +62,9 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation = step;
     layers[length-1].activation_deriv = step_deriv;
   }
-  else if (strcmp(name, "bipolar") == 0) {
-    layers[length-1].activation = bipolar;
-    layers[length-1].activation_deriv = bipolar_deriv;
+  else if (strcmp(name, "tanh") == 0) {
+    layers[length-1].activation = mytanh;
+    layers[length-1].activation_deriv = tanh_deriv;
   }
   else if (strcmp(name, "lecun_tanh") == 0) {
     layers[length-1].activation = lecun_tanh;
@@ -185,7 +185,7 @@ void Network::backpropagate()
   }
   for (int i = 0; i < length-1; i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    *layers[length-2-i].weights -= 0.5 * *layers[length-2-i].prev_update + learning_rate * deltas[i];
+    *layers[length-2-i].weights -= 0.9 * *layers[length-2-i].prev_update + learning_rate * deltas[i];
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
