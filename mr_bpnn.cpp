@@ -4,8 +4,8 @@
 class NetworkArray
 {
 public:
-  std::function<pair*(pair)> map;
-  std::function<pair*(pair*)> reduce;
+  std::function<struct pair*(struct pair)> map;
+  std::function<struct pair*(struct pair*)> reduce;
   std::function<void(char*)> translate;
   
   NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs);
@@ -14,22 +14,24 @@ public:
 
 NetworkArray::NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs)
 {
-  map = [setup, epochs](pair input_pair) -> pair*
+  map = [setup, epochs](struct pair input_pair) -> struct pair*
   {
     char* path = new char[100];
+    printf("%p %p (from %p)\n", input_pair.key, input_pair.value, &input_pair);
+    printf("%s %s (from %p)\n", (char*)input_pair.key, (char*)input_pair.value, &input_pair);
     strcpy(path, (char*)input_pair.key);
-    strcat(path, "_shuf");
-    int linecount = prep_file((char*)input_pair.key, path);
-    Network* net = setup();
-    net->train(epochs);
+    //strcat(path, "_shuf");
+    //int linecount = prep_file((char*)input_pair.key, path);
+    // Network* net = setup();
+    // net->train(epochs);
     struct pair* output = new struct pair;
-    char* key = new char[100];
-    strcpy(key, path);
-    output[0].key = key;
-    output[0].value = net;
+    //char* key = new char[100];
+    //strcpy(key, path);
+    output[0].key = 0x0;
+    output[0].value = 0x0;
     return output;
   };
-  reduce = [](pair* input_pairs) -> pair*
+  reduce = [](struct pair* input_pairs) -> struct pair*
   {
     struct pair* output = new struct pair[6];  
     for (int i = 0; input_pairs[i].key != 0x0; i++) {
@@ -80,7 +82,12 @@ Network* setup()
 int main()
 {
   NetworkArray netarray ("Train", setup, 1);
-  netarray.start_array("./extra.txt", 5, 1, "98.33.105.140", 1);
+  char* path = "./extra.txt";
+  char* msg = "junk";
+  struct pair testing = {(void*)path, (void*)msg};
+  printf("SENDING %p %p (part of %p)\n", testing.key, testing.value, &testing);
+  netarray.map(testing);
+  // netarray.start_array("./extra.txt", 5, 1, "98.33.105.140", 1);
   return 0;
 }
 
