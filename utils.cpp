@@ -76,8 +76,15 @@ uintmax_t wc(char const *fname)
         if (!bytes_read)
           break;
         for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p) {
-          printf("START%sEND\n", p);
+          printf("About to segfault? It's simple - just don't!\n");
+          //          printf("%s", p)
+          for (int i = 1; i < BUFFER_SIZE; i++) {
+            printf("%c", p[i]);
+          }
+          printf("\nGlad you heeded my advice.\n");
+          printf("\n\nDONE\n\n");
           ++lines;
+          //printf(" DONE \n");
         }
     }
 

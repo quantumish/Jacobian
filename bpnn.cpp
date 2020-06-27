@@ -185,7 +185,7 @@ void Network::backpropagate()
   }
   for (int i = 0; i < length-1; i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    *layers[length-2-i].weights -= 0.9 * *layers[length-2-i].prev_update + learning_rate * deltas[i];
+    *layers[length-2-i].weights -= learning_rate * deltas[i];
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -210,9 +210,9 @@ int Network::next_batch()
     if (fgets(line, 1024, data)==NULL) {
       break;
     }
-    sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (i * inputs)],
+    sscanf(line, "%i,%f,%f,%f,%f", &label, &batch[0 + (i * inputs)],
            &batch[1 + (i * inputs)], &batch[2 + (i * inputs)],
-           &batch[3 + (i * inputs)], &label);
+           &batch[3 + (i * inputs)]);
     (*labels)(i, 0) = label;
   }
   auto get_end = std::chrono::high_resolution_clock::now();
