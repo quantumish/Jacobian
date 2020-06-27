@@ -69,6 +69,18 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation = lecun_tanh;
     layers[length-1].activation_deriv = lecun_tanh_deriv;
   }
+  else if (strcmp(name, "inverse_logit") == 0) {
+    layers[length-1].activation = inverse_logit;
+    layers[length-1].activation_deriv = inverse_logit_deriv;
+  }
+  else if (strcmp(name, "cloglog") == 0) {
+    layers[length-1].activation = cloglog;
+    layers[length-1].activation_deriv = cloglog_deriv;
+  }
+  else if (strcmp(name, "softplus") == 0) {
+    layers[length-1].activation = softplus;
+    layers[length-1].activation_deriv = softplus_deriv;
+  }
   else if (strcmp(name, "relu") == 0) {
     layers[length-1].activation = rectifier(linear);
     layers[length-1].activation_deriv = rectifier(linear_deriv);

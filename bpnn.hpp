@@ -3,9 +3,7 @@
 
 #include "/Users/davidfreifeld/Downloads/eigen-3.3.7/Eigen/Dense"
 
-extern "C" {
-  #include "../mapreduce/mapreduce.h"
-}
+#include "../mapreduce/mapreduce.hpp"
 
 #include <vector>
 #include <array>

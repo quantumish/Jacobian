@@ -20,8 +20,17 @@ double linear_deriv(double x) {return 1;}
 double lecun_tanh(double x) {return 1.7159 * tanh((2.0/3) * x);}
 double lecun_tanh_deriv(double x) {return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);}
 
-double tanh(double x) {return tanh(x);} // For sake of symmetry.
+double tanh(double x) {return tanh(x);}
 double tanh_deriv(double x) {return pow(1.0/cosh(x),2);}
+
+double inverse_logit(double x) {return (exp(x)/(exp(x)+1));}
+double inverse_logit_deriv(double x) {return (exp(x)/pow(exp(x)+1, 2));}
+
+double softplus(double x) {return log(1+exp(x));}
+double softplus_deriv(double x) {return exp(x)/(exp(x)+1);}
+
+double cloglog(double x) {return 1-exp(-exp(x));}
+double cloglog_deriv(double x) {return exp(x-exp(x));}
 
 double step(double x)
 {

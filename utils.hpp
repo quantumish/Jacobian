@@ -13,6 +13,12 @@ double bipolar(double x);
 double bipolar_deriv(double x);
 double lecun_tanh(double x);
 double lecun_tanh_deriv(double x);
+double cloglog(double x);
+double cloglog_deriv(double x);
+double softplus(double x);
+double softplus_deriv(double x);
+double inverse_logit(double x);
+double inverse_logit_deriv(double x);
 std::function<double(double)> rectifier(double (*activation)(double));
 
 uintmax_t wc(char const *fname);
