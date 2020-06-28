@@ -210,28 +210,21 @@ int Network::next_batch()
     if (fgets(line, 1024, data)==NULL) {
       break;
     }
-    //char* p = line;
-    char *end;
-    const char *p = "111.11 -2.22 Nan nan(2) inF 0X1.BC70A3D70A3D7P+6  1.18973e+4932zzz";
-    printf("%s\n", p);
-    for (double f = strtod(p, &end); p != end; f = strtod(p, &end))
-    {
-        printf("'%.*s' -> ", (int)(end-p), p);
-        p = end;
-        if (errno == ERANGE){
-            printf("range error, got ");
-            errno = 0;
-        }
-        printf("%f\n", f);
+    char *p;
+    //    p = strtok (line," ,.-");
+    p = strtok(line,",");
+    for (int j = 0; j < inputs; j++) {
+      batch[j + (i * inputs)] = strtod(p, NULL);
+      p = strtok(NULL,",");
     }
-    (*labels)(i, 0) = label;
+    (*labels)(i, 0) = strtod(p, NULL);
   }
   //auto get_end = std::chrono::high_resolution_clock::now();
   float* batchptr = batch;
   update_layer(batchptr, datalen, 0);
   //auto update_end = std::chrono::high_resolution_clock::now();
   //std::cout << " INIT " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_begin - init_begin).count() / pow(10,9) << " GET " << std::chrono::duration_cast<std::chrono::nanoseconds>(get_end - get_begin).count() / pow(10,9) << " UPDATE " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - get_end).count() / pow(10,9) << " TOTAL " << std::chrono::duration_cast<std::chrono::nanoseconds>(update_end - init_begin).count() / pow(10,9) << "\n";
-  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
+  //  std::cout << "Next batch is\n" << *layers[0].contents << "\nwith labels\n"<<*labels << "\n\n";
   return 0;
 }
 
