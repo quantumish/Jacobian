@@ -10,14 +10,14 @@ def bench():
     net.add_layer(1, "resig");
     net.initialize();
     initend = time.time()
-    net.train(50);
+    net.train(1);
     end = time.time()
     return (end-init)
 #    print("%s: init %s" % (end-init, initend-init))
 
-timesum=0
-trials = 100
-for i in range(trials):
-    timesum+=bench()
-print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
-#print(bench())
+# timesum=0
+# trials = 1000
+# for i in range(trials):
+#     timesum+=bench()
+# print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
+print(bench())
