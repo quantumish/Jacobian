@@ -18,25 +18,22 @@ from keras import backend as K
 from keras.models import Sequential
 from keras.layers import Activation
 from keras.layers import Dense
-def lecun_tanh(x):
-    return 1.7159 * K.tanh((2.0/3) * x)
-
 init = time.time()
 # load the dataset
-dataset = loadtxt('./data_banknote_authentication.txt', delimiter=',')
+dataset = loadtxt('data_banknote_authentication.txt', delimiter=',')
 # split into input (X) and output (y) variables
-X = dataset[:,1:5]
-y = dataset[:,1]
+X = dataset[:,0:4]
+y = dataset[:,4]
 # define the keras model
 model = Sequential()
 model.add(Dense(4, input_dim=4, activation='linear'))
+model.add(Dense(5, activation='relu'))
 model.add(Dense(1, activation='sigmoid'))
 # compile the keras model
 opt = keras.optimizers.SGD(lr=0.0155)
 model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
 # fit the keras model on the dataset
 initend = time.time()
-print(model.summary())
 model.fit(X, y, epochs=50, batch_size=10)
 # evaluate the keras model
 #_, accuracy = model.evaluate(X, y)
