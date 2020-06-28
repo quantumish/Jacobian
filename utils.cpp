@@ -58,7 +58,7 @@ std::function<double(double)> rectifier(double (*activation)(double))
 
 uintmax_t wc(char const *fname)
 {
-    static const auto BUFFER_SIZE = 16*1024;
+    static const auto BUFFER_SIZE = 1024;
     int fd = open(fname, O_RDONLY);
     if(fd == -1)
       exit(1);
