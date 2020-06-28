@@ -62,10 +62,6 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation = step;
     layers[length-1].activation_deriv = step_deriv;
   }
-  else if (strcmp(name, "tanh") == 0) {
-    layers[length-1].activation = mytanh;
-    layers[length-1].activation_deriv = tanh_deriv;
-  }
   else if (strcmp(name, "lecun_tanh") == 0) {
     layers[length-1].activation = lecun_tanh;
     layers[length-1].activation_deriv = lecun_tanh_deriv;

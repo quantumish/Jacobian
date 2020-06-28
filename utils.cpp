@@ -11,6 +11,9 @@
 // A bunch of hardcoded activation functions. Avoids much of the slowness of custom functions.
 // Although the std::function makes it not the fastest way, the functionality is worth it.
 // Yes, these functions may be a frustrating to read but they're just equations and I want to conserve space.
+
+//double tanhapprox(double x) {return x - (1/3 * pow(x, 3)) + (2/15 * pow(x, 5)) - (17/315 * pow(x, 7));}
+
 double sigmoid(double x) {return 1.0/(1+exp(-x));}
 double sigmoid_deriv(double x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));}
 
@@ -19,9 +22,6 @@ double linear_deriv(double x) {return 1;}
 
 double lecun_tanh(double x) {return 1.7159 * tanh((2.0/3) * x);}
 double lecun_tanh_deriv(double x) {return 1.14393 * pow(1.0/cosh(2.0/3 * x),2);}
-
-double mytanh(double x) {return tanh(x);}
-double tanh_deriv(double x) {return pow(1.0/cosh(x),2);}
 
 double inverse_logit(double x) {return (exp(x)/(exp(x)+1));}
 double inverse_logit_deriv(double x) {return (exp(x)/pow(exp(x)+1, 2));}

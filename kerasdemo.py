@@ -23,7 +23,7 @@ def lecun_tanh(x):
 
 init = time.time()
 # load the dataset
-dataset = loadtxt('exoplanets.txt', delimiter=',')
+dataset = loadtxt('./data_banknote_authentication.txt', delimiter=',')
 # split into input (X) and output (y) variables
 X = dataset[:,1:5]
 y = dataset[:,1]
