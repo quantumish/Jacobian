@@ -42,7 +42,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
   instances = prep_file(path, "./shuffled.txt");
   length = 0;
   batch_size = batch_sz;
-  data = new std::ifstream("./shuffled.txt");
+  data = fopen("./shuffled.txt", "r");
   batches = 0;
 }
 
@@ -200,17 +200,19 @@ void Network::update_layer(float* vals, int datalen, int index)
 int Network::next_batch()
 {
   auto init_begin = std::chrono::high_resolution_clock::now();
-  char line[1024];
+  char line[1024] = {' '};
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
   auto get_begin = std::chrono::high_resolution_clock::now();
   for (int i = 0; i < batch_size; i++) {
-    data->getline(line, 1024);
-    sscanf(line, "%i,%f,%f,%f,%f", &label, &batch[0 + (i * inputs)],
+    if (fgets(line, 1024, data)==NULL) {
+      break;
+    }
+    sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (i * inputs)],
            &batch[1 + (i * inputs)], &batch[2 + (i * inputs)],
-           &batch[3 + (i * inputs)]);
+           &batch[3 + (i * inputs)], &label);
     (*labels)(i, 0) = label;
   }
   auto get_end = std::chrono::high_resolution_clock::now();
@@ -326,7 +328,6 @@ void Network::train(int total_epochs)
     printf("Time spent across epoch: %lf on next batch, %lf on feedforward, %lf on backprop, %lf on cost, %lf on acc.\n\n", times[0], times[1], times[2], times[3], times[4], epochtime-times[0]-times[1]-times[2]-times[3]-times[4]);
     batches=1;
     epochs++;
-    data->clear();
-    data->seekg(0);
+    rewind(data);
   }
 }

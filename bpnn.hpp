@@ -31,7 +31,7 @@ public:
 
 class Network {
 public:
-  std::ifstream* data;
+  FILE* data;
   int instances;
 
   std::vector<Layer> layers;
