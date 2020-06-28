@@ -20,3 +20,4 @@ trials = 100
 for i in range(trials):
     timesum+=bench()
 print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
+#print(bench())
