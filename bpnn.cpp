@@ -32,7 +32,6 @@ void Layer::init_weights(Layer next)
     std::mt19937 gen(rd()); 
     (*weights)((int)i / nodes, i%nodes) = d(gen);
   }
-  prev_update = new Eigen::MatrixXd (contents->cols(), next.contents->cols());
 }
 
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
@@ -173,7 +172,12 @@ void Network::backpropagate()
   }
   for (int i = 0; i < length-1; i++) {
     Eigen::MatrixXd gradient = gradients[i];
-    *layers[length-2-i].weights -= learning_rate * deltas[i];
+    Eigen::MatrixXd sum (layers[length-2-i].weights->rows(), layers[length-2-i].weights->cols());
+    for (int j = 0; j < layers[length-2-i].prev_updates.size(); j++) {
+      sum = sum + layers[length-2-i].prev_updates[j].cwiseProduct(layers[length-2-i].prev_updates[j]); 
+    }
+    layers[length-2-i].prev_updates.emplace_back(((1/learning_rate) * sum.cwiseSqrt()).transpose() * deltas[i]);
+   *layers[length-2-i].weights -= layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()];
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
