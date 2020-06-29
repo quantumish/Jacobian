@@ -35,14 +35,14 @@ def kerasbench(batch_sz, layers):
     end = time.time()
     return (end-init)
 
-sum = 0
-for i in range(10):
-    sum += kerasbench(10, 1)
-print(sum/10)
+# sum = 0
+# for i in range(10):
+#     sum += kerasbench(10, 1)
+# print(sum/10)
     
-# y2 = []
-# i = 20
-# while (i < 1340):
-#     y2.append(kerasbench(i, 1))
-#     i+=20
-# print(y2)
+y2 = []
+y2.append(kerasbench(1, 1))
+y2.append(kerasbench(5, 1))
+y2.append(kerasbench(10, 1))
+y2.append(kerasbench(15, 1))
+print(y2)

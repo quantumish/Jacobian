@@ -11,7 +11,6 @@ def bench(batch_sz, layers):
         net.add_layer(5, "relu")
     net.add_layer(1, "resig")
     net.initialize()
-    initend = time.time()
     net.train(50)
     end = time.time()
     return (end-init)
@@ -21,13 +20,14 @@ def bench(batch_sz, layers):
 # for i in range(trials):
 #     timesum+=bench()
 # print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
-# x = []
-# y = []
-# i = 1
-# while(i < 1340):
-#     y.append(bench(i, 1))
-#     x.append(i)
-#     i+=1;
+x = []
+y = []
+i = 1
+while(i < 1340):
+    y.append(bench(i, 1))
+    x.append(i)
+    i+=1
+print(y)
 # plt.plot(x,y, label = "ML-in-Parallel (Sequential)")
 # i = 20
 # otherlist = []
@@ -39,20 +39,20 @@ def bench(batch_sz, layers):
 # plt.legend()
 # plt.show()
 
-sum = 0
-for i in range(10):
-    sum += bench(10, 1)
-print(sum/10)
+# sum = 0
+# for i in range(10):
+#     sum += bench(10, 1)
+# print(sum/10)
 
-x = ['Keras', 'MIP-Sequential']
-speed = [4.71297559738, 0.043680644035339354]
+# x = ['Keras', 'MIP-Sequential']
+# speed = [4.71297559738, 0.043680644035339354]
 
-x_pos = [i for i, _ in enumerate(x)]
+# x_pos = [i for i, _ in enumerate(x)]
 
-plt.bar(x_pos, speed, color='green')
-plt.ylabel("Time (s)")
-plt.title("Average Runtime (10 trials)")
+# plt.bar(x_pos, speed, color='green')
+# plt.ylabel("Time (s)")
+# plt.title("Average Runtime (10 trials)")
 
-plt.xticks(x_pos, x)
+# plt.xticks(x_pos, x)
 
-plt.show()
+# plt.show()
