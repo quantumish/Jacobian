@@ -172,21 +172,21 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    Eigen::MatrixXd gradient = gradients[i];
-    std::cout << t <<"\n";
-    if (t > 0) {
-      Eigen::MatrixXd sum (layers[length-2-i].weights->rows(), layers[length-2-i].weights->cols());
-      for (int j = 0; j < layers[length-2-i].prev_updates.size(); j++) {
-        sum = sum + layers[length-2-i].prev_updates[j]; 
-      }
-      layers[length-2-i].prev_updates.emplace_back(((1/learning_rate) * sum.cwiseSqrt()).cwiseProduct(deltas[i]));
-      std::cout << layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1] << "\n\nSUM\n\n" << sum << "\n\n\n";
-      *layers[length-2-i].weights -= layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1];
-    }
-    else {
-      std::cout << "AAAA" << learning_rate * deltas[i] << "\n\n";
-      *layers[length-2-i].weights -= learning_rate * deltas[i];
-    }
+    //Eigen::MatrixXd gradient = gradients[i];
+    //std::cout << t <<"\n";
+    //if (t > 0) {
+    //  Eigen::MatrixXd sum (layers[length-2-i].weights->rows(), layers[length-2-i].weights->cols());
+    //   for (int j = 0; j < layers[length-2-i].prev_updates.size(); j++) {
+    //    sum = sum + layers[length-2-i].prev_updates[j].cwiseProduct(layers[length-2-i].prev_updates[j]);
+        //        std::cout << sum << "\n\n";
+    //  }
+    //  layers[length-2-i].prev_updates.emplace_back(((1/learning_rate) * sum.cwiseSqrt()).cwiseProduct(deltas[i]));
+    //   std::cout << layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1] << "\n\nSUM\n\n" << sum << "\n\n\n";
+    //  *layers[length-2-i].weights -= layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1];
+    //}
+    //else {
+      //std::cout << "AAAA" << learning_rate * deltas[i] << "\n\n";
+    *layers[length-2-i].weights -= learning_rate * deltas[i];
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -304,7 +304,7 @@ void Network::train(int total_epochs)
       cost_sum += cost();
       acc_sum += accuracy();
       batches++;
-      t++;
+      //t++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
