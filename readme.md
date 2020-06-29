@@ -5,7 +5,7 @@
 
 ## Benchmark Info
 
-Batch size of model vs. total runtime for this project and Keras:
+Batch size of model vs. total runtime for this project and Keras (Keras was slow enough that it moves in steps of 20 and starts at a batch size of 20. In reality, the spike at the beginning is much larger for lower batch sizes but it throws the graph off so much you can't see any detail from MIP):
 
 ![Batch Size vs. Runtime](./graphs/batch_size.png)
 
