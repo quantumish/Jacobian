@@ -11,8 +11,8 @@ int main()
   net.add_layer(1, "resig");
   net.initialize();
   //  net.list_net();
-  net.train(50);
-  net.list_net();
+  net.train(1);
+  //  net.list_net();
   //printf("%i\n", wc("./data_banknote_authentication.txt"));
 
   // double x = 0.4235;

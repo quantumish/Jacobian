@@ -36,6 +36,7 @@ public:
 
   std::vector<Layer> layers;
   int length;
+  int t;
 
   float learning_rate;
   float bias_lr;
