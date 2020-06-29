@@ -18,25 +18,31 @@ from keras import backend as K
 from keras.models import Sequential
 from keras.layers import Activation
 from keras.layers import Dense
-init = time.time()
-# load the dataset
-dataset = loadtxt('data_banknote_authentication.txt', delimiter=',')
-# split into input (X) and output (y) variables
-X = dataset[:,0:4]
-y = dataset[:,4]
-# define the keras model
-model = Sequential()
-model.add(Dense(4, input_dim=4, activation='linear'))
-model.add(Dense(5, activation='relu'))
-model.add(Dense(1, activation='sigmoid'))
-# compile the keras model
-opt = keras.optimizers.SGD(lr=0.0155)
-model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
-# fit the keras model on the dataset
-initend = time.time()
-model.fit(X, y, epochs=50, batch_size=10)
-# evaluate the keras model
-#_, accuracy = model.evaluate(X, y)
-#print('Accuracy: %.2f' % (accuracy*100))
-end = time.time()
-print("%s: init %s" % (end-init, initend-init))
+
+def kerasbench(batch_sz, layers):
+    init = time.time()
+    dataset = loadtxt('data_banknote_authentication.txt', delimiter=',')
+    X = dataset[:,0:4]
+    y = dataset[:,4]
+    model = Sequential()
+    model.add(Dense(4, input_dim=4, activation='linear'))
+    for i in range(layers):
+        model.add(Dense(5, activation='relu'))
+    model.add(Dense(1, activation='sigmoid'))
+    opt = keras.optimizers.SGD(lr=0.0155)
+    model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
+    model.fit(X, y, epochs=50, batch_size=batch_sz)
+    end = time.time()
+    return (end-init)
+
+sum = 0
+for i in range(10):
+    sum += kerasbench(10, 1)
+print(sum/10)
+    
+# y2 = []
+# i = 20
+# while (i < 1340):
+#     y2.append(kerasbench(i, 1))
+#     i+=20
+# print(y2)
