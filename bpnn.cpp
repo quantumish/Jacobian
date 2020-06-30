@@ -193,7 +193,7 @@ int Network::next_batch()
   int label = -1;
   for (int i = 0; i < batch_size; i++) {
     // This shouldn't ever happen - tell the compiler that.
-    if (__builtin_expect_with_probability(fgets(line, 1024, data), NULL, 0.001)) {
+    if (fgets(line, 1024, data) == NULL) {
       break;
     }
     char *p;
