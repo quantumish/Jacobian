@@ -140,7 +140,7 @@ float Network::cost()
 {
   float sum = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    sum += pow((*labels)(i, 0) - (*layers[length-1].contents)(i, 0),2);
+    sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
   }
   return (1.0/batch_size) * sum;
 }
@@ -172,20 +172,6 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    //Eigen::MatrixXd gradient = gradients[i];
-    //std::cout << t <<"\n";
-    //if (t > 0) {
-    //  Eigen::MatrixXd sum (layers[length-2-i].weights->rows(), layers[length-2-i].weights->cols());
-    //   for (int j = 0; j < layers[length-2-i].prev_updates.size(); j++) {
-    //    sum = sum + layers[length-2-i].prev_updates[j].cwiseProduct(layers[length-2-i].prev_updates[j]);
-        //        std::cout << sum << "\n\n";
-    //  }
-    //  layers[length-2-i].prev_updates.emplace_back(((1/learning_rate) * sum.cwiseSqrt()).cwiseProduct(deltas[i]));
-    //   std::cout << layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1] << "\n\nSUM\n\n" << sum << "\n\n\n";
-    //  *layers[length-2-i].weights -= layers[length-2-i].prev_updates[layers[length-2-i].prev_updates.size()-1];
-    //}
-    //else {
-      //std::cout << "AAAA" << learning_rate * deltas[i] << "\n\n";
     *layers[length-2-i].weights -= learning_rate * deltas[i];
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
@@ -206,7 +192,8 @@ int Network::next_batch()
   float batch[datalen];
   int label = -1;
   for (int i = 0; i < batch_size; i++) {
-    if (fgets(line, 1024, data)==NULL) {
+    // This shouldn't ever happen - tell the compiler that.
+    if (__builtin_expect_with_probability(fgets(line, 1024, data), NULL, 0.001)) {
       break;
     }
     char *p;
