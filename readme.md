@@ -1,19 +1,19 @@
-# ML in Parallel
+![Banner](./pictures/banner.png)
 
 ## About
-"ML in Parallel" (better name pending) is a work-in-progress machine learning library written in C++ designed to run as fast as possible. Parallelization will be achieved by utilizing Google's powerful MapReduce framework with [a custom implementation in C](https://github.com/richardfeynmanrocks/mapreduce), and the compiled nature of C++/C as well as the optimizations enabled by compilers enable further speedups. On the same benchmark task (of running a small neural network for 50 epochs on a specified dataset) In some preliminary benchmarks "ML in Parallel" has ran up to ~90-110x faster than a simple Keras program. This library is also easily accessible and initializing and using a neural network can be done in just 10 lines of code.
+Jacobian is a work-in-progress machine learning library written in C++ designed to run as fast as possible. Parallelization will be achieved by utilizing Google's powerful MapReduce framework with [a custom implementation in C](https://github.com/richardfeynmanrocks/mapreduce), and the compiled nature of C++/C as well as the optimizations enabled by compilers enable further speedups. On the same benchmark task (of running a small neural network for 50 epochs on a specified dataset) In some preliminary benchmarks Jacobian has ran up to ~90-110x faster than a simple Keras program. This library is also easily accessible and initializing and using a neural network can be done in just 10 lines of code.
 
 ## Benchmark Info
 
 Batch size of model vs. total runtime for this project and Keras (Keras was slow enough that it moves in steps of 20 and starts at a batch size of 20. In reality, the spike at the beginning is much larger for lower batch sizes but it throws the graph off so much you can't see any detail from MIP):
 
-![Batch Size vs. Runtime](./graphs/batch_size.png)
+![Batch Size vs. Runtime](./pictures/batch_size.png)
 
 Average runtime for batch size of 10 for 10 trials:
 
-![Runtime Comparison](./graphs/runtime.png)
+![Runtime Comparison](./pictures/runtime.png)
 
-Coming soon: A more detailed rundown of the speed of "ML in Parallel" vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
+Coming soon: A more detailed rundown of the speed of Jacobian vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
 
 ## Usage
 As of now using "ML in Parallel" inside C++ code requires manual building.
