@@ -5,22 +5,18 @@
 
 class ConvLayer
 {
+public:
+  int stride_len;
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
-  int stride_len;
-
-public:
+  
   ConvLayer(int x, int y, int stride, int kernel_size);
   void convolute();
 };
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 {
-  input = new Eigen::MatrixXd (x, y);
-  for (int i = 0; i < x*y; i++) {
-    (*input)((int)i / y,i%y) = 0;
-  }
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*input)((int)i / kern_size,i%kern_size) = 0;
@@ -42,12 +38,12 @@ void ConvLayer::convolute()
 
 class PoolingLayer
 {
+public:
+  int stride_len;
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
-  int stride_len;
   
-public:
   void pool();
   PoolingLayer(int x, int y, int stride, int kern_size);
 };
@@ -55,10 +51,6 @@ public:
 // Will eventually be different from ConvLayer
 PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
 {
-  input = new Eigen::MatrixXd (x, y);
-  for (int i = 0; i < x*y; i++) {
-    (*input)((int)i / y,i%y) = 0;
-  }
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*input)((int)i / kern_size,i%kern_size) = 0;
@@ -119,13 +111,25 @@ void add_conv_layer(int x, int y, int stride, int kern_size)
   conv_layers.empace_back(x,y,stride,kern_size);
 }
 
+// May make this inaccessible to user code and just have it called from add_conv_layer as pooling is basically always paired with conv.
 void add_pool_layer(int x, int y, int stride, int kern_size)
 {
   preprocess_length++;
   pool_layers.empace_back(x,y,stride,kern_size);
 }
 
+// Needs a batch advancement function, 100% does not work.
 void process()
 {
-  
+  // Assumes pooling is immediately after any conv layer.
+  for (int i = 0; i < preprocess_length-1; i++) {
+    conv_layers[i].convolute();
+    pool_layers[i].input = conv_layers[i].output;
+    pool_layers[i].pool();
+    conv_layers[i+1].input = pool_layers[i].output;
+  }
+  conv_layers[preprocess_length-1].convolute();
+  pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
+  pool_layers[preprocess_length-1].pool();
+  layers[0].contents = pool_layers[i].output;
 }
