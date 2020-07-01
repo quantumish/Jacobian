@@ -8,10 +8,27 @@ class ConvLayer
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
+  int stride_len;
 
 public:
-  ConvLayer(int stride) 
+  ConvLayer(int x, int y, int stride, int kernel_size);
   void convolute();
+};
+
+ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
+{
+  input = new Eigen::MatrixXd (x, y);
+  for (int i = 0; i < x*y; i++) {
+    (*input)((int)i / y,i%y) = 0;
+  }
+  kernel = new Eigen::MatrixXd (kern_size, kern_size);
+  for (int i = 0; i < kern_size*kern_size; i++) {
+    (*input)((int)i / kern_size,i%kern_size) = 0;
+  }
+  output = new Eigen::MatrixXd (kern_size, kern_size); // We're using valid padding for now.
+  for (int i = 0; i < kern_size*kern_size; i++) {
+    (*input)((int)i / kern_size,i%kern_size) = 0;
+  }
 };
 
 void ConvLayer::convolute()
@@ -28,9 +45,28 @@ class PoolingLayer
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
-
+  int stride_len;
+  
 public:
   void pool();
+  PoolingLayer(int x, int y, int stride, int kern_size);
+};
+
+// Will eventually be different from ConvLayer
+PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
+{
+  input = new Eigen::MatrixXd (x, y);
+  for (int i = 0; i < x*y; i++) {
+    (*input)((int)i / y,i%y) = 0;
+  }
+  kernel = new Eigen::MatrixXd (kern_size, kern_size);
+  for (int i = 0; i < kern_size*kern_size; i++) {
+    (*input)((int)i / kern_size,i%kern_size) = 0;
+  }
+  output = new Eigen::MatrixXd (kern_size, kern_size);
+  for (int i = 0; i < kern_size*kern_size; i++) {
+    (*input)((int)i / kern_size,i%kern_size) = 0;
+  }
 };
 
 void PoolingLayer::pool()
@@ -62,6 +98,7 @@ public:
   void process(); // Runs the convolutional and pooling layers.
   void next_batch();
   void add_conv_layer();
+  void add_pool_layer();
 };
 
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate)
@@ -74,4 +111,21 @@ ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate)
   batch_size = batch_sz;
   data = fopen("./shuffled.txt", "r");
   batches = 0;
+}
+
+void add_conv_layer(int x, int y, int stride, int kern_size)
+{
+  preprocess_length++;
+  conv_layers.empace_back(x,y,stride,kern_size);
+}
+
+void add_pool_layer(int x, int y, int stride, int kern_size)
+{
+  preprocess_length++;
+  pool_layers.empace_back(x,y,stride,kern_size);
+}
+
+void process()
+{
+  
 }
