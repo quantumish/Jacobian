@@ -73,8 +73,8 @@ Planned features include:
 ## The Future
 
 Jacobian is actively in development and the following are things that are planned for the nearish future:
-    - More architectures such as Convolutional Neural Networks and RNN-like architectures (LSTM, GRU...).
-    - Moving towards a more proper release by emphasizing usability.
-    - Further increasing speedups from a conceptual perspective with better algorithms, a implementation perspective with optimized code, and a low-level perspective with hardware optimizations + more compiler work.
-    - More advanced capabilities such as the inclusion of gradient descent optimizations.
-    - More clear examples on how this is used as well as why one would use it.
+- More architectures such as Convolutional Neural Networks and RNN-like architectures (LSTM, GRU...).
+- Moving towards a more proper release by emphasizing usability.
+- Further increasing speedups from a conceptual perspective with better algorithms, a implementation perspective with optimized code, and a low-level perspective with hardware optimizations + more compiler work.
+- More advanced capabilities such as the inclusion of gradient descent optimizations.
+- More clear examples on how this is used as well as why one would use it.
