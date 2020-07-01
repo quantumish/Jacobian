@@ -11,7 +11,8 @@
 // Not extensible, just initial test.
 Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b)
 {
-  block_len = a.rows()/4;
+  int block_len = a.rows()/4;
+  
 }
 
 Eigen::MatrixXd a = Eigen::MatrixXd::Random(5000, 5000);

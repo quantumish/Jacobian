@@ -16,32 +16,51 @@ Average runtime for batch size of 10 for 10 trials:
 Coming soon: A more detailed rundown of the speed of Jacobian vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
 
 ## Usage
-As of now using "ML in Parallel" inside C++ code requires manual building.
+This library is relatively fit for some use with python, but as of now using Jacobian inside C++ code requires manual building.
 
 ### Precompiled Libraries
 Head to the 'Releases' section and pick up the right python library for you if you don't want to build from source.
 
 ### Build Configurations
 
-There are 5 build configurations, each one prioritizing program speed more than the last. *Warning!* Makefile assumes the presence of the Intel C++ Compiler (`icpc`). If you don't have this, replace all instances of `icpc` in the Makefile with `g++`.
+There are 5 build configurations, each one prioritizing program speed more than the last. *Warning!* Makefile assumes the presence of the Intel C++ Compiler (`icpc`) and the Intel Math Kernel Library. If you don't have this, replace all instances of `icpc` in the Makefile with `g++', remove all traces of the Math Kernel Library, and remove the flags `g++` doesn't understand.
 
-- Level 1: `make`
+#### Level 1: `make`
 Simply builds the project with no optimization at all. Use this if you don't want to wait long for the library to compile and don't care too much about speed in the moment.
 
-- Level 2: `make fast`
-Builds the project with the O3 optimization setting, essentially the highest optimization configuration without manually passing optimization flags (Ofast proves slower). Use this if you want some speed but shorter build commands and compile times.
+#### Level 2: `make fast`
+  - Builds the project with the O3 optimization setting, essentially the highest optimization configuration without manually passing optimization flags (Ofast can prove slower). 
 
-- Level 3: `make faster`
-Builds the project with O3 as well as specific optimization flags relevant to matrix operations. Links with Intel's Math Kernel Library (make sure you have this!). Provides an extra boost to speed. Use this if you care a lot about speed but are not willing to sacrifice anything but compile times for it.
+Use this if you want some speed but shorter build commands and compile times.
 
-- Level 4: `make tradeoffs`
-Builds the project with O3, specific optimization flags, and *more* specific optimization flags that sacrifice things like precision and make assumptions to increase speed even further. Use this if you care about speed more than precision and are willing to make some tradeoffs (and also don't mind longer compile times).
+#### Level 3: `make faster`
+Enables a whole slew of extra optimizations, some of which include:
+  - Building the project with O3.
+  - Optimizing for native architecture.
+  - Instructing compiler to fetch data for CPU cache earlier.
+  - Unrolling loops.
+  - Links with Intel's Math Kernel Library (make sure you have this!). Provides an extra boost to speed. 
+  
+  Use this if you care a lot about speed but are not willing to sacrifice anything but compile time for it.
 
-In the future this setting may try to parallelize operations (even if the network is already parallelized with MapReduce). It may also work with branch prediction and cache optimization, but it's possible just leaving that to the compiler is better.
+#### Level 4: `make tradeoffs`
+Builds the project with O3, specific optimization flags, and *more* specific optimization flags that sacrifice things like portability and precision as well as makes assumptions to increase speed even further. Use this if you care about speed more than precision and are willing to make some tradeoffs (and also don't mind longer compile times).
 
-- Level 5: `make reckless`
+Some of the new compiler optimizations include:
+   - Using an optimized version of `calloc`.
+   - Using Intel-specific optimizations.
+   - Allowing low-precision alternatives to operations like sqrt and division.
+   - Enabling the `-ffast-math` flag.
+   - Approximating more complicated functions.
+
+In the future this setting may try to parallelize operations (even if the network is already parallelized with MapReduce).
+
+#### Level 5: `make reckless`
 This option is not implemented as of now.
-All the aforementioned compiler options as well as compiler options that are potentially unsafe. Defines the `RECKLESS` macro which will skip anything that is not absolutely necessary in the code (with preprocessor statements like `#ifndef`).
+
+Planned features include:
+    - Adding all the aforementioned compiler options as well as compiler options that are potentially unsafe. 
+    - Defining the `RECKLESS` macro which will skip anything that is not absolutely necessary in the code (with preprocessor statements like `#ifndef`).
 
 ### Python Bindings
 
@@ -51,3 +70,11 @@ All the aforementioned compiler options as well as compiler options that are pot
 4. Import `mrbpnn` from your Python code and use it.
 5. Look to the `example.py` file for simple usage of the library.
 
+## The Future
+
+Jacobian is actively in development and the following are things that are planned for the nearish future:
+    - More architectures such as Convolutional Neural Networks and RNN-like architectures (LSTM, GRU...).
+    - Moving towards a more proper release by emphasizing usability.
+    - Further increasing speedups from a conceptual perspective with better algorithms, a implementation perspective with optimized code, and a low-level perspective with hardware optimizations + more compiler work.
+    - More advanced capabilities such as the inclusion of gradient descent optimizations.
+    - More clear examples on how this is used as well as why one would use it.
