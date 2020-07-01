@@ -18,13 +18,6 @@ double bench(int batch_sz)
 
 int main()
 {
-  double x[1340];
-  for(int i = 0; i < 3; i++) {
-    x[i] = bench(i);
-  }
-  printf("[");
-  for(int i = 0; i < 3; i++) {
-    printf("%d, ", x[i]);
-  }
-  printf("]");
+  sleep(10);
+  bench(10);
 }

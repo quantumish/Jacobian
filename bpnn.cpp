@@ -294,6 +294,7 @@ void Network::train(int total_epochs)
       //t++;
     }
     epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
+    epoch_acc = epoch_accuracy;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
     printf("Epoch %i/%i - cost %f - acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_accuracy);
     batches=1;
@@ -301,3 +302,9 @@ void Network::train(int total_epochs)
     rewind(data);
   }
 }
+
+float Network::get_info()
+{
+  return epoch_acc;
+}
+  

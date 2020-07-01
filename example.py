@@ -3,56 +3,21 @@ import matplotlib.pyplot as plt
 import numpy
 import time
 
-def bench(batch_sz, layers):
-    init = time.time()
-    net = mrbpnn.Network("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03)
-    net.add_layer(4, "linear")
-    for i in range(layers):
-        net.add_layer(5, "relu")
-    net.add_layer(1, "resig")
-    net.initialize()
-#    net.list_net()
-    net.train(50)
-    end = time.time()
-    return (end-init)
+batch_sz = 10
+layers = 1
 
-# timesum=0
-# trials = 20
-# for i in range(trials):
-#     timesum+=bench(10,1)
-# print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
-x = []
-y = []
-i = 1
-while(i < 1340):
-    y.append(bench(i, 1))
-    x.append(i)
-    i+=1
-plt.plot(x,y, label = "Jacobian (Sequential)")
-i = 20
-otherlist = []
-while(i < 1340):
-    otherlist.append(i)
-    i += 20
+net = mrbpnn.Network("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03)
+net.add_layer(4, "linear")
+for i in range(layers):
+    net.add_layer(5, "relu")
+net.add_layer(1, "resig")
+net.initialize()
 
-plt.plot(otherlist, [2.3994078636169434, 1.2735769748687744, 1.0030598640441895, 0.8972160816192627, 0.801548957824707, 0.752018928527832, 0.7073678970336914, 0.6857280731201172, 0.6707980632781982, 0.6421489715576172, 0.6614980697631836, 0.6403779983520508, 0.7251319885253906, 0.6796879768371582, 0.6601080894470215, 0.6711599826812744, 0.6432759761810303, 0.6491389274597168, 0.6762490272521973, 0.6859049797058105, 0.7067179679870605, 0.7142889499664307, 0.7258059978485107, 0.7868969440460205, 0.7326970100402832, 0.7365641593933105, 0.7576079368591309, 0.7772500514984131, 0.8062641620635986, 0.7768490314483643, 0.8253629207611084, 0.8264601230621338, 0.8459320068359375, 0.9670729637145996, 0.8388969898223877, 0.9129719734191895, 0.9009649753570557, 0.8916170597076416, 0.8926799297332764, 0.9171609878540039, 0.9242072105407715, 0.9534740447998047, 0.947465181350708, 0.9723358154296875, 1.018247127532959, 1.1208629608154297, 1.014026165008545, 1.034980058670044, 1.0626468658447266, 1.080394983291626, 1.0627479553222656, 1.0839190483093262, 1.0938241481781006, 1.127730131149292, 1.1265759468078613, 1.136888027191162, 1.140428066253662, 1.1712510585784912, 1.206390142440796, 1.2087180614471436, 1.4066569805145264, 1.2425589561462402, 1.280066967010498, 1.2891559600830078, 1.3243582248687744, 1.3152379989624023], label="Keras")
-plt.legend()
-plt.show()
+import wandb
+wandb.init(project="jacobian")
+wandb.config.update({"epochs": 50, "batch_size": batch_sz, "hidden_layers": layers})
+for i in range(50):
+    net.train(1)
+    wandb.log({'accuracy': net.get_info()})
 
-# # sum = 0
-# # for i in range(10):
-# #     sum += bench(10, 1)
-# # print(sum/10)
-
-# # x = ['Keras', 'MIP-Sequential']
-# # speed = [4.71297559738, 0.043680644035339354]
-
-# # x_pos = [i for i, _ in enumerate(x)]
-
-# # plt.bar(x_pos, speed, color='green')
-# # plt.ylabel("Time (s)")
-# # plt.title("Average Runtime (10 trials)")
-
-# # plt.xticks(x_pos, x)
-
-# # plt.show()
+wandb.save('jacobian.h5')

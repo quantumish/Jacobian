@@ -38,6 +38,7 @@ public:
   int length;
   int t;
 
+  float epoch_acc;
   float learning_rate;
   float bias_lr;
   int batch_size;
@@ -60,6 +61,8 @@ public:
   int next_batch();
   float test(char* path);
   void train(int total_epochs);
+
+  float get_info();
 };
 
 void demo(int total_epochs);
