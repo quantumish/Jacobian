@@ -16,19 +16,25 @@ Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b)
   int block_len = a.rows()/2;
   Eigen::MatrixXd result (a.rows(), a.cols());
 
-  // Nigh unreadable code follows.
+  // (A+D)(E+H)
   Eigen::MatrixXd m1 = (a.block(0,0, block_len, block_len)) + a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len) * (b.block(0,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
+  // (C+D)E
   Eigen::MatrixXd m2 = (a.block(a.rows()-block_len, 0, block_len, block_len) + a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(0,0, block_len, block_len));
+  // A(F-H)
   Eigen::MatrixXd m3 = a.block(0,0, block_len, block_len) * (b.block(0,b.cols()-block_len, block_len, block_len) - b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
+  // D(G-E)
   Eigen::MatrixXd m4 = a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len) * (b.block(b.rows()-block_len,0, block_len, block_len) - b.block(0,0, block_len, block_len));
+  // (A+B)H
   Eigen::MatrixXd m5 = (a.block(0, 0, block_len, block_len) + a.block(0,a.cols()-block_len, block_len, block_len)) * (b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
-  Eigen::MatrixXd m6 = (a.block(a.rows()-block_len,0, block_len, block_len) - a.block(0,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
+  // (A-C)(E+F)
+  Eigen::MatrixXd m6 = (a.block(0,0, block_len, block_len) - a.block(a.rows()-block_len,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
+  // (B-D)(G+H)
   Eigen::MatrixXd m7 = (a.block(0,a.cols()-block_len, block_len, block_len) - a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(a.rows()-block_len,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
 
   result.block(0,0, block_len, block_len) =  m1 + m4 - m5 + m7;
   result.block(0,result.cols()-block_len, block_len, block_len) =  m3 + m5;
   result.block(result.rows()-block_len,0, block_len, block_len) =  m2 + m4;
-  result.block(result.rows()-block_len,result.cols()-block_len, block_len, block_len) =  m1 - m2 + m3 + m6;
+  result.block(result.rows()-block_len,result.cols()-block_len, block_len, block_len) =  m1 - m6 + m3 - m2;
 
   return result;
 }
