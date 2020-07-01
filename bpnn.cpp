@@ -274,8 +274,6 @@ float Network::test(char* path)
 
 void Network::train(int total_epochs)
 {
-  float epoch_cost = 1000;
-  float epoch_accuracy = -1;
   int epochs = 0;
   //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
   double batch_time = 0;
@@ -293,18 +291,22 @@ void Network::train(int total_epochs)
       batches++;
       //t++;
     }
-    epoch_accuracy = 1.0/((float) instances/batch_size) * acc_sum;
-    epoch_acc = epoch_accuracy;
+    epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
-    printf("Epoch %i/%i - cost %f - acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_accuracy);
+    printf("Epoch %i/%i - cost %f - acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc);
     batches=1;
     epochs++;
     rewind(data);
   }
 }
 
-float Network::get_info()
+float Network::get_acc()
 {
   return epoch_acc;
+}
+
+float Network::get_cost()
+{
+  return epoch_cost;
 }
   

@@ -39,6 +39,7 @@ public:
   int t;
 
   float epoch_acc;
+  float epoch_cost;
   float learning_rate;
   float bias_lr;
   int batch_size;
@@ -62,7 +63,8 @@ public:
   float test(char* path);
   void train(int total_epochs);
 
-  float get_info();
+  float get_acc();
+  float get_cost();
 };
 
 void demo(int total_epochs);
