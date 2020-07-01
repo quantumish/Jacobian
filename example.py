@@ -11,12 +11,13 @@ def bench(batch_sz, layers):
         net.add_layer(5, "relu")
     net.add_layer(1, "resig")
     net.initialize()
+#    net.list_net()
     net.train(50)
     end = time.time()
     return (end-init)
 
 timesum=0
-trials = 5
+trials = 20
 for i in range(trials):
     timesum+=bench(10,1)
 print("Averages over %s trials\n--------------\nTime: %s seconds.\n" % (trials, timesum/trials))
