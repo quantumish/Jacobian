@@ -1,7 +1,7 @@
 #ifndef BPNN_H
 #define BPNN_H
 
-#include "/Users/davidfreifeld/Downloads/eigen-3.3.7/Eigen/Dense"
+#include <Eigen/Dense>
 
 #include "../mapreduce/mapreduce.hpp"
 
