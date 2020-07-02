@@ -3,6 +3,8 @@
 #include <ctime>
 #include <random>
 
+#define TEST_PATH "./test.txt"
+
 Layer::Layer(int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXd (batch_sz, nodes);
@@ -193,9 +195,7 @@ int Network::next_batch()
   int label = -1;
   for (int i = 0; i < batch_size; i++) {
     // This shouldn't ever happen - tell the compiler that.
-    if (fgets(line, 1024, data) == NULL) {
-      break;
-    }
+    fgets(line, 1024, data);
     char *p;
     //    p = strtok (line," ,.-");
     p = strtok(line,",");
@@ -210,7 +210,7 @@ int Network::next_batch()
   return 0;
 }
 
-int prep_file(char* path, char* out_path)
+int prep_file(char* path, char* out_path, float ratio)
 {
   FILE* rptr = fopen(path, "r");
   char line[1024];
@@ -235,41 +235,32 @@ int prep_file(char* path, char* out_path)
 
 float Network::test(char* path)
 {
-  int rounds = 1;
-  int exit = 0;
-  int linecount = prep_file(path, "./testshuffled");
-  float cost_sum = 0;
-  float acc_sum = 0;
-  int finalcount;
-  for (int i = 0; i < linecount; i+=batch_size) {
-    feedforward();
-    FILE* fptr = fopen("./testshuffled", "r");
-    char line[1024] = {' '};
+  FILE* test_data = fopen(path, "r");
+  for (int i = 0; i <= test_instances-batch_size; i+=batch_size) {
+    float costsum = 0;
+    float accsum = 0;
+    char line[1024];
     int inputs = layers[0].contents->cols();
     int datalen = batch_size * inputs;
     float batch[datalen];
     int label = -1;
-    for (int j = 1; j < batch_size*((i/batch_size)+1); j++) {
-      if (fgets(line, 1024, fptr)==NULL) {
-        break;
+    for (int i = 0; i < batch_size; i++) {
+      fgets(line, 1024, data);
+      char *p;
+      p = strtok(line,",");
+      for (int j = 0; j < inputs; j++) {
+        batch[j + (i * inputs)] = strtod(p, NULL);
+        p = strtok(NULL,",");
       }
-      if (i >= (i/batch_size)*batch_size) {
-        int k = i - ((i/batch_size)*batch_size);
-        sscanf(line, "%f,%f,%f,%f,%i", &batch[0 + (k * inputs)],
-                &batch[1 + (k * inputs)], &batch[2 + (k * inputs)],
-                &batch[3 + (k * inputs)], &label);
-        (*labels)(k, 0) = label;
-      }
+      (*labels)(i, 0) = strtod(p, NULL);
     }
     float* batchptr = batch;
     update_layer(batchptr, datalen, 0);
-    fclose(fptr);
-    cost_sum += cost();
-    acc_sum += accuracy();
-    finalcount = i;
+    feedforward();
+    costsum += cost();
+    accsum += accuracy();
   }
-  float chunks = ((float)finalcount/batch_size)+1;
-  return acc_sum/chunks;
+  return 0;
 }
 
 void Network::train(int total_epochs)

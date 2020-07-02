@@ -33,13 +33,16 @@ class Network {
 public:
   FILE* data;
   int instances;
+  int test_instances;
 
   std::vector<Layer> layers;
   int length;
   int t;
 
-  float epoch_acc;
-  float epoch_cost;
+  float acc;
+  float cost;
+  float val_acc;
+  float val_cost;
   float learning_rate;
   float bias_lr;
   int batch_size;
