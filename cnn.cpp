@@ -1,7 +1,7 @@
 #include "bpnn.hpp"
 #include "utils.hpp"
 
-#define LARGE_NUM = 1000000 // Remove me.
+#define LARGE_NUM 1000000 // Remove me.
 
 class ConvLayer
 {
@@ -31,7 +31,7 @@ void ConvLayer::convolute()
 {
   for (int i = 0; i < input->cols() - kernel->cols() + 1; i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows() + 1; j+=stride_len) {
-      output(j, i) = (*kernel * input->block<kernel->rows(), kernel->cols()(j, i)).sum()
+      output->block(j, i, kernel->rows(), kernel->cols()) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()).sum()));
     }
   }
 }
@@ -69,8 +69,8 @@ void PoolingLayer::pool()
     for (int j = 0; j < input->rows() - kernel->rows() + 1; j+=stride_len) {
       for (int k = 0; k < kernel->cols(); k++) {
         for (int l = 0; l < kernel->rows(); l++) {
-          if ((input->block<kernel->rows(), kernel->cols()(j, i))(l, k) > maxnum) {
-            maxnum = (input->block<kernel->rows(), kernel->cols()(j, i))(l, k);
+          if ((input->block(j, i, kernel->rows(), kernel->cols()))(l, k) > maxnum) {
+            maxnum = (input->block(j, i, kernel->rows(), kernel->cols()))(l, k);
           }
         }
       }
@@ -86,14 +86,14 @@ class ConvNet : Network
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
 public:
-  ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate);
+  ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void process(); // Runs the convolutional and pooling layers.
   void next_batch();
-  void add_conv_layer();
-  void add_pool_layer();
+  void add_conv_layer(int x, int y, int stride, int kern_size);
+  void add_pool_layer(int x, int y, int stride, int kern_size);
 };
 
-ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate)
+ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
 {
   learning_rate = learn_rate;
   bias_lr = bias_rate;
@@ -105,21 +105,21 @@ ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate)
   batches = 0;
 }
 
-void add_conv_layer(int x, int y, int stride, int kern_size)
+void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size)
 {
   preprocess_length++;
-  conv_layers.empace_back(x,y,stride,kern_size);
+  conv_layers.emplace_back(x,y,stride,kern_size);
 }
 
 // May make this inaccessible to user code and just have it called from add_conv_layer as pooling is basically always paired with conv.
-void add_pool_layer(int x, int y, int stride, int kern_size)
+void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size)
 {
   preprocess_length++;
-  pool_layers.empace_back(x,y,stride,kern_size);
+  pool_layers.emplace_back(x,y,stride,kern_size);
 }
 
 // Needs a batch advancement function, 100% does not work.
-void process()
+void ConvNet::process()
 {
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
@@ -131,5 +131,9 @@ void process()
   conv_layers[preprocess_length-1].convolute();
   pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   pool_layers[preprocess_length-1].pool();
-  layers[0].contents = pool_layers[i].output;
+  layers[0].contents = pool_layers[preprocess_length-1].output;
+}
+
+int main()
+{
 }
