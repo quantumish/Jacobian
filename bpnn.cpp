@@ -3,7 +3,11 @@
 #include <ctime>
 #include <random>
 
+#define SHUFFLED_PATH "./shuffled.txt"
 #define TEST_PATH "./test.txt"
+#define TRAIN_PATH "./train.txt"
+
+#define MAXLINE 1024
 
 Layer::Layer(int batch_sz, int nodes)
 {
@@ -40,11 +44,13 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
 {
   learning_rate = learn_rate;
   bias_lr = bias_rate;
-  instances = prep_file(path, "./shuffled.txt");
+  int total_instances = prep_file(path, SHUFFLED_PATH);
+  test_instances = split_file(SHUFFLED_PATH, total_instances, 0.7);
+  instances = total_instances - test_instances;
   length = 0;
   t = 0;
   batch_size = batch_sz;
-  data = fopen("./shuffled.txt", "r");
+  data = fopen(TRAIN_PATH, "r");
   batches = 0;
 }
 
@@ -188,14 +194,14 @@ void Network::update_layer(float* vals, int datalen, int index)
 
 int Network::next_batch()
 {
-  char line[1024] = {' '};
+  char line[MAXLINE] = {' '};
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
   int label = -1;
   for (int i = 0; i < batch_size; i++) {
     // This shouldn't ever happen - tell the compiler that.
-    fgets(line, 1024, data);
+    fgets(line, MAXLINE, data);
     char *p;
     //    p = strtok (line," ,.-");
     p = strtok(line,",");
@@ -210,13 +216,13 @@ int Network::next_batch()
   return 0;
 }
 
-int prep_file(char* path, char* out_path, float ratio)
+int prep_file(char* path, char* out_path)
 {
   FILE* rptr = fopen(path, "r");
-  char line[1024];
+  char line[MAXLINE];
   std::vector<std::string> lines;
   int count = 0;
-  while (fgets(line, 1024, rptr) != NULL) {
+  while (fgets(line, MAXLINE, rptr) != NULL) {
     lines.emplace_back(line);
     count++;
   }
@@ -233,19 +239,41 @@ int prep_file(char* path, char* out_path, float ratio)
   return count;
 }
 
+int split_file(char* path, int lines, float ratio)
+{
+  FILE* src = fopen(path, "r");
+  FILE* test = fopen(TEST_PATH, "w");
+  FILE* train = fopen(TRAIN_PATH, "w");
+  int switch_line = round(ratio * lines);
+  char line[MAXLINE];
+  int tests = 0;
+  for (int i = 0; fgets(line, MAXLINE, src) != NULL; i++) {
+    if (i > switch_line) {
+      fprintf(test, "%s", line);
+      tests++;
+    }
+    else fprintf(train, "%s", line);
+  }
+  fclose(src);
+  fclose(test);
+  fclose(train);
+  return tests;
+}
+
 float Network::test(char* path)
 {
   FILE* test_data = fopen(path, "r");
+  float costsum = 0;
+  float accsum = 0;
   for (int i = 0; i <= test_instances-batch_size; i+=batch_size) {
-    float costsum = 0;
-    float accsum = 0;
-    char line[1024];
+    char line[MAXLINE];
     int inputs = layers[0].contents->cols();
     int datalen = batch_size * inputs;
     float batch[datalen];
     int label = -1;
     for (int i = 0; i < batch_size; i++) {
-      fgets(line, 1024, data);
+      fgets(line, MAXLINE, data);
+      printf("%s", line);
       char *p;
       p = strtok(line,",");
       for (int j = 0; j < inputs; j++) {
@@ -260,6 +288,8 @@ float Network::test(char* path)
     costsum += cost();
     accsum += accuracy();
   }
+  val_acc = 1.0/((float) test_instances/batch_size) * accsum;
+  val_cost = 1.0/((float) test_instances/batch_size) * costsum;
   return 0;
 }
 
@@ -284,7 +314,8 @@ void Network::train(int total_epochs)
     }
     epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
-    printf("Epoch %i/%i - cost %f - acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc);
+    test(TEST_PATH);
+    printf("Epoch %i/%i - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     epochs++;
     rewind(data);
@@ -296,8 +327,18 @@ float Network::get_acc()
   return epoch_acc;
 }
 
+float Network::get_val_acc()
+{
+  return val_acc;
+}
+
 float Network::get_cost()
 {
   return epoch_cost;
 }
-  
+
+float Network::get_val_cost()
+{
+  return val_cost;
+}
+

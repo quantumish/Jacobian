@@ -39,8 +39,8 @@ public:
   int length;
   int t;
 
-  float acc;
-  float cost;
+  float epoch_acc;
+  float epoch_cost;
   float val_acc;
   float val_cost;
   float learning_rate;
@@ -68,9 +68,12 @@ public:
 
   float get_acc();
   float get_cost();
+  float get_val_acc();
+  float get_val_cost();
 };
 
 void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
+int split_file(char* path, int lines, float ratio);
 
 #endif /* MODULE_H */
