@@ -12,25 +12,43 @@ public:
   void start_array(char* data, int m, int length, char* ip, int r);
 };
 
+struct pair* mymap (struct pair* input_pair)
+{
+  char* path = new char[100];
+  printf("%p %p (from %p)\n", input_pair->key, input_pair->value, input_pair);
+  printf("%s %p (from %p)\n", (char*)input_pair->key, input_pair->value, input_pair);
+  //strcpy(path, (char*)input_pair->key);
+  //strcat(path, "_shuf");
+  //int linecount = prep_file((char*)input_pair.key, path);
+  // Network* net = setup();
+  // net->train(epochs);
+  struct pair* output = new struct pair;
+  //char* key = new char[100];
+  //strcpy(key, path);
+  output[0].key = 0x0;
+  output[0].value = 0x0;
+  return output;
+}
+
 NetworkArray::NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs)
 {
-  map = [setup, epochs](struct pair* input_pair) -> struct pair*
-  {
-    char* path = new char[100];
-    printf("%p %p (from %p)\n", input_pair->key, input_pair->value, input_pair);
-    printf("%s %p (from %p)\n", (char*)input_pair->key, input_pair->value, input_pair);
-    strcpy(path, (char*)input_pair->key);
-    //strcat(path, "_shuf");
-    //int linecount = prep_file((char*)input_pair.key, path);
-    // Network* net = setup();
-    // net->train(epochs);
-    struct pair* output = new struct pair;
-    //char* key = new char[100];
-    //strcpy(key, path);
-    output[0].key = 0x0;
-    output[0].value = 0x0;
-    return output;
-  };
+  // map = [setup, epochs](struct pair* input_pair) -> struct pair*
+  // {
+  //   char* path = new char[100];
+  //   printf("%p %p (from %p)\n", input_pair->key, input_pair->value, input_pair);
+  //   printf("%s %p (from %p)\n", (char*)input_pair->key, input_pair->value, input_pair);
+  //   strcpy(path, (char*)input_pair->key);
+  //   //strcat(path, "_shuf");
+  //   //int linecount = prep_file((char*)input_pair.key, path);
+  //   // Network* net = setup();
+  //   // net->train(epochs);
+  //   struct pair* output = new struct pair;
+  //   //char* key = new char[100];
+  //   //strcpy(key, path);
+  //   output[0].key = 0x0;
+  //   output[0].value = 0x0;
+  //   return output;
+  // };
   reduce = [](struct pair* input_pairs) -> struct pair*
   {
     struct pair* output = new struct pair[6];  
@@ -70,7 +88,7 @@ void NetworkArray::start_array(char* data, int m, int length, char* ip, int r)
 
 Network* setup()
 {
-  Network* net = new Network ("./data_banknote_authentication.txt", 10, 0.01, 0.001);
+  Network* net = new Network ("./data_banknote_authentication.txt", 10, 0.01, 0.001, 0.9);
   net->add_layer(4, "linear");
   net->add_layer(5, "sigmoid");
   net->set_activation(1, lecun_tanh, lecun_tanh_deriv);
