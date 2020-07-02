@@ -27,22 +27,25 @@ Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b)
   // (A+B)H
   Eigen::MatrixXd m5 = (a.block(0, 0, block_len, block_len) + a.block(0,a.cols()-block_len, block_len, block_len)) * (b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
   // (A-C)(E+F)
-  Eigen::MatrixXd m6 = (a.block(0,0, block_len, block_len) - a.block(a.rows()-block_len,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
+  Eigen::MatrixXd m6 = (a.block(a.rows()-block_len,0, block_len, block_len) - a.block(0,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
   // (B-D)(G+H)
   Eigen::MatrixXd m7 = (a.block(0,a.cols()-block_len, block_len, block_len) - a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(a.rows()-block_len,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
 
+  std::cout << m1 << "\n\n" << m2 << "\n\n" << m3 << "\n\n" << m4 << "\n\n" << m5 << "\n\n" << m6 << "\n\n" << m7 << "\n\n";
+  
   result.block(0,0, block_len, block_len) =  m1 + m4 - m5 + m7;
   result.block(0,result.cols()-block_len, block_len, block_len) =  m3 + m5;
   result.block(result.rows()-block_len,0, block_len, block_len) =  m2 + m4;
-  result.block(result.rows()-block_len,result.cols()-block_len, block_len, block_len) =  m1 - m6 + m3 - m2;
+  result.block(result.rows()-block_len,result.cols()-block_len, block_len, block_len) =  m1 -m2 + m3 + m6;
 
   return result;
 }
 
 int main()
 {
-  Eigen::MatrixXd a = Eigen::MatrixXd::Random(16, 16);
-  Eigen::MatrixXd b = Eigen::MatrixXd::Random(16, 16);
+  srand((unsigned int) time(0));
+  Eigen::MatrixXd a = Eigen::MatrixXd::Random(4, 4);
+  Eigen::MatrixXd b = Eigen::MatrixXd::Random(4, 4);
   
   auto eigen_begin = std::chrono::high_resolution_clock::now();
   Eigen::MatrixXd product = a * b;
