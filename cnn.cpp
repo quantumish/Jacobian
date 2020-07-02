@@ -19,11 +19,11 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 {
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = 0;
+    (*input)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
   output = new Eigen::MatrixXd (kern_size, kern_size); // We're using valid padding for now.
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = 0;
+    (*input)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
 };
 
@@ -78,14 +78,15 @@ void PoolingLayer::pool()
   }
 }
 
-class ConvNet : Network
+class ConvNet : public Network
 {
+public:
   int stride_len;
   int preprocess_length;
                 
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
-public:
+
   ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void process(); // Runs the convolutional and pooling layers.
   void next_batch();
@@ -95,14 +96,6 @@ public:
 
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
 {
-  learning_rate = learn_rate;
-  bias_lr = bias_rate;
-  instances = prep_file(path, "./shuffled.txt");
-  length = 0;
-  t = 0;
-  batch_size = batch_sz;
-  data = fopen("./shuffled.txt", "r");
-  batches = 0;
 }
 
 void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size)
@@ -131,9 +124,30 @@ void ConvNet::process()
   conv_layers[preprocess_length-1].convolute();
   pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   pool_layers[preprocess_length-1].pool();
-  layers[0].contents = pool_layers[preprocess_length-1].output;
+  Eigen::Map<Eigen::RowVectorXd> flattened (pool_layers[preprocess_length-1].output->data(), pool_layers[preprocess_length-1].output->size());
+  for (int i = 0; i < flattened.cols(); i++) {
+    (*layers[0].contents)(0, i) = flattened[i];
+  }
 }
 
 int main()
 {
+  ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
+  net.add_conv_layer(8,8,1,4);
+  net.add_pool_layer(4,4,1,2);
+  net.add_layer(4, "linear");
+  net.add_layer(5, "relu");
+  net.add_layer(1, "resig");
+  net.initialize();
+  Eigen::MatrixXd* input = new Eigen::MatrixXd (4,4);
+  *input <<
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,1,1,1,1,0,0,
+    0,0,1,1,1,1,0,0,
+    0,0,1,1,1,1,0,0,
+    0,0,1,1,1,1,0,0,
+    0,0,0,0,0,0,0,0,
+    0,0,0,0,0,0,0,0;    
+  net.conv_layers[0].input = input;
 }
