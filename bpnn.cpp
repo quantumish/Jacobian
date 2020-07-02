@@ -231,11 +231,12 @@ int prep_file(char* path, char* out_path)
   std::mt19937 g(rd());
   std::shuffle(lines.begin(), lines.end(), g);
   fclose(rptr);
-  std::ofstream out(out_path);
+  FILE* wptr = fopen(out_path, "w");
   for (int i = 0; i < lines.size(); i++) {
-    out << lines[i];
+    const char* cstr = lines[i].c_str();
+    fprintf(wptr,"%s", cstr);
   }
-  out.close();
+  fclose(wptr);
   return count;
 }
 
@@ -273,10 +274,13 @@ float Network::test(char* path)
     int label = -1;
     for (int i = 0; i < batch_size; i++) {
       fgets(line, MAXLINE, data);
-      printf("%s", line);
+      printf("Next line: %s\n", line);
       char *p;
       p = strtok(line,",");
+      printf("Finish strtok\n");
       for (int j = 0; j < inputs; j++) {
+        printf("%s\n", p);
+        printf("Enter strtod loop\n");
         batch[j + (i * inputs)] = strtod(p, NULL);
         p = strtok(NULL,",");
       }
