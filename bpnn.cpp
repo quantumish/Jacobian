@@ -40,12 +40,12 @@ void Layer::init_weights(Layer next)
   }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate)
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio)
 {
   learning_rate = learn_rate;
   bias_lr = bias_rate;
   int total_instances = prep_file(path, SHUFFLED_PATH);
-  test_instances = split_file(SHUFFLED_PATH, total_instances, 0.7);
+  test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
   length = 0;
   t = 0;
@@ -273,14 +273,11 @@ float Network::test(char* path)
     float batch[datalen];
     int label = -1;
     for (int i = 0; i < batch_size; i++) {
-      fgets(line, MAXLINE, data);
-      printf("Next line: %s\n", line);
+      fgets(line, MAXLINE, test_data);
+      //if (strcmp(line, "\n")==0) continue;
       char *p;
       p = strtok(line,",");
-      printf("Finish strtok\n");
       for (int j = 0; j < inputs; j++) {
-        printf("%s\n", p);
-        printf("Enter strtod loop\n");
         batch[j + (i * inputs)] = strtod(p, NULL);
         p = strtok(NULL,",");
       }

@@ -6,7 +6,7 @@
 double bench(int batch_sz)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03);
+  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0.9);
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
@@ -18,6 +18,5 @@ double bench(int batch_sz)
 
 int main()
 {
-  sleep(10);
   bench(10);
 }
