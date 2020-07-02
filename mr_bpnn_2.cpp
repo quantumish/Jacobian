@@ -119,6 +119,8 @@ PYBIND11_MODULE(mrbpnn, m) {
     .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
     .def("next_batch", &Network::next_batch)
     .def("train", &Network::train, py::arg("epochs"))
-    .def("get_acc", &Network::get_acc)x
-    .def("get_cost", &Network::get_cost);
+    .def("get_acc", &Network::get_acc)
+    .def("get_cost", &Network::get_cost)
+    .def("get_val_acc", &Network::get_val_acc)
+    .def("get_val_cost", &Network::get_val_cost);
 }
