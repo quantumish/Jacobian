@@ -22,9 +22,9 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
   }
-  output = new Eigen::MatrixXd (kern_size, kern_size); // We're using valid padding for now.
-  for (int i = 0; i < kern_size*kern_size; i++) {
-    (*output)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
+  output = new Eigen::MatrixXd (x-kern_size+1, y-kern_size+1); // We're using valid padding for now.
+  for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
+    (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
   }
 };
 
@@ -32,11 +32,12 @@ void ConvLayer::convolute()
 {
   //std::cout << input->cols() << " " << input->cols() << "\n";
   //  std::cout << "Conv input:\n" << *input << "\nkernel:\n" << *kernel << "\n\n";
+  //  std::cout << *input << "\n\n";
   for (int i = 0; i < input->cols() - kernel->cols()+1; i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows()+1; j+=stride_len) {
       //std::cout << i << j << stride_len << "\n";
+      //  std::cout << j << ","<< i <<  " vs " << input->rows() << "," << input->cols() <<"\n"<< input->block(j, i, kernel->rows(), kernel->cols()) << "\n\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
-      std::cout << j << ","<< i <<  " vs " << input->rows() << "," << input->cols() <<"\n"<< input->block(j, i, kernel->rows(), kernel->cols()) << "\n\n";
     }
   }
 }
@@ -61,9 +62,10 @@ PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
   }
-  output = new Eigen::MatrixXd (kern_size, kern_size);
-  for (int i = 0; i < kern_size*kern_size; i++) {
-    (*output)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
+  output = new Eigen::MatrixXd (x-kern_size+1, y-kern_size+1);
+  std::cout << *output;
+  for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
+    (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
   }
 };
 
@@ -71,7 +73,6 @@ void PoolingLayer::pool()
 {
   // It doesn't look like anything better than O(n^4) is doable for this as kernel needs to go through matrix and you need to index kernel. LOOK INTO ME!! 
   float maxnum = -LARGE_NUM;
-  //  std::cout << "Pool input:\n" << *input << "\n\n";
   for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
       for (int k = 0; k < kernel->cols(); k++) {
@@ -165,8 +166,8 @@ int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
   net.add_conv_layer(8,8,1,4);
-  net.add_pool_layer(4,4,1,2);
-  net.add_layer(4, "linear");
+  net.add_pool_layer(5,5,1,2);
+  net.add_layer(16, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
