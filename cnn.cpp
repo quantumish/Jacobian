@@ -19,11 +19,11 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 {
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
   output = new Eigen::MatrixXd (kern_size, kern_size); // We're using valid padding for now.
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*output)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
 };
 
@@ -31,7 +31,7 @@ void ConvLayer::convolute()
 {
   for (int i = 0; i < input->cols() - kernel->cols() + 1; i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows() + 1; j+=stride_len) {
-      output->block(j, i, kernel->rows(), kernel->cols()) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()).sum()));
+      (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
 }
@@ -53,11 +53,11 @@ PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
 {
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = 0;
+    (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
   output = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*input)((int)i / kern_size,i%kern_size) = 0;
+    (*output)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
   }
 };
 
@@ -124,7 +124,9 @@ void ConvNet::process()
   conv_layers[preprocess_length-1].convolute();
   pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   pool_layers[preprocess_length-1].pool();
+  std::cout << "Output" << *pool_layers[preprocess_length-1].output << "\n\n";
   Eigen::Map<Eigen::RowVectorXd> flattened (pool_layers[preprocess_length-1].output->data(), pool_layers[preprocess_length-1].output->size());
+  std::cout << "Flattened" << flattened << "\n\n";
   for (int i = 0; i < flattened.cols(); i++) {
     (*layers[0].contents)(0, i) = flattened[i];
   }
@@ -139,9 +141,8 @@ int main()
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  Eigen::MatrixXd* input = new Eigen::MatrixXd (4,4);
-  *input <<
-    0,0,0,0,0,0,0,0,
+  Eigen::MatrixXd* input = new Eigen::MatrixXd (8,8);
+  *input << 0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
     0,0,1,1,1,1,0,0,
     0,0,1,1,1,1,0,0,
@@ -150,4 +151,6 @@ int main()
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0;    
   net.conv_layers[0].input = input;
+  net.process();
+  net.list_net();
 }
