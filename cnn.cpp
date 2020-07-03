@@ -143,14 +143,14 @@ void ConvNet::process()
 void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
-    std::cout << " CONVOLUTIONAL LAYER " << i << "\n\n" << *conv_layers[i].input << "\n\n WITH KERNEL\n" << *conv_layers[i].kernel << "\n\n AND OUTPUT \n" << *conv_layers[i].output << "\n\n\n";
-    std::cout << " POOLING LAYER " << i << "\n\n" << *pool_layers[i].input << "\n\n WITH KERNEL\n" << *pool_layers[i].kernel << "\n\n AND OUTPUT \n" << *pool_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
-  std::cout << " INPUT LAYER (LAYER 0)\n\n" << *layers[0].contents << "\n\n WITH BIAS\n" << *layers[0].bias << "\n\n AND WEIGHTS \n" << *layers[0].weights << "\n\n\n";
+  std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].bias << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].weights << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
-    std::cout << " LAYER " << i << "\n\n" << *layers[i].contents << "\n\n WITH BIAS\n" << *layers[i].bias << "\n\n AND WEIGHTS \n" << *layers[i].weights << "\n\n\n";
+    std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
   }
-  std::cout << " OUTPUT LAYER (LAYER " << length-1 << ")\n\n" << *layers[length-1].contents << "\n\n WITH BIAS\n" << *layers[length-1].bias <<  "\n\n\n";
+  std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
 int main()
