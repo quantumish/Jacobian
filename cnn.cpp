@@ -32,10 +32,11 @@ void ConvLayer::convolute()
 {
   //std::cout << input->cols() << " " << input->cols() << "\n";
   //  std::cout << "Conv input:\n" << *input << "\nkernel:\n" << *kernel << "\n\n";
-  for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
-    for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
+  for (int i = 0; i < input->cols() - kernel->cols()+1; i+=stride_len) {
+    for (int j = 0; j < input->rows() - kernel->rows()+1; j+=stride_len) {
       //std::cout << i << j << stride_len << "\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
+      std::cout << j << ","<< i <<  " vs " << input->rows() << "," << input->cols() <<"\n"<< input->block(j, i, kernel->rows(), kernel->cols()) << "\n\n";
     }
   }
 }
@@ -96,6 +97,7 @@ public:
   ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
+  void backpropagate();
   void next_batch();
   void add_conv_layer(int x, int y, int stride, int kern_size);
   void add_pool_layer(int x, int y, int stride, int kern_size);
@@ -143,14 +145,20 @@ void ConvNet::process()
 void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
-    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
-    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].bias << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].weights << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
     std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
   }
   std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
+}
+
+void backpropagate()
+{
+  //*layers[layers.size()-1] = 1;
+  // Magic.
 }
 
 int main()
