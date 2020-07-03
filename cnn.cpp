@@ -145,7 +145,7 @@ void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
     std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
-    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
+    //std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
@@ -168,20 +168,28 @@ void ConvNet::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
+    std::cout <<  bias_lr * gradients[i];
     *layers[length-2-i].weights -= learning_rate * deltas[i];   
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
-  for (int i = 0; i < conv_layers[0].input->cols() - gradients[0].cols()+1; i+=conv_layers[0].stride_len) {
-    for (int j = 0; j < conv_layers[0].input->rows() - gradients[0].rows()+1; j+=conv_layers[0].stride_len) {
-      (*conv_layers[0].kernel)(j, i) -= (gradients[0] * (conv_layers[0].input->block(j, i, gradients[0].rows(), gradients[0].cols()))).sum();
+  list_net();
+  for (int i = 0; i < gradients.size(); i++) {
+    std::cout  << gradients[i] << "\n\n";
+  }
+  std::cout << gradients[length].rows() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].rows()+1 << "\n";
+  for (int i = 0; i < conv_layers[0].input->cols() - gradients[length-1].cols()+1; i+=conv_layers[0].stride_len) {
+    for (int j = 0; j < conv_layers[0].input->rows() - gradients[length-1].rows()+1; j+=conv_layers[0].stride_len) {
+      (*conv_layers[0].kernel)(j, i) -= (gradients[length-1] * (conv_layers[0].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
     }
   }
-  *conv_layers[0].kernel -= *conv_layers[0].input * gradients[0];
 }
 
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
+  Eigen::MatrixXd* testlabel = new Eigen::MatrixXd (1,1);
+  *testlabel << 1;
+  net.labels = testlabel;
   net.add_conv_layer(8,8,1,4,0);
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(25, "linear");
