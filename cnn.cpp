@@ -11,6 +11,7 @@ public:
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
+  Eigen::MatrixXd* bias;
   
   ConvLayer(int x, int y, int stride, int kernel_size, int pad);
   void convolute();
@@ -130,10 +131,10 @@ void ConvNet::process()
     conv_layers[i+1].input = pool_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute();
-  pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
-  pool_layers[preprocess_length-1].pool();
+  //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
+  //pool_layers[preprocess_length-1].pool();
   //  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
-  Eigen::Map<Eigen::RowVectorXd> flattened (pool_layers[preprocess_length-1].output->data(), pool_layers[preprocess_length-1].output->size());
+  Eigen::Map<Eigen::RowVectorXd> flattened (conv_layers[preprocess_length-1].output->data(), conv_layers[preprocess_length-1].output->size());
   // std::cout << "Flattened:\n" << flattened << "\n\n";
   for (int i = 0; i < flattened.cols(); i++) {
     (*layers[0].contents)(0, i) = flattened[i];
@@ -153,18 +154,37 @@ void ConvNet::list_net()
   std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
-void backpropagate()
+void ConvNet::backpropagate()
 {
-  //*layers[layers.size()-1] = 1;
-  // Magic.
+  std::vector<Eigen::MatrixXd> gradients;
+  std::vector<Eigen::MatrixXd> deltas;
+  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
+  gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
+  deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+  int counter = 1;
+  for (int i = length-2; i >= 1; i--) {
+    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+    deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
+    counter++;
+  }
+  for (int i = 0; i < length-1; i++) {
+    *layers[length-2-i].weights -= learning_rate * deltas[i];   
+    *layers[length-1-i].bias -= bias_lr * gradients[i];
+  }
+  for (int i = 0; i < conv_layers[0].input->cols() - gradients[0].cols()+1; i+=conv_layers[0].stride_len) {
+    for (int j = 0; j < conv_layers[0].input->rows() - gradients[0].rows()+1; j+=conv_layers[0].stride_len) {
+      (*conv_layers[0].kernel)(j, i) -= (gradients[0] * (conv_layers[0].input->block(j, i, gradients[0].rows(), gradients[0].cols()))).sum();
+    }
+  }
+  *conv_layers[0].kernel -= *conv_layers[0].input * gradients[0];
 }
 
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
   net.add_conv_layer(8,8,1,4,0);
-  net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(16, "linear");
+  //net.add_pool_layer(5,5,1,2,0);
+  net.add_layer(25, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
@@ -181,5 +201,6 @@ int main()
   net.conv_layers[0].input = input;
   net.process();
   net.feedforward();
+  net.backpropagate();
   net.list_net();
 }
