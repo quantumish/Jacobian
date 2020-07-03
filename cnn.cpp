@@ -17,6 +17,7 @@ public:
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 {
+  stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
@@ -29,8 +30,10 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 
 void ConvLayer::convolute()
 {
-  for (int i = 0; i < input->cols() - kernel->cols() + 1; i+=stride_len) {
-    for (int j = 0; j < input->rows() - kernel->rows() + 1; j+=stride_len) {
+  //std::cout << input->cols() << " " << input->cols() << "\n";
+  for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
+    for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
+      //std::cout << i << j << stride_len << "\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
@@ -51,6 +54,7 @@ public:
 // Will eventually be different from ConvLayer
 PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
 {
+  stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
@@ -65,11 +69,12 @@ void PoolingLayer::pool()
 {
   // It doesn't look like anything better than O(n^4) is doable for this as kernel needs to go through matrix and you need to index kernel. LOOK INTO ME!! 
   float maxnum = -LARGE_NUM;
-  for (int i = 0; i < input->cols() - kernel->cols() + 1; i+=stride_len) {
-    for (int j = 0; j < input->rows() - kernel->rows() + 1; j+=stride_len) {
+  for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
+    for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
       for (int k = 0; k < kernel->cols(); k++) {
         for (int l = 0; l < kernel->rows(); l++) {
           if ((input->block(j, i, kernel->rows(), kernel->cols()))(l, k) > maxnum) {
+            std::cout << j << i << l << k << "\n";
             maxnum = (input->block(j, i, kernel->rows(), kernel->cols()))(l, k);
           }
         }
@@ -96,34 +101,39 @@ public:
 
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
 {
+  preprocess_length = 0;
 }
 
 void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size)
 {
-  preprocess_length++;
+  preprocess_length+=1;
   conv_layers.emplace_back(x,y,stride,kern_size);
 }
 
 // May make this inaccessible to user code and just have it called from add_conv_layer as pooling is basically always paired with conv.
 void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size)
 {
-  preprocess_length++;
   pool_layers.emplace_back(x,y,stride,kern_size);
 }
 
 // Needs a batch advancement function, 100% does not work.
 void ConvNet::process()
 {
+  std::cout << preprocess_length << "\n";
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
+    printf("Done with convolution\n");
     pool_layers[i].input = conv_layers[i].output;
     pool_layers[i].pool();
+    printf("Done with pool\n");
     conv_layers[i+1].input = pool_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute();
+  printf("Final conv done\n");
   pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   pool_layers[preprocess_length-1].pool();
+  printf("Done with final pool\n");
   std::cout << "Output" << *pool_layers[preprocess_length-1].output << "\n\n";
   Eigen::Map<Eigen::RowVectorXd> flattened (pool_layers[preprocess_length-1].output->data(), pool_layers[preprocess_length-1].output->size());
   std::cout << "Flattened" << flattened << "\n\n";
