@@ -167,16 +167,18 @@ void ConvNet::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
+  gradients.push_back((gradients[gradients.size()-1] * layers[0].weights->transpose()).cwiseProduct(*layers[0].dZ));
   for (int i = 0; i < length-1; i++) {
-    std::cout <<  bias_lr * gradients[i];
     *layers[length-2-i].weights -= learning_rate * deltas[i];   
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
-  list_net();
+  //  list_net();
   for (int i = 0; i < gradients.size(); i++) {
     std::cout  << gradients[i] << "\n\n";
   }
-  std::cout << gradients[length].rows() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].rows()+1 << "\n";
+  Eigen::Map<Eigen::MatrixXd> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
+  gradients[gradients.size()-1] = reshaped;
+  //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
   for (int i = 0; i < conv_layers[0].input->cols() - gradients[length-1].cols()+1; i+=conv_layers[0].stride_len) {
     for (int j = 0; j < conv_layers[0].input->rows() - gradients[length-1].rows()+1; j+=conv_layers[0].stride_len) {
       (*conv_layers[0].kernel)(j, i) -= (gradients[length-1] * (conv_layers[0].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
@@ -209,6 +211,7 @@ int main()
   net.conv_layers[0].input = input;
   net.process();
   net.feedforward();
+  net.list_net();
   net.backpropagate();
   net.list_net();
 }
