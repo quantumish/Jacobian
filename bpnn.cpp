@@ -58,6 +58,7 @@ void Network::add_layer(int nodes, char* name)
 {
   length++;
   layers.emplace_back(batch_size, nodes);
+  strcpy(layers[length-1].activation_str, name);
   if (strcmp(name, "sigmoid") == 0) {
     layers[length-1].activation = sigmoid;
     layers[length-1].activation_deriv = sigmoid_deriv;

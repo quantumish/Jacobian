@@ -23,6 +23,7 @@ public:
   std::vector<Eigen::MatrixXd> prev_updates;
   std::function<double(double)> activation;
   std::function<double(double)> activation_deriv;
+  char activation_str[1024];
   
   Layer(int rows, int columns);
   Layer(float* vals, int rows, int columns);
@@ -47,6 +48,7 @@ public:
   float bias_lr;
   int batch_size;
   int batches;
+
   Eigen::MatrixXd* labels;
 
   Network(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);

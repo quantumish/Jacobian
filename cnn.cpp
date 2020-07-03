@@ -7,16 +7,18 @@ class ConvLayer
 {
 public:
   int stride_len;
+  int padding;
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
   
-  ConvLayer(int x, int y, int stride, int kernel_size);
+  ConvLayer(int x, int y, int stride, int kernel_size, int pad);
   void convolute();
 };
 
-ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
+ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
 {
+  padding = pad;
   stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
@@ -30,13 +32,8 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
 
 void ConvLayer::convolute()
 {
-  //std::cout << input->cols() << " " << input->cols() << "\n";
-  //  std::cout << "Conv input:\n" << *input << "\nkernel:\n" << *kernel << "\n\n";
-  //  std::cout << *input << "\n\n";
   for (int i = 0; i < input->cols() - kernel->cols()+1; i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows()+1; j+=stride_len) {
-      //std::cout << i << j << stride_len << "\n";
-      //  std::cout << j << ","<< i <<  " vs " << input->rows() << "," << input->cols() <<"\n"<< input->block(j, i, kernel->rows(), kernel->cols()) << "\n\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
@@ -46,24 +43,25 @@ class PoolingLayer
 {
 public:
   int stride_len;
+  int padding;
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
   
   void pool();
-  PoolingLayer(int x, int y, int stride, int kern_size);
+  PoolingLayer(int x, int y, int stride, int kern_size, int pad);
 };
 
 // Will eventually be different from ConvLayer
-PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
+PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size, int pad)
 {
+  padding = pad;
   stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
   }
   output = new Eigen::MatrixXd (x-kern_size+1, y-kern_size+1);
-  std::cout << *output;
   for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
     (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
   }
@@ -89,7 +87,6 @@ void PoolingLayer::pool()
 class ConvNet : public Network
 {
 public:
-  int stride_len;
   int preprocess_length;
                 
   std::vector<ConvLayer> conv_layers;
@@ -100,8 +97,8 @@ public:
   void process(); // Runs the convolutional and pooling layers.
   void backpropagate();
   void next_batch();
-  void add_conv_layer(int x, int y, int stride, int kern_size);
-  void add_pool_layer(int x, int y, int stride, int kern_size);
+  void add_conv_layer(int x, int y, int stride, int kern_size, int pad);
+  void add_pool_layer(int x, int y, int stride, int kern_size, int pad);
 };
 
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
@@ -109,16 +106,16 @@ ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, fl
   preprocess_length = 0;
 }
 
-void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size)
+void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size, int pad)
 {
   preprocess_length+=1;
-  conv_layers.emplace_back(x,y,stride,kern_size);
+  conv_layers.emplace_back(x,y,stride,kern_size,pad);
 }
 
 // May make this inaccessible to user code and just have it called from add_conv_layer as pooling is basically always paired with conv.
-void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size)
+void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size, int pad)
 {
-  pool_layers.emplace_back(x,y,stride,kern_size);
+  pool_layers.emplace_back(x,y,stride,kern_size,pad);
 }
 
 // Needs a batch advancement function, 100% does not work.
@@ -146,14 +143,14 @@ void ConvNet::process()
 void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
-    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
-    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
-  std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].bias << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].weights << "\n\n\n";
+  std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
-    std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
+    std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
   }
-  std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
+  std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
 void backpropagate()
@@ -165,8 +162,8 @@ void backpropagate()
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
-  net.add_conv_layer(8,8,1,4);
-  net.add_pool_layer(5,5,1,2);
+  net.add_conv_layer(8,8,1,4,0);
+  net.add_pool_layer(5,5,1,2,0);
   net.add_layer(16, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
