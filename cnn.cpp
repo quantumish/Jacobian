@@ -20,17 +20,18 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size)
   stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
   }
   output = new Eigen::MatrixXd (kern_size, kern_size); // We're using valid padding for now.
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*output)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*output)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
   }
 };
 
 void ConvLayer::convolute()
 {
   //std::cout << input->cols() << " " << input->cols() << "\n";
+  std::cout << "Conv input:\n" << *input << "\nkernel:\n" << *kernel << "\n\n";
   for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
       //std::cout << i << j << stride_len << "\n";
@@ -57,11 +58,11 @@ PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size)
   stride_len = stride;
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*kernel)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*kernel)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
   }
   output = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
-    (*output)((int)i / kern_size,i%kern_size) = rand()/RAND_MAX;
+    (*output)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
   }
 };
 
@@ -69,12 +70,12 @@ void PoolingLayer::pool()
 {
   // It doesn't look like anything better than O(n^4) is doable for this as kernel needs to go through matrix and you need to index kernel. LOOK INTO ME!! 
   float maxnum = -LARGE_NUM;
+  std::cout << "Pool input:\n" << *input << "\n\n";
   for (int i = 0; i < input->cols() - kernel->cols(); i+=stride_len) {
     for (int j = 0; j < input->rows() - kernel->rows(); j+=stride_len) {
       for (int k = 0; k < kernel->cols(); k++) {
         for (int l = 0; l < kernel->rows(); l++) {
           if ((input->block(j, i, kernel->rows(), kernel->cols()))(l, k) > maxnum) {
-            std::cout << j << i << l << k << "\n";
             maxnum = (input->block(j, i, kernel->rows(), kernel->cols()))(l, k);
           }
         }
@@ -123,20 +124,16 @@ void ConvNet::process()
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
-    printf("Done with convolution\n");
     pool_layers[i].input = conv_layers[i].output;
     pool_layers[i].pool();
-    printf("Done with pool\n");
     conv_layers[i+1].input = pool_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute();
-  printf("Final conv done\n");
   pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   pool_layers[preprocess_length-1].pool();
-  printf("Done with final pool\n");
-  std::cout << "Output" << *pool_layers[preprocess_length-1].output << "\n\n";
+  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
   Eigen::Map<Eigen::RowVectorXd> flattened (pool_layers[preprocess_length-1].output->data(), pool_layers[preprocess_length-1].output->size());
-  std::cout << "Flattened" << flattened << "\n\n";
+  std::cout << "Flattened:\n" << flattened << "\n\n";
   for (int i = 0; i < flattened.cols(); i++) {
     (*layers[0].contents)(0, i) = flattened[i];
   }
@@ -162,5 +159,6 @@ int main()
     0,0,0,0,0,0,0,0;    
   net.conv_layers[0].input = input;
   net.process();
+  net.feedforward();
   net.list_net();
 }
