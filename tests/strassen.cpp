@@ -29,7 +29,7 @@ Eigen::MatrixXd strassen_mul(Eigen::MatrixXd x, Eigen::MatrixXd y)
   b.block(0,0,y.rows(), y.cols()) = y;
   //Eigen::MatrixXd a ()
   int block_len = largest/2;
-  Eigen::MatrixXd result (a.rows(), a.cols());
+  Eigen::MatrixXd result ((int)pow(2,power), (int)pow(2,power));
 
   Eigen::MatrixXd m1 = ((a.block(0,0, block_len, block_len)) + a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
   Eigen::MatrixXd m2 = (a.block(a.rows()-block_len, 0, block_len, block_len) + a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(0,0, block_len, block_len));
@@ -39,6 +39,8 @@ Eigen::MatrixXd strassen_mul(Eigen::MatrixXd x, Eigen::MatrixXd y)
   Eigen::MatrixXd m6 = (a.block(a.rows()-block_len,0, block_len, block_len) - a.block(0,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
   Eigen::MatrixXd m7 = (a.block(0,a.cols()-block_len, block_len, block_len) - a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(a.rows()-block_len,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
 
+
+  std::cout << m1 + m4 - m5 + m7 << "\n\n" << m3+m5 << "\n\n" << m2+m4 << "\n\n" << m1-m2+m3+m6;
   
   result.block(0,0, block_len, block_len) =  m1 + m4 - m5 + m7;
   result.block(0,result.cols()-block_len, block_len, block_len) =  m3 + m5;
