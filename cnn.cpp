@@ -163,7 +163,9 @@ void ConvNet::backpropagate()
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
+    //std::cout << "--GRAD---\n" << gradients[counter-1] << "\n\n" << layers[i].weights->transpose() << "\n\n" << *layers[i].dZ << "\n\n";
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+    //std::cout << "---DELTA---\n" << gradients[counter] << "\n\n" << layers[i].weights->transpose() << "\n\n" << *layers[i].dZ << "\n\n";
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
@@ -173,9 +175,10 @@ void ConvNet::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
   //  list_net();
-  for (int i = 0; i < gradients.size(); i++) {
-    std::cout  << gradients[i] << "\n\n";
-  }
+  // std::cout << "GRADIENT LIST\n";
+  // for (int i = 0; i < gradients.size(); i++) {
+  //   std::cout  << gradients[i] << "\n\n";
+  // }
   Eigen::Map<Eigen::MatrixXd> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
   //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
@@ -210,8 +213,11 @@ int main()
     0,0,0,0,0,0,0,0;    
   net.conv_layers[0].input = input;
   net.process();
-  net.feedforward();
-  net.list_net();
-  net.backpropagate();
-  net.list_net();
+  for (int i = 0; i < 10; i++) {
+    net.feedforward();
+    net.backpropagate();
+    std::cout << *net.layers[net.layers.size()-1].contents << "\n";
+  }
+  //  net.list_net();
+  // net.list_net();
 }
