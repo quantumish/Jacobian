@@ -15,13 +15,18 @@ public:
   
   ConvLayer(int x, int y, int stride, int kernel_size, int pad);
   void convolute();
-  void set_layer(Eigen::MatrixXd* matrix);
+  void set_input(Eigen::MatrixXd* matrix);
 };
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
 {
   padding = pad;
+  pad++;
   stride_len = stride;
+  input = new Eigen::MatrixXd (x+pad,y+pad);
+  for (int i = 0; i < (x+pad)*(y+pad); i++) {
+    (*input)((int)i / (y+pad),i%(y+pad)) = 0;
+  }
   kernel = new Eigen::MatrixXd (kern_size, kern_size);
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
@@ -43,8 +48,9 @@ void ConvLayer::convolute()
   *output = (output->array() + bias).matrix();
 }
 
-void ConvLayer::set_layer(Eigen::MatrixXd* matrix) {
-
+void ConvLayer::set_input(Eigen::MatrixXd* matrix)
+{
+  input->block(padding, padding, matrix->rows(), matrix->cols()) = *matrix;
 }
 
 class PoolingLayer
@@ -205,7 +211,7 @@ int main()
   net.labels = testlabel;
   net.add_conv_layer(8,8,1,4,1);
   //net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(25, "linear");
+  net.add_layer(49, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
@@ -219,7 +225,7 @@ int main()
     0,0,1,1,1,1,0,0,
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0;    
-  net.conv_layers[0].input = input;
+  net.conv_layers[0].set_input(input);
   net.process();
   for (int i = 0; i < 10; i++) {
     net.feedforward();
