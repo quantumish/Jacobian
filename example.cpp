@@ -13,10 +13,15 @@ double bench(int batch_sz)
   net.initialize();
   net.train(50);
   auto end = std::chrono::high_resolution_clock::now();
+  //  net.list_net();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }
 
 int main()
 {
-  bench(10);
+  bench(50);
+  bench(50);
+  bench(50);
+  bench(50);
+  bench(50);
 }
