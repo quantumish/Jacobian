@@ -24,6 +24,6 @@ double inverse_logit(double x);
 double inverse_logit_deriv(double x);
 std::function<double(double)> rectifier(double (*activation)(double));
 
-// Experimental fast file reading functions
-uintmax_t wc(char const *fname);
+Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b);
+
 #endif /* MODULE_H */
