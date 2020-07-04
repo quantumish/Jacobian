@@ -11,7 +11,7 @@ public:
   Eigen::MatrixXd* input;
   Eigen::MatrixXd* kernel;
   Eigen::MatrixXd* output;
-  Eigen::MatrixXd* bias;
+  double bias;
   
   ConvLayer(int x, int y, int stride, int kernel_size, int pad);
   void convolute();
@@ -29,6 +29,7 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
   for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
     (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
   }
+  bias = 0;
 };
 
 void ConvLayer::convolute()
@@ -38,6 +39,7 @@ void ConvLayer::convolute()
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
+  *output = (output->array() + bias).matrix();
 }
 
 class PoolingLayer
@@ -144,7 +146,7 @@ void ConvNet::process()
 void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
-    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\u001b[31mBIAS:\x1B[0;37m\n" << conv_layers[i].bias << "\n\n\n";
     //std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
@@ -187,6 +189,7 @@ void ConvNet::backpropagate()
       (*conv_layers[0].kernel)(j, i) -= (gradients[length-1] * (conv_layers[0].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
     }
   }
+  conv_layers[0].bias -= gradients[gradients.size()-1].sum();
 }
 
 int main()
@@ -218,6 +221,6 @@ int main()
     net.backpropagate();
     std::cout << *net.layers[net.layers.size()-1].contents << "\n";
   }
-  //  net.list_net();
+  net.list_net();
   // net.list_net();
 }
