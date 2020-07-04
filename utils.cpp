@@ -57,8 +57,12 @@ std::function<double(double)> rectifier(double (*activation)(double))
   return rectified;
 }
 
-Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b)
+Eigen::MatrixXd strassen_mul(Eigen::MatrixXd x, Eigen::MatrixXd y)
 {
+  int apower;
+  int bpower;
+  for (;a
+  //Eigen::MatrixXd a ()
   int block_len = a.rows()/2;
   Eigen::MatrixXd result (a.rows(), a.cols());
 
