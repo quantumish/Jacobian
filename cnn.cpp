@@ -15,6 +15,7 @@ public:
   
   ConvLayer(int x, int y, int stride, int kernel_size, int pad);
   void convolute();
+  void set_layer(Eigen::MatrixXd* matrix);
 };
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
@@ -25,9 +26,9 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
   for (int i = 0; i < kern_size*kern_size; i++) {
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
   }
-  output = new Eigen::MatrixXd (x-kern_size+1, y-kern_size+1); // We're using valid padding for now.
-  for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
-    (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
+  output = new Eigen::MatrixXd ((x-kern_size+1+pad/stride_len), (y-kern_size+1+pad/stride_len)); // We're using valid padding for now.
+  for (int i = 0; i < (x-kern_size+1+pad/stride_len)*(y-kern_size+1+pad/stride_len); i++) {
+    (*output)((int)i / (y-kern_size+1+pad/stride_len),i%(y-kern_size+1+pad/stride_len)) = 0;
   }
   bias = 0;
 };
@@ -40,6 +41,10 @@ void ConvLayer::convolute()
     }
   }
   *output = (output->array() + bias).matrix();
+}
+
+void ConvLayer::set_layer(Eigen::MatrixXd* matrix) {
+
 }
 
 class PoolingLayer
@@ -198,7 +203,7 @@ int main()
   Eigen::MatrixXd* testlabel = new Eigen::MatrixXd (1,1);
   *testlabel << 1;
   net.labels = testlabel;
-  net.add_conv_layer(8,8,1,4,0);
+  net.add_conv_layer(8,8,1,4,1);
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(25, "linear");
   net.add_layer(5, "relu");
