@@ -105,12 +105,12 @@ public:
                 
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
-
+  std::function<Eigen::MatrixXd(void)>next_batch();
+  
   ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
   void backpropagate();
-  void next_batch();
   void add_conv_layer(int x, int y, int stride, int kern_size, int pad);
   void add_pool_layer(int x, int y, int stride, int kern_size, int pad);
 };
@@ -172,6 +172,7 @@ void ConvNet::backpropagate()
 {
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
+  (*labels)(0,0) = 1;
   std::cout << *labels << "lab\n\n\n\n";
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
   std::cout << (*layers[length-1].dZ) << " " << error << "|n\n\n\n\n";
@@ -206,6 +207,8 @@ void ConvNet::backpropagate()
   conv_layers[0].bias -= gradients[gradients.size()-1].sum();
 }
 
+
+
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
@@ -226,7 +229,7 @@ int main()
     0,0,1,1,1,1,0,0,
     0,0,1,1,1,1,0,0,
     0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0;    
+    0,0,0,0,0,0,0,0;
   net.conv_layers[0].set_input(input);
   net.process();
   for (int i = 0; i < 10; i++) {
