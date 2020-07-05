@@ -105,7 +105,6 @@ public:
                 
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
-  std::function<Eigen::MatrixXd(void)>next_batch();
   
   ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void list_net();
@@ -113,6 +112,8 @@ public:
   void backpropagate();
   void add_conv_layer(int x, int y, int stride, int kern_size, int pad);
   void add_pool_layer(int x, int y, int stride, int kern_size, int pad);
+  void set_label(Eigen::MatrixXd newlabels);
+  void initialize();
 };
 
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
@@ -133,7 +134,13 @@ void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size, int pad)
   pool_layers.emplace_back(x,y,stride,kern_size,pad);
 }
 
-// Needs a batch advancement function, 100% does not work.
+void ConvNet::initialize()
+{
+  for (int i = 0; i < length-1; i++) {
+    layers[i].init_weights(layers[i+1]);
+  }
+}
+
 void ConvNet::process()
 {
   //  std::cout << preprocess_length << "\n";
@@ -155,6 +162,11 @@ void ConvNet::process()
   }
 }
 
+void ConvNet::set_label(Eigen::MatrixXd newlabels)
+{
+  *labels = newlabels;
+}
+
 void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
@@ -172,10 +184,7 @@ void ConvNet::backpropagate()
 {
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
-  (*labels)(0,0) = 1;
-  std::cout << *labels << "lab\n\n\n\n";
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
-  std::cout << (*layers[length-1].dZ) << " " << error << "|n\n\n\n\n";
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -192,10 +201,10 @@ void ConvNet::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
   //  list_net();
-  std::cout << "GRADIENT LIST\n";
-  for (int i = 0; i < gradients.size(); i++) {
-    std::cout  << gradients[i] << "\n\n";
-  }
+  // std::cout << "GRADIENT LIST\n";
+  // for (int i = 0; i < gradients.size(); i++) {
+  //   std::cout  << gradients[i] << "\n\n";
+  // }
   Eigen::Map<Eigen::MatrixXd> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
   //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
@@ -207,13 +216,12 @@ void ConvNet::backpropagate()
   conv_layers[0].bias -= gradients[gradients.size()-1].sum();
 }
 
-
-
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
-  (*net.labels)(0,0) = 1;
-  std::cout << *net.labels << "LABEL\n\n";
+  Eigen::MatrixXd labels (1,1);
+  labels << 1;
+  net.set_label(labels);
   net.add_conv_layer(8,8,1,4,0);
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(25, "linear");
@@ -235,8 +243,8 @@ int main()
   for (int i = 0; i < 10; i++) {
     net.feedforward();
     net.backpropagate();
-    std::cout << *net.layers[net.layers.size()-1].contents << " <--- ACTIVIATION\n";
+    std::cout << *net.layers[net.layers.size()-1].contents << " <--- ACTIVATION\n";
   }
-  //net.list_net();
+  net.list_net();
   // net.list_net();
 }
