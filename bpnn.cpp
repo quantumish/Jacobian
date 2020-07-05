@@ -124,10 +124,10 @@ void Network::feedforward()
     }
   }
   for (int i = 0; i < length-1; i++) {
-    if (batch_size > 64 && batch_size % 4 == 0) {
-      *layers[i+1].contents = strassen_mul((*layers[i].contents),(*layers[i].weights));
-    }
-    else *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
+    //if (batch_size > 64 && batch_size % 4 == 0) {
+    //  *layers[i+1].contents = strassen_mul((*layers[i].contents),(*layers[i].weights));
+    //}
+    *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
     *layers[i+1].contents += *layers[i+1].bias;
   }
   for (int i = 1; i < length; i++) {
@@ -320,8 +320,8 @@ void Network::train(int total_epochs)
     }
     epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
-    //test(TEST_PATH);
-    //printf("Epoch %i/%i - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+    test(TEST_PATH);
+    printf("Epoch %i/%i - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     epochs++;
     rewind(data);

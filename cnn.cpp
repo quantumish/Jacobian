@@ -21,7 +21,7 @@ public:
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
 {
   padding = pad;
-  pad++;
+  pad*=2;
   stride_len = stride;
   input = new Eigen::MatrixXd (x+pad,y+pad);
   for (int i = 0; i < (x+pad)*(y+pad); i++) {
@@ -118,6 +118,7 @@ public:
 ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
 {
   preprocess_length = 0;
+  labels = new Eigen::MatrixXd (batch_sz, 1);
 }
 
 void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size, int pad)
@@ -171,7 +172,9 @@ void ConvNet::backpropagate()
 {
   std::vector<Eigen::MatrixXd> gradients;
   std::vector<Eigen::MatrixXd> deltas;
+  std::cout << *labels << "lab\n\n\n\n";
   Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
+  std::cout << (*layers[length-1].dZ) << " " << error << "|n\n\n\n\n";
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -188,10 +191,10 @@ void ConvNet::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
   //  list_net();
-  // std::cout << "GRADIENT LIST\n";
-  // for (int i = 0; i < gradients.size(); i++) {
-  //   std::cout  << gradients[i] << "\n\n";
-  // }
+  std::cout << "GRADIENT LIST\n";
+  for (int i = 0; i < gradients.size(); i++) {
+    std::cout  << gradients[i] << "\n\n";
+  }
   Eigen::Map<Eigen::MatrixXd> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
   //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
@@ -206,12 +209,11 @@ void ConvNet::backpropagate()
 int main()
 {
   ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
-  Eigen::MatrixXd* testlabel = new Eigen::MatrixXd (1,1);
-  *testlabel << 1;
-  net.labels = testlabel;
-  net.add_conv_layer(8,8,1,4,1);
+  (*net.labels)(0,0) = 1;
+  std::cout << *net.labels << "LABEL\n\n";
+  net.add_conv_layer(8,8,1,4,0);
   //net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(49, "linear");
+  net.add_layer(25, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
@@ -230,8 +232,8 @@ int main()
   for (int i = 0; i < 10; i++) {
     net.feedforward();
     net.backpropagate();
-    std::cout << *net.layers[net.layers.size()-1].contents << "\n";
+    std::cout << *net.layers[net.layers.size()-1].contents << " <--- ACTIVIATION\n";
   }
-  net.list_net();
+  //net.list_net();
   // net.list_net();
 }
