@@ -4,7 +4,7 @@
 class NetworkArray
 {
 public:
-  std::function<struct pair*(struct pair)> map;
+  std::function<struct pair*(struct pair*)> map;
   std::function<struct pair*(struct pair*)> reduce;
   std::function<void(char*)> translate;
   
@@ -14,12 +14,12 @@ public:
 
 NetworkArray::NetworkArray(char* configuration, std::function<Network*(void)> setup, int epochs)
 {
-  map = [setup, epochs](struct pair input_pair) -> struct pair*
+  map = [setup, epochs](struct pair* input_pair) -> struct pair*
   {
-    printf("%p %p\n", input_pair.key, input_pair.value);
-    printf("%s %p\n", (char*)input_pair.key, input_pair.value);
+    printf("Recieved %p %p in form of %p\n", input_pair->key, input_pair->value, input_pair);
+    printf("%s %p\n", (char*)input_pair->key, input_pair->value);
     char* path = new char[100];
-    strcpy(path, (char*)input_pair.key);
+    strcpy(path, (char*)input_pair->key);
     //strcat(path, "_shuf");
     //int linecount = prep_file((char*)input_pair.key, path);
     // Network* net = setup();
