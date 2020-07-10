@@ -16,13 +16,13 @@
 
 class Layer {
 public:
-  Eigen::MatrixXd* contents;
-  Eigen::MatrixXd* weights;
-  Eigen::MatrixXd* bias;
-  Eigen::MatrixXd* dZ;
-  std::vector<Eigen::MatrixXd> prev_updates;
-  std::function<double(double)> activation;
-  std::function<double(double)> activation_deriv;
+  Eigen::MatrixXf* contents;
+  Eigen::MatrixXf* weights;
+  Eigen::MatrixXf* bias;
+  Eigen::MatrixXf* dZ;
+  std::vector<Eigen::MatrixXf> prev_updates;
+  std::function<float(float)> activation;
+  std::function<float(float)> activation_deriv;
   char activation_str[1024];
   
   Layer(int rows, int columns);
@@ -46,16 +46,17 @@ public:
   float val_cost;
   float learning_rate;
   float bias_lr;
+  float lambda;
   int batch_size;
   int batches;
 
-  Eigen::MatrixXd* labels;
+  Eigen::MatrixXf* labels;
 
   Network(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
   void add_layer(int nodes, char* activation);
   void initialize();
   void update_layer(float* vals, int datalen, int index);
-  void set_activation(int index, std::function<double(double)> custom, std::function<double(double)> custom_deriv);
+  void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
   
   void feedforward();
   void list_net();

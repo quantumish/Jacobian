@@ -11,7 +11,7 @@ double bench(int batch_sz)
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  net.begin();
+  //  net.begin();
   for (int i = 0; i < 50; i++) {
     net.train();
   }
@@ -22,7 +22,7 @@ double bench(int batch_sz)
 
 int main()
 {
-  bench(50);
+  std::cout << bench(50) << "\n";
   //  bench(50);
   //  bench(50);
   //  bench(50);

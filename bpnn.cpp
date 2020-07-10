@@ -11,25 +11,25 @@
 
 Layer::Layer(int batch_sz, int nodes)
 {
-  contents = new Eigen::MatrixXd (batch_sz, nodes);
-  dZ = new Eigen::MatrixXd (batch_sz, nodes);
+  contents = new Eigen::MatrixXf (batch_sz, nodes);
+  dZ = new Eigen::MatrixXf (batch_sz, nodes);
   int datalen = batch_sz*nodes;
   for (int i = 0; i < datalen; i++) {
     (*contents)((int)i / nodes,i%nodes) = 0;
     (*dZ)((int)i / nodes,i%nodes) = 0;
   }
-  bias = new Eigen::MatrixXd (batch_sz, nodes);
+  bias = new Eigen::MatrixXf (batch_sz, nodes);
   for (int i = 0; i < nodes; i++) {
     for (int j = 0; j < batch_sz; j++) {
       (*bias)(j, i) = 0;
     }
   }
-  dZ = new Eigen::MatrixXd (batch_sz, nodes);
+  dZ = new Eigen::MatrixXf (batch_sz, nodes);
 }
 
 void Layer::init_weights(Layer next)
 {
-  weights = new Eigen::MatrixXd (contents->cols(), next.contents->cols());
+  weights = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
   int n = contents->cols() + next.contents->cols();
   std::normal_distribution<float> d(0,sqrt(1.0/n));
@@ -103,13 +103,13 @@ void Network::add_layer(int nodes, char* name)
 
 void Network::initialize()
 {
-  labels = new Eigen::MatrixXd (batch_size,layers[length-1].contents->cols());
+  labels = new Eigen::MatrixXf (batch_size,layers[length-1].contents->cols());
   for (int i = 0; i < length-1; i++) {
     layers[i].init_weights(layers[i+1]);
   }
 }
 
-void Network::set_activation(int index, std::function<double(double)> custom, std::function<double(double)> custom_deriv)
+void Network::set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv)
 {
   layers[index].activation = custom;
   layers[index].activation_deriv = custom_deriv;
@@ -169,9 +169,9 @@ float Network::accuracy()
 
 void Network::backpropagate()
 {
-  std::vector<Eigen::MatrixXd> gradients;
-  std::vector<Eigen::MatrixXd> deltas;
-  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
+  std::vector<Eigen::MatrixXf> gradients;
+  std::vector<Eigen::MatrixXf> deltas;
+  Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -181,7 +181,7 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= learning_rate * deltas[i];
+    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + (learning_rate * deltas[i]);
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -292,11 +292,18 @@ float Network::test(char* path)
   return 0;
 }
 
-void Network::begin()
-{
-  Network sim = *this;
-  //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
-}
+// void Network::begin()
+// {
+//   Network sim = *this;
+//   for (int i = 0; i < sim.layers.size()-1; i++) {
+//     //    sim.layers[i].weights
+//     for (int j = 0; i < sim.layers[i].weights.rows(); i++) {
+//       for (int k = 0; i < sim.layers[i].weights.cols(); i++) {
+//       }
+//     }
+//   }
+//   //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
+// }
 
 void Network::train()
 {
@@ -315,7 +322,7 @@ void Network::train()
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
   test(TEST_PATH);
-  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
+  //  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
 }
