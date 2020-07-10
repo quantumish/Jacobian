@@ -57,7 +57,6 @@ public:
   void update_layer(float* vals, int datalen, int index);
   void set_activation(int index, std::function<double(double)> custom, std::function<double(double)> custom_deriv);
   
-  Eigen::MatrixXd init_ones(Eigen::MatrixXd matrix);
   void feedforward();
   void list_net();
 
@@ -66,7 +65,8 @@ public:
   void backpropagate();
   int next_batch();
   float test(char* path);
-  void train(int total_epochs);
+  void train();
+  void begin();
 
   float get_acc();
   float get_cost();

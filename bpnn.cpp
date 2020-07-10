@@ -161,12 +161,8 @@ float Network::cost()
 float Network::accuracy()
 {
   float correct = 0;
-  int total = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) {
-      correct += 1;
-    }
-    total = i;
+    if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) correct += 1;
   }
   return (1.0/batch_size) * correct;
 }
@@ -203,12 +199,9 @@ int Network::next_batch()
   int inputs = layers[0].contents->cols();
   int datalen = batch_size * inputs;
   float batch[datalen];
-  int label = -1;
   for (int i = 0; i < batch_size; i++) {
-    // This shouldn't ever happen - tell the compiler that.
     fgets(line, MAXLINE, data);
     char *p;
-    //    p = strtok (line," ,.-");
     p = strtok(line,",");
     for (int j = 0; j < inputs; j++) {
       batch[j + (i * inputs)] = strtod(p, NULL);
@@ -237,8 +230,8 @@ int prep_file(char* path, char* out_path)
   std::shuffle(lines.begin(), lines.end(), g);
   fclose(rptr);
   FILE* wptr = fopen(out_path, "w");
-  for (int i = 0; i < lines.size(); i++) {
-    const char* cstr = lines[i].c_str();
+  for (std::string & i : lines) {
+    const char* cstr = i.c_str();
     fprintf(wptr,"%s", cstr);
   }
   fclose(wptr);
@@ -299,52 +292,36 @@ float Network::test(char* path)
   return 0;
 }
 
-void Network::train(int total_epochs)
+void Network::begin()
 {
-  int epochs = 0;
+  Network sim = *this;
   //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
-  double batch_time = 0;
-  while (epochs < total_epochs) {
-    float cost_sum = 0;
-    float acc_sum = 0;
-    for (int i = 0; i <= instances-batch_size; i+=batch_size) {
-      if (i != instances-batch_size) { // Don't try to advance batch on final batch.
-        next_batch();
-      }
-      feedforward();
-      backpropagate();
-      cost_sum += cost();
-      acc_sum += accuracy();
-      batches++;
-      //t++;
+}
+
+void Network::train()
+{
+  float cost_sum = 0;
+  float acc_sum = 0;
+  for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+    [[unlikely]] if (i != instances-batch_size) { // Don't try to advance batch on final batch.
+      next_batch();
     }
-    epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
-    epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
-    test(TEST_PATH);
-    printf("Epoch %i/%i - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs+1, total_epochs, epoch_cost, epoch_acc, val_cost, val_acc);
-    batches=1;
-    epochs++;
-    rewind(data);
+    feedforward();
+    backpropagate();
+    cost_sum += cost();
+    acc_sum += accuracy();
+    batches++;
   }
+  epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
+  epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
+  test(TEST_PATH);
+  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
+  batches=1;
+  rewind(data);
 }
 
-float Network::get_acc()
-{
-  return epoch_acc;
-}
-
-float Network::get_val_acc()
-{
-  return val_acc;
-}
-
-float Network::get_cost()
-{
-  return epoch_cost;
-}
-
-float Network::get_val_cost()
-{
-  return val_cost;
-}
+float Network::get_acc() {return epoch_acc;}
+float Network::get_val_acc() {return val_acc;}
+float Network::get_cost() {return epoch_cost;}
+float Network::get_val_cost() {return val_cost;}
 
