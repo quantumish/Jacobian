@@ -1,0 +1,36 @@
+program: example.py
+method: bayes
+metric:
+  name: val_cost
+  goal: minimize
+parameters:
+  epochs:
+    distribution: int_uniform
+    min: 25
+    max: 100
+  batch_size:
+    distribution: int_uniform
+    min: 5
+    max: 200
+  hidden_layers:
+    distribution: int_uniform
+    min: 1
+    max: 6
+  bias_lr:
+    distribution: uniform
+    min: 0.0015
+    max: 0.06
+  neurons:
+    distribution: int_uniform
+    min: 2
+    max: 40
+  activation:
+    distribution: categorical
+    values:
+      - lecun_tanh
+      - relu
+      - sigmoid
+  learning_rate:
+    distribution: uniform
+    min: 0.001
+    max: 0.5
