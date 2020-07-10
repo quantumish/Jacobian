@@ -40,8 +40,9 @@ void Layer::init_weights(Layer next)
   }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio)
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio)
 {
+  lambda = l;
   learning_rate = learn_rate;
   bias_lr = bias_rate;
   int total_instances = prep_file(path, SHUFFLED_PATH);
@@ -181,7 +182,7 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + (learning_rate * deltas[i]);
+    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + (learning_rate * (lambda/batch_size) * *layers[length-2-i].weights);
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -322,7 +323,7 @@ void Network::train()
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
   test(TEST_PATH);
-  //  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
+  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
 }

@@ -52,7 +52,7 @@ public:
 
   Eigen::MatrixXf* labels;
 
-  Network(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
+  Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
   void add_layer(int nodes, char* activation);
   void initialize();
   void update_layer(float* vals, int datalen, int index);
