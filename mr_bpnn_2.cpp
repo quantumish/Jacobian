@@ -107,7 +107,7 @@ PYBIND11_MODULE(mrbpnn, m) {
   m.doc() = "Fast machine learning in C++"; // optional module docstring
  
   py::class_<Network>(m, "Network")
-    .def(py::init<char*, int, float, float, float>())
+    .def(py::init<char*, int, float, float, float, float>())
     .def("add_layer", &Network::add_layer, py::arg("nodes"), py::arg("activation"))
     .def("initialize", &Network::initialize)
     .def("set_activation", &Network::set_activation)
@@ -118,7 +118,7 @@ PYBIND11_MODULE(mrbpnn, m) {
     .def("accuracy", &Network::accuracy)
     .def("update_layer", &Network::update_layer, py::arg("vals"), py::arg("len"), py::arg("index"))
     .def("next_batch", &Network::next_batch)
-    .def("train", &Network::train, py::arg("epochs"))
+    .def("train", &Network::train)
     .def("get_acc", &Network::get_acc)
     .def("get_cost", &Network::get_cost)
     .def("get_val_acc", &Network::get_val_acc)
