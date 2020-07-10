@@ -293,18 +293,42 @@ float Network::test(char* path)
   return 0;
 }
 
-// void Network::begin()
-// {
-//   Network sim = *this;
-//   for (int i = 0; i < sim.layers.size()-1; i++) {
-//     //    sim.layers[i].weights
-//     for (int j = 0; i < sim.layers[i].weights.rows(); i++) {
-//       for (int k = 0; i < sim.layers[i].weights.cols(); i++) {
-//       }
-//     }
-//   }
-//   //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
-// }
+void Network::begin()
+{
+  float epsilon = 0.0001;
+  Network copy = *this;
+  std::vector<Eigen::MatrixXf> approx_gradients;
+  for (int i = 0; i < copy.layers.size()-1; i++) {
+    Eigen::MatrixXf current_approx = *copy.layers[i].weights;
+    for (int j = 0; i < copy.layers[i].weights->rows(); i++) {
+      for (int k = 0; i < copy.layers[i].weights->cols(); i++) {
+        Network sim1 = copy;
+        (*sim1.layers[i].contents)(j,k) += epsilon;
+        sim1.feedforward();
+        Network sim2 = copy;
+        (*sim2.layers[i].contents)(j,k) -= epsilon;
+        sim2.feedforward();
+        current_approx(j,k) = (sim1.cost() - sim2.cost())/(2*epsilon);
+      }
+    }
+    approx_gradients.push_back(current_approx);
+  }
+  for (Eigen::MatrixXf i : approx_gradients) {
+    std::cout << i << "\n\n";
+  }
+  // std::vector<Eigen::MatrixXf> gradients;
+  // std::vector<Eigen::MatrixXf> deltas;
+  // Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
+  // gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
+  // deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+  // int counter = 1;
+  // for (int i = length-2; i >= 1; i--) {
+  //   gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+  //   deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
+  //   counter++;
+  // }
+  //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
+}
 
 void Network::train()
 {

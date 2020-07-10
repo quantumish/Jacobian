@@ -11,12 +11,11 @@ double bench(int batch_sz)
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  //  net.begin();
   for (int i = 0; i < 50; i++) {
     net.train();
   }
   auto end = std::chrono::high_resolution_clock::now();
-  net.list_net();
+  //;  net.list_net();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }
 
