@@ -18,6 +18,7 @@ class Layer {
 public:
   Eigen::MatrixXf* contents;
   Eigen::MatrixXf* weights;
+  Eigen::MatrixXf* v;
   Eigen::MatrixXf* bias;
   Eigen::MatrixXf* dZ;
   std::vector<Eigen::MatrixXf> prev_updates;

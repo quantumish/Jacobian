@@ -26,12 +26,12 @@ Layer::Layer(int batch_sz, int nodes)
       (*bias)(j, i) = 0;
     }
   }
-  dZ = new Eigen::MatrixXf (batch_sz, nodes);
 }
 
 void Layer::init_weights(Layer next)
 {
   weights = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
+  v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
   int n = contents->cols() + next.contents->cols();
   std::normal_distribution<float> d(0,sqrt(1.0/n));
@@ -39,6 +39,9 @@ void Layer::init_weights(Layer next)
     std::random_device rd;
     std::mt19937 gen(rd()); 
     (*weights)((int)i / nodes, i%nodes) = d(gen);
+  }
+  for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
+    (*v)((int)i / nodes, i%nodes) = 0;
   }
 }
 
@@ -163,7 +166,7 @@ float Network::cost()
     //    std::cout << *layers[i].weights << "\n\n" << (layers[i].weights->cwiseProduct(*layers[i].weights)).sum() << "\n\n\n";
     reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
   }
-  return ((1.0/batch_size) * sum) + (lambda*reg);
+  return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
 }
 
 float Network::accuracy()
@@ -189,7 +192,9 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights * 2));
+    //    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
+    *layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
+    *layers[length-2-i].weights += *layers[length-2-i].v;
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
