@@ -9,6 +9,8 @@
 
 #define MAXLINE 1024
 
+#define ZERO_THRESHOLD pow(10, -8) // for checks
+
 Layer::Layer(int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXf (batch_sz, nodes);
@@ -158,7 +160,8 @@ float Network::cost()
     sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
   }
   for (int i = 0; i < layers.size()-1; i++) {
-    reg += (layers[i].contents->cwiseProduct(*layers[i].contents)).sum();
+    //    std::cout << *layers[i].weights << "\n\n" << (layers[i].weights->cwiseProduct(*layers[i].weights)).sum() << "\n\n\n";
+    reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
   }
   return ((1.0/batch_size) * sum) + (lambda*reg);
 }
@@ -186,7 +189,7 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + (learning_rate * (lambda/batch_size) * *layers[length-2-i].weights);
+    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights * 2));
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -301,7 +304,7 @@ void Network::checks()
 {
   //fclose(data);
   int sanity_passed = 0;
-  std::cout << "Beginning sanity checks.\n\n";
+  std::cout << "\u001b[4m\u001b[1mSanity checks:\u001b[0m\n";
   // Check if regularization strength increases loss (as it should).
   std::cout << "Regularization sanity check...";
   Network copy1 = *this;
@@ -316,6 +319,43 @@ void Network::checks()
     sanity_passed++;
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+
+  // Check if zero cost is achievable on a batch
+  std::cout << "Zero-cost sanity check...";
+  copy1 = *this;
+  copy1.lambda = 0;
+  copy1.next_batch();
+  float finalcost;
+  for (int i = 0; i < 10000; i++) {
+    copy1.feedforward();
+    copy1.backpropagate();
+    finalcost = copy1.cost();
+    if (finalcost <= ZERO_THRESHOLD) {
+      break;
+    }
+  }
+  if (finalcost <= ZERO_THRESHOLD) {
+    std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
+    sanity_passed++;
+  }
+  else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+
+  std::cout << "Gradient floating-point sanity check...";
+  copy1 = *this;
+  copy1.next_batch();
+  copy1.feedforward();
+  std::vector<Eigen::MatrixXf> gradients;
+  std::vector<Eigen::MatrixXf> deltas;
+  Eigen::MatrixXf error = ((*copy1.layers[copy1.length-1].contents) - (*copy1.labels));
+  gradients.push_back(error.cwiseProduct(*copy1.layers[copy1.length-1].dZ));
+  deltas.push_back((*copy1.layers[copy1.length-2].contents).transpose() * gradients[0]);
+  int counter = 1;
+  for (int i = copy1.length-2; i >= 1; i--) {
+    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*copy1.layers[i].dZ));
+    deltas.push_back(copy1.layers[i-1].contents->transpose() * gradients[counter]);
+    counter++;
+  }
+  
   // float epsilon = 0.0001;
   // Network copy = *this;
   // std::vector<Eigen::MatrixXf> approx_gradients;
