@@ -303,7 +303,7 @@ float Network::test(char* path)
 void Network::checks()
 {
   int sanity_passed = 0;
-  std::cout << "\u001b[4m\u001b[1mSanity checks:\u001b[0m\n";
+  std::cout << "\u001b[4m\u001b[1mSANITY CHECKS:\u001b[0m\n";
   // Check if regularization strength increases loss (as it should).
   std::cout << "Regularization sanity check...";
   Network copy1 = *this;
@@ -314,7 +314,7 @@ void Network::checks()
   copy2.next_batch();
   copy2.feedforward();
   if (copy1.cost() > copy2.cost()) {
-    std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
+    std::cout << " \u001b[32mPassed!\n\u001b[37m";
     sanity_passed++;
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
@@ -334,7 +334,7 @@ void Network::checks()
     }
   }
   if (finalcost <= ZERO_THRESHOLD) {
-    std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
+    std::cout << " \u001b[32mPassed!\n\u001b[37m";
     sanity_passed++;
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
@@ -366,10 +366,49 @@ void Network::checks()
     }
   };
   if (check_gradients(gradients) == false && check_gradients(deltas) == false) {
+    std::cout << " \u001b[32mPassed!\n\u001b[37m";
+    sanity_passed++;
+  }
+  else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+
+  std::cout << "Expected loss sanity check...";
+  copy1 = *this;
+  copy1.next_batch();
+  copy1.feedforward();
+  if (copy1.cost() <= 1) {
     std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
     sanity_passed++;
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+
+  std::cout << "Layer updates sanity check...";
+  copy1 = *this;
+  copy2 = *this;
+  copy1.next_batch();
+  copy1.feedforward();
+  copy2.next_batch();
+  copy2.feedforward();
+  copy1.backpropagate();
+  int passed = 1;
+  for (int i = 0; i < copy1.layers.size()-1; i++) {
+    if (*copy1.layers[i].weights == *copy2.layers[i].weights) {
+      std::cout << *copy1.layers[i].weights << " "<<i<<"weight\n\n";
+      passed = -1;
+    }
+  }
+  for (int i = 1; i < copy1.layers.size(); i++) {
+    if (*copy1.layers[i].bias == *copy2.layers[i].bias) {
+      std::cout << *copy1.layers[i].bias <<" " << i << "bias\n\n";
+      passed = -1;
+    }
+  }
+  if (passed == 1) {
+    std::cout << " \u001b[32mPassed!\n\u001b[37m";
+    sanity_passed++;
+  }
+  else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+  
+  std::cout << "\u001b[1m\nPassed " << sanity_passed << "/4" <<" sanity checks.\u001b[0m\n\n\n";
   
   // float epsilon = 0.0001;
   // Network copy = *this;
