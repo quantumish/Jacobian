@@ -1,8 +1,8 @@
 program: example.py
 method: bayes
 metric:
-  name: val_cost
-  goal: minimize
+  name: val_accuracy
+  goal: maximize
 parameters:
   epochs:
     distribution: int_uniform
@@ -10,7 +10,7 @@ parameters:
     max: 100
   batch_size:
     distribution: int_uniform
-p    min: 5
+    min: 5
     max: 200
   hidden_layers:
     distribution: int_uniform
@@ -18,8 +18,8 @@ p    min: 5
     max: 6
   bias_lr:
     distribution: uniform
-    min: 0.0015
-    max: 0.06
+    min: 0.0001
+    max: 0.5
   neurons:
     distribution: int_uniform
     min: 2
@@ -30,7 +30,15 @@ p    min: 5
       - lecun_tanh
       - relu
       - sigmoid
+      - linear
+      - softplus
+      - resig
+      - cloglog
   learning_rate:
     distribution: uniform
+    min: 0.0001
+    max: 1
+  l:
+    distribution: uniform
     min: 0.001
-    max: 0.5
+    max: 5

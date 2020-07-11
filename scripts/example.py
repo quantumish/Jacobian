@@ -1,4 +1,7 @@
-import mrbpnn
+import importlib.util
+spec = importlib.util.spec_from_file_location("mrbpnn", "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/mrbpnn/mrbpnn.cpython-37m-darwin.so")
+mrbpnn = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(mrbpnn)
 import numpy as np
 import matplotlib.pyplot as plt
 import numpy
