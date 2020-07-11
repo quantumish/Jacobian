@@ -8,7 +8,6 @@
 #define TRAIN_PATH "./train.txt"
 
 #define MAXLINE 1024
-
 #define ZERO_THRESHOLD pow(10, -8) // for checks
 
 Layer::Layer(int batch_sz, int nodes)
@@ -53,11 +52,30 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, fl
   int total_instances = prep_file(path, SHUFFLED_PATH);
   test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
-  length = 0;
-  t = 0;
   batch_size = batch_sz;
   data = fopen(TRAIN_PATH, "r");
-  batches = 0;
+  decay = [](float lr, float t) -> float {
+    return lr;
+  };
+}
+
+void Network::init_decay(char* type, float a_0, float k)
+{
+  if (strcmp(type, "step") == 0) {
+    decay = [a_0, k](float lr, float t) -> float {
+      return lr/k;
+    };
+  }
+  if (strcmp(type, "exp") == 0) {
+    decay = [a_0, k](float lr, float t) -> float {
+      return a_0 * exp(-k*t);
+    };
+  }
+  if (strcmp(type, "frac") == 0) {
+    decay = [a_0, k](float lr, float t) -> float {
+      return a_0/(1-k*t);
+    };
+  }
 }
 
 void Network::add_layer(int nodes, char* name)
@@ -192,9 +210,9 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    //    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
-    *layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
-    *layers[length-2-i].weights += *layers[length-2-i].v;
+    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
+    //*layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
+    //*layers[length-2-i].weights += *layers[length-2-i].v;
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
 }
@@ -325,9 +343,13 @@ void Network::train()
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
   test(TEST_PATH);
-  printf("Epoch complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epoch_cost, epoch_acc, val_cost, val_acc);
+  printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
+  std::cout << learning_rate << "\nTHEN\n";
+  learning_rate = decay(learning_rate, epochs);
+  std::cout << learning_rate << "\n\n\n";
+  epochs++;
 }
 
 float Network::get_acc() {return epoch_acc;}

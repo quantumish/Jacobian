@@ -38,23 +38,27 @@ public:
   int test_instances;
 
   std::vector<Layer> layers;
-  int length;
-  int t;
+  int length = 0;
 
   float epoch_acc;
   float epoch_cost;
   float val_acc;
   float val_cost;
+  
   float learning_rate;
   float bias_lr;
   float lambda;
   int batch_size;
-  int batches;
 
+  int epochs = 0;
+  int batches = 0;
   Eigen::MatrixXf* labels;
+
+  std::function<float(float, float)> decay;
 
   Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
   void add_layer(int nodes, char* activation);
+  void init_decay(char* type, float a_0, float k);
   void initialize();
   void update_layer(float* vals, int datalen, int index);
   void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
