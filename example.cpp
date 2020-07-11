@@ -1,5 +1,5 @@
-#include "bpnn.hpp"
-#include "utils.hpp"
+#include "./src/bpnn.hpp"
+#include "./src/utils.hpp"
 #include "unistd.h"
 #include <ctime>
 

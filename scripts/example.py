@@ -1,6 +1,3 @@
-import sys
-sys.path.append("/Users/davidfreifeld/projects/Jacobian/")
-print(sys.path)
 import mrbpnn
 import numpy as np
 import matplotlib.pyplot as plt
@@ -17,13 +14,13 @@ hyperparameter_defaults = dict(batch_size = 10,
                                bias_lr = 0.03,
                                activation = "lecun_tanh",
                                neurons = 10,
-                               l = 0.5)
+                               l = 0)
 
 wandb.init(project="jacobian", config=hyperparameter_defaults)
 config = wandb.config
 
 init = time.time()
-net = mrbpnn.Network("./data_banknote_authentication.txt", config.batch_size, config.learning_rate, config.bias_lr, config.l, data_split)
+net = mrbpnn.Network("../data_banknote_authentication.txt", config.batch_size, config.learning_rate, config.bias_lr, config.l, data_split)
 net.add_layer(4, "linear")
 for i in range(config.hidden_layers):
     net.add_layer(config.neurons, config.activation)

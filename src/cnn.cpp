@@ -13,12 +13,12 @@ public:
   Eigen::MatrixXd* output;
   double bias;
   
-  ConvLayer(int x, int y, int stride, int kernel_size, int pad);
+  ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void convolute();
   void set_input(Eigen::MatrixXd* matrix);
 };
 
-ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
+ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
 {
   padding = pad;
   pad*=2;
@@ -32,8 +32,8 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_size, int pad)
     (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
   }
   output = new Eigen::MatrixXd ((x-kern_size+1+pad/stride_len), (y-kern_size+1+pad/stride_len)); // We're using valid padding for now.
-  for (int i = 0; i < (x-kern_size+1+pad/stride_len)*(y-kern_size+1+pad/stride_len); i++) {
-    (*output)((int)i / (y-kern_size+1+pad/stride_len),i%(y-kern_size+1+pad/stride_len)) = 0;
+  for (int i = 0; i < (x-kern_y+1+pad/stride_len)*(y-kern_x+1+pad/stride_len); i++) {
+    (*output)((int)i / (y-kern_y+1+pad/stride_len),i%(y-kern_y+1+pad/stride_len)) = 0;
   }
   bias = 0;
 };
@@ -110,8 +110,8 @@ public:
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
   void backpropagate();
-  void add_conv_layer(int x, int y, int stride, int kern_size, int pad);
-  void add_pool_layer(int x, int y, int stride, int kern_size, int pad);
+  void add_conv_layer(int x, int y, int stride, int kern_x, int kern_y int pad);
+  void add_pool_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void set_label(Eigen::MatrixXd newlabels);
   void initialize();
 };

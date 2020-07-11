@@ -10,7 +10,7 @@ parameters:
     max: 100
   batch_size:
     distribution: int_uniform
-    min: 5
+p    min: 5
     max: 200
   hidden_layers:
     distribution: int_uniform

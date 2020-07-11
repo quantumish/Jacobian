@@ -16,7 +16,8 @@ NetworkArray::NetworkArray(char* configuration, std::function<Network*(void)> se
 {
   map = [setup, epochs](struct pair* input_pair) -> struct pair*
   {
-    printf("Recieved %p %p in form of %p\n", input_pair->key, input_pair->value, input_pair);
+    //printf("Hello? %s\n", test.key);
+    printf("Recieved %p %p in form of %p (at %p)\n", input_pair->key, input_pair->value, input_pair, &input_pair);
     printf("%s %p\n", (char*)input_pair->key, input_pair->value);
     char* path = new char[100];
     strcpy(path, (char*)input_pair->key);
@@ -87,7 +88,7 @@ int main()
   //struct pair testing = {(void*)path, (void*)msg};
   //  printf("SENDING %p %p (part of %p)\n", testing.key, testing.value, &testing);
   //netarray.map(testing);
-  netarray.start_array("./extra.txt", 5, 1, "98.33.105.140", 1);
+  netarray.start_array("./extra.txt", 1, 1, "98.33.105.140", 1);
   return 0;
 }
 

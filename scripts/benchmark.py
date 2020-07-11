@@ -5,7 +5,7 @@ import time
 
 def bench(batch_sz, layers):
     init = time.time()
-    net = mrbpnn.Network("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0.1, 0.9)
+    net = mrbpnn.Network("../data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0, 0.9)
     net.add_layer(4, "linear")
     for i in range(layers):
         net.add_layer(5, "relu")
