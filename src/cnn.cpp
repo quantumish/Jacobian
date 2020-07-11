@@ -216,35 +216,75 @@ void ConvNet::backpropagate()
   conv_layers[0].bias -= gradients[gradients.size()-1].sum();
 }
 
+using namespace std;
+int ReverseInt (int i)
+{
+    unsigned char ch1, ch2, ch3, ch4;
+    ch1=i&255;
+    ch2=(i>>8)&255;
+    ch3=(i>>16)&255;
+    ch4=(i>>24)&255;
+    return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
+}
+void ReadMNIST(int NumberOfImages, int DataOfAnImage,vector<vector<double>> &arr)
+{
+    arr.resize(NumberOfImages,vector<double>(DataOfAnImage));
+    ifstream file ("./t10k-images-idx3-ubyte",ios::binary);
+    if (file.is_open())
+    {
+        int magic_number=0;
+        int number_of_images=0;
+        int n_rows=0;
+        int n_cols=0;
+        file.read((char*)&magic_number,sizeof(magic_number));
+        magic_number= ReverseInt(magic_number);
+        file.read((char*)&number_of_images,sizeof(number_of_images));
+        number_of_images= ReverseInt(number_of_images);
+        file.read((char*)&n_rows,sizeof(n_rows));
+        n_rows= ReverseInt(n_rows);
+        file.read((char*)&n_cols,sizeof(n_cols));
+        n_cols= ReverseInt(n_cols);
+        for(int i=0;i<number_of_images;++i)
+        {
+            for(int r=0;r<n_rows;++r)
+            {
+                for(int c=0;c<n_cols;++c)
+                {
+                    unsigned char temp=0;
+                    file.read((char*)&temp,sizeof(temp));
+                    arr[i][(n_rows*r)+c]= (double)temp;
+                }
+            }
+        }
+    }
+}
+
 int main()
 {
   ConvNet net ("../data_banknote_authentication.txt", 1, 0.05, 0.01, 0, 0.9);
   Eigen::MatrixXf labels (1,1);
   labels << 1;
   net.set_label(labels);
-  net.add_conv_layer(8,8,1,4,2,0);
+  net.add_conv_layer(28,28,1,4,4,0);
   //net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(25, "linear");
+  net.add_layer(625, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  Eigen::MatrixXf* input = new Eigen::MatrixXf (8,8);
-  *input <<
-    0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0,
-    0,0,1,1,1,1,0,0,
-    0,0,1,1,1,1,0,0,
-    0,0,1,1,1,1,0,0,
-    0,0,1,1,1,1,0,0,
-    0,0,0,0,0,0,0,0,
-    0,0,0,0,0,0,0,0;
+
+  Eigen::MatrixXf* input = new Eigen::MatrixXf (28,28);
+  vector<vector<double>> ar;
+  ReadMNIST(10000,784,ar);
+  for (int i = 0; i < 784; i++) {
+    (*input)(i/28, i%28) = ar[1][i];
+  }
+  std::cout << "\n\n" << *input << "\n";
+  
   net.conv_layers[0].set_input(input);
   net.process();
   for (int i = 0; i < 10; i++) {
     net.feedforward();
     net.backpropagate();
-    std::cout << *net.layers[net.layers.size()-1].contents << " <--- ACTIVATION\n";
+    printf("Epoch %i complete - cost %f - acc %f\n", net.epochs, net.cost(), net.accuracy());
   }
-  net.list_net();
-  // net.list_net();
 }
