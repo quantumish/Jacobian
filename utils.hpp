@@ -4,26 +4,26 @@
 #include <functional>
 
 // A zoo of activation functions.
-double sigmoid(double x);
-double sigmoid_deriv(double x);
-double linear(double x);
-double linear_deriv(double x);
-double step(double x);
-double step_deriv(double x);
-double bipolar(double x);
-double bipolar_deriv(double x);
-double mytanh(double x);
-double tanh_deriv(double x);
-double lecun_tanh(double x);
-double lecun_tanh_deriv(double x);
-double cloglog(double x);
-double cloglog_deriv(double x);
-double softplus(double x);
-double softplus_deriv(double x);
-double inverse_logit(double x);
-double inverse_logit_deriv(double x);
-std::function<double(double)> rectifier(double (*activation)(double));
+float sigmoid(float x);
+float sigmoid_deriv(float x);
+float linear(float x);
+float linear_deriv(float x);
+float step(float x);
+float step_deriv(float x);
+float bipolar(float x);
+float bipolar_deriv(float x);
+float mytanh(float x);
+float tanh_deriv(float x);
+float lecun_tanh(float x);
+float lecun_tanh_deriv(float x);
+float cloglog(float x);
+float cloglog_deriv(float x);
+float softplus(float x);
+float softplus_deriv(float x);
+float inverse_logit(float x);
+float inverse_logit_deriv(float x);
+std::function<float(float)> rectifier(float (*activation)(float));
 
-Eigen::MatrixXd strassen_mul(Eigen::MatrixXd a, Eigen::MatrixXd b);
+Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 
 #endif /* MODULE_H */
