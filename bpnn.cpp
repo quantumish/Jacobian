@@ -302,7 +302,6 @@ float Network::test(char* path)
 
 void Network::checks()
 {
-  //fclose(data);
   int sanity_passed = 0;
   std::cout << "\u001b[4m\u001b[1mSanity checks:\u001b[0m\n";
   // Check if regularization strength increases loss (as it should).
@@ -351,10 +350,26 @@ void Network::checks()
   deltas.push_back((*copy1.layers[copy1.length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = copy1.length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*copy1.layers[i].dZ));
+    gradients.push_back((gradients[counter-1] * copy1.layers[i].weights->transpose()).cwiseProduct(*copy1.layers[i].dZ));
     deltas.push_back(copy1.layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
+  auto check_gradients = [](std::vector<Eigen::MatrixXf> vec) -> bool {
+    for (Eigen::MatrixXf i : vec) {
+      for (int j = 0; j < i.rows(); j++) {
+        for (int k = 0; k < i.cols(); k++) {
+          if (i(j,k) == -0 || i(j,k) == INFINITY || i(j,k) == NAN || i(j,k) == -INFINITY) {
+            return true;
+          }
+        }
+      }
+    }
+  };
+  if (check_gradients(gradients) == false && check_gradients(deltas) == false) {
+    std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
+    sanity_passed++;
+  }
+  else std::cout << " \u001b[31mFailed.\n\u001b[37m";
   
   // float epsilon = 0.0001;
   // Network copy = *this;
