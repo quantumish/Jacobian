@@ -8,14 +8,14 @@ class ConvLayer
 public:
   int stride_len;
   int padding;
-  Eigen::MatrixXd* input;
-  Eigen::MatrixXd* kernel;
-  Eigen::MatrixXd* output;
-  double bias;
+  Eigen::MatrixXf* input;
+  Eigen::MatrixXf* kernel;
+  Eigen::MatrixXf* output;
+  float bias;
   
   ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void convolute();
-  void set_input(Eigen::MatrixXd* matrix);
+  void set_input(Eigen::MatrixXf* matrix);
 };
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
@@ -23,15 +23,15 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
   padding = pad;
   pad*=2;
   stride_len = stride;
-  input = new Eigen::MatrixXd (x+pad,y+pad);
+  input = new Eigen::MatrixXf (x+pad,y+pad);
   for (int i = 0; i < (x+pad)*(y+pad); i++) {
     (*input)((int)i / (y+pad),i%(y+pad)) = 0;
   }
-  kernel = new Eigen::MatrixXd (kern_size, kern_size);
-  for (int i = 0; i < kern_size*kern_size; i++) {
-    (*kernel)((int)i / kern_size,i%kern_size) = (double) rand() / RAND_MAX;
+  kernel = new Eigen::MatrixXf (kern_x, kern_y);
+  for (int i = 0; i < kern_x*kern_y; i++) {
+    (*kernel)((int)i / kern_y,i%kern_y) = (float) rand() / RAND_MAX;
   }
-  output = new Eigen::MatrixXd ((x-kern_size+1+pad/stride_len), (y-kern_size+1+pad/stride_len)); // We're using valid padding for now.
+  output = new Eigen::MatrixXf ((x-kern_x+1+pad/stride_len), (y-kern_y+1+pad/stride_len));
   for (int i = 0; i < (x-kern_y+1+pad/stride_len)*(y-kern_x+1+pad/stride_len); i++) {
     (*output)((int)i / (y-kern_y+1+pad/stride_len),i%(y-kern_y+1+pad/stride_len)) = 0;
   }
@@ -48,7 +48,7 @@ void ConvLayer::convolute()
   *output = (output->array() + bias).matrix();
 }
 
-void ConvLayer::set_input(Eigen::MatrixXd* matrix)
+void ConvLayer::set_input(Eigen::MatrixXf* matrix)
 {
   input->block(padding, padding, matrix->rows(), matrix->cols()) = *matrix;
 }
@@ -58,26 +58,26 @@ class PoolingLayer
 public:
   int stride_len;
   int padding;
-  Eigen::MatrixXd* input;
-  Eigen::MatrixXd* kernel;
-  Eigen::MatrixXd* output;
+  Eigen::MatrixXf* input;
+  Eigen::MatrixXf* kernel;
+  Eigen::MatrixXf* output;
   
   void pool();
-  PoolingLayer(int x, int y, int stride, int kern_size, int pad);
+  PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad);
 };
 
 // Will eventually be different from ConvLayer
-PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_size, int pad)
+PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
 {
   padding = pad;
   stride_len = stride;
-  kernel = new Eigen::MatrixXd (kern_size, kern_size);
-  for (int i = 0; i < kern_size*kern_size; i++) {
-    (*kernel)((int)i / kern_size,i%kern_size) = (double) rand()/RAND_MAX;
+  kernel = new Eigen::MatrixXf (kern_x, kern_y);
+  for (int i = 0; i < kern_x*kern_y; i++) {
+    (*kernel)((int)i / kern_y,i%kern_y) = (float) rand()/RAND_MAX;
   }
-  output = new Eigen::MatrixXd (x-kern_size+1, y-kern_size+1);
-  for (int i = 0; i < (x-kern_size+1)*(y-kern_size+1); i++) {
-    (*output)((int)i / (y-kern_size+1),i%(y-kern_size+1)) = (double) rand()/RAND_MAX;
+  output = new Eigen::MatrixXf (x-kern_x+1, y-kern_y+1);
+  for (int i = 0; i < (x-kern_x+1)*(y-kern_y+1); i++) {
+    (*output)((int)i / (y-kern_y+1),i%(y-kern_y+1)) = (float) rand()/RAND_MAX;
   }
 };
 
@@ -106,32 +106,32 @@ public:
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
   
-  ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio);
+  ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
   void backpropagate();
-  void add_conv_layer(int x, int y, int stride, int kern_x, int kern_y int pad);
+  void add_conv_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void add_pool_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
-  void set_label(Eigen::MatrixXd newlabels);
+  void set_label(Eigen::MatrixXf newlabels);
   void initialize();
 };
 
-ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, ratio)
+ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, l, ratio)
 {
   preprocess_length = 0;
-  labels = new Eigen::MatrixXd (batch_sz, 1);
+  labels = new Eigen::MatrixXf (batch_sz, 1);
 }
 
-void ConvNet::add_conv_layer(int x, int y, int stride, int kern_size, int pad)
+void ConvNet::add_conv_layer(int x, int y, int stride, int kern_x, int kern_y, int pad)
 {
   preprocess_length+=1;
-  conv_layers.emplace_back(x,y,stride,kern_size,pad);
+  conv_layers.emplace_back(x,y,stride,kern_x, kern_y,pad);
 }
 
 // May make this inaccessible to user code and just have it called from add_conv_layer as pooling is basically always paired with conv.
-void ConvNet::add_pool_layer(int x, int y, int stride, int kern_size, int pad)
+void ConvNet::add_pool_layer(int x, int y, int stride, int kern_x, int kern_y, int pad)
 {
-  pool_layers.emplace_back(x,y,stride,kern_size,pad);
+  pool_layers.emplace_back(x,y,stride,kern_x,kern_y,pad);
 }
 
 void ConvNet::initialize()
@@ -155,14 +155,14 @@ void ConvNet::process()
   //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   //pool_layers[preprocess_length-1].pool();
   //  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
-  Eigen::Map<Eigen::RowVectorXd> flattened (conv_layers[preprocess_length-1].output->data(), conv_layers[preprocess_length-1].output->size());
+  Eigen::Map<Eigen::RowVectorXf> flattened (conv_layers[preprocess_length-1].output->data(), conv_layers[preprocess_length-1].output->size());
   // std::cout << "Flattened:\n" << flattened << "\n\n";
   for (int i = 0; i < flattened.cols(); i++) {
     (*layers[0].contents)(0, i) = flattened[i];
   }
 }
 
-void ConvNet::set_label(Eigen::MatrixXd newlabels)
+void ConvNet::set_label(Eigen::MatrixXf newlabels)
 {
   *labels = newlabels;
 }
@@ -182,9 +182,9 @@ void ConvNet::list_net()
 
 void ConvNet::backpropagate()
 {
-  std::vector<Eigen::MatrixXd> gradients;
-  std::vector<Eigen::MatrixXd> deltas;
-  Eigen::MatrixXd error = ((*layers[length-1].contents) - (*labels));
+  std::vector<Eigen::MatrixXf> gradients;
+  std::vector<Eigen::MatrixXf> deltas;
+  Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -205,7 +205,7 @@ void ConvNet::backpropagate()
   // for (int i = 0; i < gradients.size(); i++) {
   //   std::cout  << gradients[i] << "\n\n";
   // }
-  Eigen::Map<Eigen::MatrixXd> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
+  Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
   //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
   for (int i = 0; i < conv_layers[0].input->cols() - gradients[length-1].cols()+1; i+=conv_layers[0].stride_len) {
@@ -218,17 +218,17 @@ void ConvNet::backpropagate()
 
 int main()
 {
-  ConvNet net ("./data_banknote_authentication.txt", 1, 0.05, 0.01, 0.9);
-  Eigen::MatrixXd labels (1,1);
+  ConvNet net ("../data_banknote_authentication.txt", 1, 0.05, 0.01, 0, 0.9);
+  Eigen::MatrixXf labels (1,1);
   labels << 1;
   net.set_label(labels);
-  net.add_conv_layer(8,8,1,4,0);
+  net.add_conv_layer(8,8,1,4,2,0);
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(25, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  Eigen::MatrixXd* input = new Eigen::MatrixXd (8,8);
+  Eigen::MatrixXf* input = new Eigen::MatrixXf (8,8);
   *input <<
     0,0,0,0,0,0,0,0,
     0,0,0,0,0,0,0,0,
