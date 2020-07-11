@@ -11,7 +11,8 @@ double bench(int batch_sz)
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  net.checks();
+  //net.list_net();
+  //  net.checks();
   for (int i = 0; i < 50; i++) {
     net.train();
   }
