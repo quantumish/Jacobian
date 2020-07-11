@@ -153,10 +153,14 @@ void Network::list_net()
 float Network::cost()
 {
   float sum = 0;
+  float reg = 0; // Regularization term
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
   }
-  return (1.0/batch_size) * sum;
+  for (int i = 0; i < layers.size()-1; i++) {
+    reg += (layers[i].contents->cwiseProduct(*layers[i].contents)).sum();
+  }
+  return ((1.0/batch_size) * sum) + (lambda*reg);
 }
 
 float Network::accuracy()
@@ -293,29 +297,46 @@ float Network::test(char* path)
   return 0;
 }
 
-void Network::begin()
+void Network::checks()
 {
-  float epsilon = 0.0001;
-  Network copy = *this;
-  std::vector<Eigen::MatrixXf> approx_gradients;
-  for (int i = 0; i < copy.layers.size()-1; i++) {
-    Eigen::MatrixXf current_approx = *copy.layers[i].weights;
-    for (int j = 0; i < copy.layers[i].weights->rows(); i++) {
-      for (int k = 0; i < copy.layers[i].weights->cols(); i++) {
-        Network sim1 = copy;
-        (*sim1.layers[i].contents)(j,k) += epsilon;
-        sim1.feedforward();
-        Network sim2 = copy;
-        (*sim2.layers[i].contents)(j,k) -= epsilon;
-        sim2.feedforward();
-        current_approx(j,k) = (sim1.cost() - sim2.cost())/(2*epsilon);
-      }
-    }
-    approx_gradients.push_back(current_approx);
+  //fclose(data);
+  int sanity_passed = 0;
+  std::cout << "Beginning sanity checks.\n\n";
+  // Check if regularization strength increases loss (as it should).
+  std::cout << "Regularization sanity check...";
+  Network copy1 = *this;
+  Network copy2 = *this;
+  copy1.lambda += 1;
+  copy1.next_batch();
+  copy1.feedforward();
+  copy2.next_batch();
+  copy2.feedforward();
+  if (copy1.cost() > copy2.cost()) {
+    std::cout << " \u001b[32mSucceeded!\n\u001b[37m";
+    sanity_passed++;
   }
-  for (Eigen::MatrixXf i : approx_gradients) {
-    std::cout << i << "\n\n";
-  }
+  else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+  // float epsilon = 0.0001;
+  // Network copy = *this;
+  // std::vector<Eigen::MatrixXf> approx_gradients;
+  // for (int i = 0; i < copy.layers.size()-1; i++) {
+  //   Eigen::MatrixXf current_approx = *copy.layers[i].weights;
+  //   for (int j = 0; i < copy.layers[i].weights->rows(); i++) {
+  //     for (int k = 0; i < copy.layers[i].weights->cols(); i++) {
+  //       Network sim1 = copy;
+  //       (*sim1.layers[i].contents)(j,k) += epsilon;
+  //       sim1.feedforward();
+  //       Network sim2 = copy;
+  //       (*sim2.layers[i].contents)(j,k) -= epsilon;
+  //       sim2.feedforward();
+  //       current_approx(j,k) = (sim1.cost() - sim2.cost())/(2*epsilon);
+  //     }
+  //   }
+  //   approx_gradients.push_back(current_approx);
+  // }
+  // for (Eigen::MatrixXf i : approx_gradients) {
+  //   std::cout << i << "\n\n";
+  // }
   // std::vector<Eigen::MatrixXf> gradients;
   // std::vector<Eigen::MatrixXf> deltas;
   // Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
@@ -332,6 +353,7 @@ void Network::begin()
 
 void Network::train()
 {
+  rewind(data);
   float cost_sum = 0;
   float acc_sum = 0;
   for (int i = 0; i <= instances-batch_size; i+=batch_size) {

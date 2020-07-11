@@ -6,12 +6,13 @@
 double bench(int batch_sz)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0.0, 0.9);
+  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0.1, 0.9);
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(1, "resig");
   net.initialize();
-  for (int i = 0; i < 50; i++) {
+  net.checks();
+  for (int i = 0; i < 1; i++) {
     net.train();
   }
   auto end = std::chrono::high_resolution_clock::now();

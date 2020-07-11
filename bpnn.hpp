@@ -67,7 +67,7 @@ public:
   int next_batch();
   float test(char* path);
   void train();
-  void begin();
+  void checks();
 
   float get_acc();
   float get_cost();
