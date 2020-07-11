@@ -1,4 +1,4 @@
-void Network::checks()
+void checks(Network net)
 {
   int sanity_passed = 0;
   std::cout << "\u001b[4m\u001b[1mSANITY CHECKS:\u001b[0m\n";
@@ -7,8 +7,8 @@ void Network::checks()
 
   //  list_net();
   
-  Network copy1 = *this;
-  Network copy2 = *this;
+  Network copy1 = net;
+  Network copy2 = net;
   copy1.lambda += 1;
   copy1.next_batch();
   copy1.feedforward();
@@ -24,7 +24,7 @@ void Network::checks()
   
   // Check if zero cost is achievable on a batch
   std::cout << "Zero-cost sanity check...";
-  copy1 = *this;
+  copy1 = net;
   copy1.lambda = 0;
   copy1.next_batch();
   float finalcost;
@@ -45,7 +45,7 @@ void Network::checks()
   //  list_net();
   
   std::cout << "Gradient floating-point sanity check...";
-  copy1 = *this;
+  copy1 = net;
   copy1.next_batch();
   copy1.feedforward();
   std::vector<Eigen::MatrixXf> gradients;
@@ -79,7 +79,7 @@ void Network::checks()
   //  list_net();
   
   std::cout << "Expected loss sanity check...";
-  copy1 = *this;
+  copy1 = net;
   copy1.next_batch();
   copy1.feedforward();
   if (copy1.cost() <= 1) {
@@ -91,8 +91,8 @@ void Network::checks()
   //  list_net();
   
   std::cout << "Layer updates sanity check...";
-  copy1 = *this;
-  copy2 = *this;
+  copy1 = net;
+  copy2 = net;
   copy1.next_batch();
   copy1.feedforward();
   copy2.next_batch();
@@ -123,6 +123,8 @@ void Network::checks()
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
   
   std::cout << "\u001b[1m\nPassed " << sanity_passed << "/5" <<" sanity checks.\u001b[0m\n\n\n";
+
+  net.list_net();
   
   // float epsilon = 0.0001;
   // Network copy = *this;

@@ -72,7 +72,6 @@ public:
   int next_batch();
   float test(char* path);
   void train();
-  void checks();
 
   float get_acc();
   float get_cost();
@@ -80,6 +79,7 @@ public:
   float get_val_cost();
 };
 
+void checks(Network net);
 void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
 int split_file(char* path, int lines, float ratio);

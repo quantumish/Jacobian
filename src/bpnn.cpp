@@ -73,7 +73,7 @@ void Network::init_decay(char* type, float a_0, float k)
   }
   if (strcmp(type, "frac") == 0) {
     decay = [a_0, k](float lr, float t) -> float {
-      return a_0/(1-k*t);
+      return a_0/(1+(k*t));
     };
   }
 }
@@ -346,9 +346,7 @@ void Network::train()
   printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
-  std::cout << learning_rate << "\nTHEN\n";
   learning_rate = decay(learning_rate, epochs);
-  std::cout << learning_rate << "\n\n\n";
   epochs++;
 }
 
@@ -356,4 +354,3 @@ float Network::get_acc() {return epoch_acc;}
 float Network::get_val_acc() {return val_acc;}
 float Network::get_cost() {return epoch_cost;}
 float Network::get_val_cost() {return val_cost;}
-
