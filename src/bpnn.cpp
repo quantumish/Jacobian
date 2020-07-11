@@ -175,16 +175,16 @@ void Network::list_net()
 
 float Network::cost()
 {
-  float sum = 0;
+  // float sum = 0;
   float reg = 0; // Regularization term
-  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
-  }
+  // for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+  //   sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
+  // }
   for (int i = 0; i < layers.size()-1; i++) {
-    //    std::cout << *layers[i].weights << "\n\n" << (layers[i].weights->cwiseProduct(*layers[i].weights)).sum() << "\n\n\n";
     reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
   }
-  return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
+  // return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
+  return (1/2*lambda*reg);
 }
 
 float Network::accuracy()
@@ -196,11 +196,22 @@ float Network::accuracy()
   return (1.0/batch_size) * correct;
 }
 
+#define DELTA 10
 void Network::backpropagate()
 {
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
-  Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
+  Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    float loss_i = 0;
+    for (int j = 0; j < layers[length-1].contents->rows(); j++) {
+      if (j == i) continue;
+      float classloss = (*layers[length-1].contents)(i,j) - (*labels)(i,0) + DELTA;
+      if (classloss > 0) loss_i += classloss;
+      else loss_i+=0;
+    }
+    error(i, 0) = loss_i;
+  }
   gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
