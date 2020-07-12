@@ -222,29 +222,17 @@ float Network::accuracy()
   return (1.0/batch_size) * correct;
 }
 
-#define DELTA 1
 void Network::backpropagate()
 {
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      if (j == (*labels)(i,0)) {
-        float sum = 0;
-        for (int k = 0; k < layers[length-1].contents->cols(); k++) {
-          if (k == j) continue;
-          float intermediate = (*layers[length-1].contents)(i,j) - (*labels)(i,0);
-          if (intermediate > 0) sum+=1;
-        }
-        if (sum == 0) error(i,j) = 0; // IEEE floats are weird
-        else error(i,j) = -sum;
-      }
-      else {
-        float classloss = (*layers[length-1].contents)(i,j) - (*labels)(i,0) + DELTA;
-        if (classloss > 0) error(i, j) = 1;
-        else error(i, j) = 0;
-      }
+  for (int i = 0; i < error.rows(); i++) {
+    for (int j = 0; j < error.cols(); j++) {
+      float truth;
+      if (j==(*labels)(i,0)) truth = 1;
+      else truth = 0;
+      error(i,j) = truth - (*layers[length-1].contents)(i,j);
     }
   }
   //  std::cout << error << "\n\n";

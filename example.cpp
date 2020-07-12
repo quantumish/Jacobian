@@ -13,14 +13,17 @@ double bench(int batch_sz)
   net.init_decay("exp", 1, 10);
   net.initialize();
   //  checks(net);
-  net.next_batch();
-  net.feedforward();
-  std::cout << net.cost() << " " << net.accuracy() << "\n";
-  //for (int i = 0; i < 50; i++) {
-  //  net.train();
-  //}
+  for (int i = 0; i < 100; i++) {
+    net.next_batch();
+    net.feedforward();
+    net.backpropagate();
+    std::cout << net.cost() << " " << net.accuracy() << "\n";
+  }
+  // for (int i = 0; i < 1; i++) {
+  //   net.train();
+  // }
   auto end = std::chrono::high_resolution_clock::now();
-  net.list_net();
+  //net.list_net();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }
 
