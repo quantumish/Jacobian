@@ -13,7 +13,9 @@ double bench(int batch_sz)
   net.init_decay("exp", 1, 10);
   net.initialize();
   //  checks(net);
+  net.next_batch();
   net.feedforward();
+  std::cout << net.cost() << " " << net.accuracy() << "\n";
   //for (int i = 0; i < 50; i++) {
   //  net.train();
   //}
@@ -24,7 +26,7 @@ double bench(int batch_sz)
 
 int main()
 {
-  std::cout << bench(4) << "\n";
+  std::cout << bench(16) << "\n";
   //  bench(50);
   //  bench(50);
   //  bench(50);

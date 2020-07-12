@@ -190,11 +190,12 @@ float Network::cost()
     float tempsum = 0;
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       float truth;
-      if (j==(*labels)(i,0)) truth = (*labels)(i,0);
+      if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      tempsum += truth * log((*layers[length-1].contents)(i,j))
+      //      std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
+      tempsum += truth * log((*layers[length-1].contents)(i,j));
     }
-    sum+=tempsum;
+    sum-=tempsum;
   }
   for (int i = 0; i < layers.size()-1; i++) {
     reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
@@ -207,11 +208,16 @@ float Network::accuracy()
   float correct = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float ans = -INFINITY;
+    float index = -1;
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      if ((*layers[length-1].contents)(i, j) > ans) ans = j;
+      if ((*layers[length-1].contents)(i, j) > ans) {
+        ans = (*layers[length-1].contents)(i, j);
+        index = j;
+        //std::cout << "UPDATE ANS: " << index << " as "<< (*layers[length-1].contents)(i, j) << " so " << ans << "\n";
+      }
     }
-    
-    if ((*labels)(i, 0) == ans) correct += 1;
+    //std::cout << (*labels)(i, 0) << " " << index << "\n";
+    if ((*labels)(i, 0) == index) correct += 1;
   }
   return (1.0/batch_size) * correct;
 }
