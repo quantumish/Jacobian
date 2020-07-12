@@ -162,16 +162,23 @@ void Network::feedforward()
       }
     }
   }
-  std::cout << (*layers[length-1].contents) << "\n";
+  //std::cout << (*layers[length-1].contents) << "\n";
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float sum = 0;
+    Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
+    Eigen::MatrixXf::Index maxRow, maxCol;
+    float max = m.maxCoeff(&maxRow, &maxCol);
+    //    std::cout << m << "(before with max "<< max <<")\n";
+    m = (m.array() - max).matrix();
+    //    std::cout << m << "(after with max "<< max <<")\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      sum += exp((*layers[length-1].contents)(i,j));
+      sum += exp(m(0,j));
     }
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      std::cout << "(e^" << (*layers[length-1].contents)(i,j) << ")/" << sum << " -> " << exp((*layers[length-1].contents)(i,j)) << "/" << sum << " -> " << exp((*layers[length-1].contents)(i,j))/sum << "\n";
-      (*layers[length-1].contents)(i,j) = exp((*layers[length-1].contents)(i,j))/sum;
+      //      std::cout << "(e^" << m(0,j) << ")/" << sum << " -> " << exp(m(0,j)) << "/" << sum << " -> " << exp((m(0,j)))/sum << "\n";
+      m(0,j) = exp(m(0,j))/sum;
     }
+    layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
   }
 }
 
@@ -194,6 +201,7 @@ float Network::cost()
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
+      if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
       //      std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
       tempsum += truth * log((*layers[length-1].contents)(i,j));
     }
@@ -229,14 +237,14 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  std::cout << (*layers[length-1].contents) << "\n\n\n";
+  // std::cout << (*layers[length-1].contents) << "\n\n\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       error(i,j) = truth - (*layers[length-1].contents)(i,j);
-      std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
+      // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
   //  std::cout << error << "\n\n";
@@ -250,14 +258,14 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
-  std::cout << "-------\nGRADS INCOMING" << "\n\n";
-  for (Eigen::MatrixXf i : gradients) {
-    std::cout << i << "\n\n";
-  }
-  std::cout << "-------\nDELTAS INCOMING" << "\n\n";
-  for (Eigen::MatrixXf i : deltas) {
-    std::cout << i << "\n\n";
-  }
+  // std::cout << "-------\nGRADS INCOMING" << "\n\n";
+  // for (Eigen::MatrixXf i : gradients) {
+  //   std::cout << i << "\n\n";
+  // }
+  // std::cout << "-------\nDELTAS INCOMING" << "\n\n";
+  // for (Eigen::MatrixXf i : deltas) {
+  //   std::cout << i << "\n\n";
+  // }
   for (int i = 0; i < length-1; i++) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
     //*layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
