@@ -162,12 +162,14 @@ void Network::feedforward()
       }
     }
   }
+  std::cout << (*layers[length-1].contents) << "\n";
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float sum = 0;
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       sum += exp((*layers[length-1].contents)(i,j));
     }
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      std::cout << "(e^" << (*layers[length-1].contents)(i,j) << ")/" << sum << " -> " << exp((*layers[length-1].contents)(i,j)) << "/" << sum << " -> " << exp((*layers[length-1].contents)(i,j))/sum << "\n";
       (*layers[length-1].contents)(i,j) = exp((*layers[length-1].contents)(i,j))/sum;
     }
   }
@@ -227,12 +229,14 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+  std::cout << (*layers[length-1].contents) << "\n\n\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       error(i,j) = truth - (*layers[length-1].contents)(i,j);
+      std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
   //  std::cout << error << "\n\n";
@@ -246,14 +250,14 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
-  // std::cout << "-------\nGRADS INCOMING" << "\n\n";
-  // for (Eigen::MatrixXf i : gradients) {
-  //   std::cout << i << "\n\n";
-  // }
-  // std::cout << "-------\nDELTAS INCOMING" << "\n\n";
-  // for (Eigen::MatrixXf i : deltas) {
-  //   std::cout << i << "\n\n";
-  // }
+  std::cout << "-------\nGRADS INCOMING" << "\n\n";
+  for (Eigen::MatrixXf i : gradients) {
+    std::cout << i << "\n\n";
+  }
+  std::cout << "-------\nDELTAS INCOMING" << "\n\n";
+  for (Eigen::MatrixXf i : deltas) {
+    std::cout << i << "\n\n";
+  }
   for (int i = 0; i < length-1; i++) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
     //*layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
