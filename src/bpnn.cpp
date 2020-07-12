@@ -203,17 +203,29 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    float loss_i = 0;
-    for (int j = 0; j < layers[length-1].contents->rows(); j++) {
-      if (j == i) continue;
-      float classloss = (*layers[length-1].contents)(i,j) - (*labels)(i,0) + DELTA;
-      if (classloss > 0) loss_i += classloss;
-      else loss_i+=0;
+    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      if (j == (*labels)(i,0)) {
+        float sum = 0;
+        for (int k = 0; k < layers[length-1].contents->cols(); k++) {
+          if (k == j) continue;
+          float intermediate = (*layers[length-1].contents)(i,j) - (*labels)(i,0);
+          if (intermediate > 0) sum+=1;
+        }
+        if (sum == 0) error(i,j) = 0; // IEEE floats are weird
+        else error(i,j) = -sum;
+      }
+      else {
+        float classloss = (*layers[length-1].contents)(i,j) - (*labels)(i,0) + DELTA;
+        if (classloss > 0) error(i, j) = 1;
+        else error(i, j) = 0;
+      }
     }
-    error(i, 0) = loss_i;
   }
-  gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
+  std::cout << error << "\n\n";
+  gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+  std::cout << deltas[0] << "\n\n";
+  //  gradients[523] += error;
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));

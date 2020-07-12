@@ -9,7 +9,7 @@ double bench(int batch_sz)
   Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0, 0.9);
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
-  net.add_layer(2, "resig");
+  net.add_layer(2, "linear");
   net.init_decay("step", 0, 2);
   net.initialize();
   //  checks(net);
