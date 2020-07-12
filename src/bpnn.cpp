@@ -162,6 +162,15 @@ void Network::feedforward()
       }
     }
   }
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    float sum = 0;
+    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      sum += exp((*layers[length-1].contents)(i,j));
+    }
+    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      (*layers[length-1].contents)(i,j) = exp((*layers[length-1].contents)(i,j))/sum;
+    }
+  }
 }
 
 void Network::list_net()
