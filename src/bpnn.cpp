@@ -184,16 +184,22 @@ void Network::list_net()
 
 float Network::cost()
 {
-  // float sum = 0;
+  float sum = 0;
   float reg = 0; // Regularization term
-  // for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-  //   sum += ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0)) * ((*labels)(i, 0) - (*layers[length-1].contents)(i, 0));
-  // }
+  for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+    float tempsum = 0;
+    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      float truth;
+      if (j==(*labels)(i,0)) truth = (*labels)(i,0);
+      else truth = 0;
+      tempsum += truth * log((*layers[length-1].contents)(i,j))
+    }
+    sum+=tempsum;
+  }
   for (int i = 0; i < layers.size()-1; i++) {
     reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
   }
-  // return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
-  return (1/2*lambda*reg);
+  return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
 }
 
 float Network::accuracy()
