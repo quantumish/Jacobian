@@ -191,12 +191,17 @@ float Network::accuracy()
 {
   float correct = 0;
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-    if ((*labels)(i, 0) == round((*layers[length-1].contents)(i, 0))) correct += 1;
+    float ans = -INFINITY;
+    for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+      if ((*layers[length-1].contents)(i, j) > ans) ans = j;
+    }
+    
+    if ((*labels)(i, 0) == ans) correct += 1;
   }
   return (1.0/batch_size) * correct;
 }
 
-#define DELTA 10
+#define DELTA 1
 void Network::backpropagate()
 {
   std::vector<Eigen::MatrixXf> gradients;
@@ -221,10 +226,10 @@ void Network::backpropagate()
       }
     }
   }
-  std::cout << error << "\n\n";
+  //  std::cout << error << "\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-  std::cout << deltas[0] << "\n\n";
+  //  std::cout << deltas[0] << "\n\n";
   //  gradients[523] += error;
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
@@ -232,6 +237,14 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
+  // std::cout << "-------\nGRADS INCOMING" << "\n\n";
+  // for (Eigen::MatrixXf i : gradients) {
+  //   std::cout << i << "\n\n";
+  // }
+  // std::cout << "-------\nDELTAS INCOMING" << "\n\n";
+  // for (Eigen::MatrixXf i : deltas) {
+  //   std::cout << i << "\n\n";
+  // }
   for (int i = 0; i < length-1; i++) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
     //*layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
@@ -362,6 +375,10 @@ void Network::train()
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
+    // if (i > batch_size * 10) {
+    //   list_net();
+    //   exit(1);
+    // }
   }
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
