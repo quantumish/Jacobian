@@ -151,7 +151,7 @@ void ConvNet::process()
     pool_layers[i].pool();
     conv_layers[i+1].input = pool_layers[i].output;
   }
-  conv_layers[preprocess_length-1].convolute();
+  conv_layers[preprocess_length-1].convolute(); 
   //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
   //pool_layers[preprocess_length-1].pool();
   //  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
@@ -184,8 +184,18 @@ void ConvNet::backpropagate()
 {
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
-  Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
-  gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
+  Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+  // std::cout << (*layers[length-1].contents) << "\n\n\n";
+  for (int i = 0; i < error.rows(); i++) {
+    for (int j = 0; j < error.cols(); j++) {
+      float truth;
+      if (j==(*labels)(i,0)) truth = 1;
+      else truth = 0;
+      error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+      // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
+    }
+  }
+  gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
@@ -263,13 +273,14 @@ int main()
 {
   ConvNet net ("../data_banknote_authentication.txt", 1, 0.05, 0.01, 0, 0.9);
   Eigen::MatrixXf labels (1,1);
-  labels << 1;
+  labels << 2;
   net.set_label(labels);
   net.add_conv_layer(28,28,1,4,4,0);
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(625, "linear");
   net.add_layer(5, "relu");
-  net.add_layer(1, "resig");
+  net.add_layer(10, "resig");
+  net.init_decay("step", 1, 10);
   net.initialize();
 
   Eigen::MatrixXf* input = new Eigen::MatrixXf (28,28);
@@ -282,9 +293,10 @@ int main()
   
   net.conv_layers[0].set_input(input);
   net.process();
-  for (int i = 0; i < 10; i++) {
+  for (int i = 0; i < 50; i++) {
     net.feedforward();
     net.backpropagate();
-    printf("Epoch %i complete - cost %f - acc %f\n", net.epochs, net.cost(), net.accuracy());
+    printf("'Epoch' %i complete - cost %f - acc %f\n", net.epochs, net.cost(), net.accuracy());
   }
+  std::cout << *net.layers[net.length-1].contents << "\n";
 }

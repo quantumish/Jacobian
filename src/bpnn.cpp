@@ -202,7 +202,7 @@ float Network::cost()
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
-      //      std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
+      // std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
       tempsum += truth * log((*layers[length-1].contents)(i,j));
     }
     sum-=tempsum;
@@ -243,7 +243,7 @@ void Network::backpropagate()
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      error(i,j) = truth - (*layers[length-1].contents)(i,j);
+      error(i,j) = (*layers[length-1].contents)(i,j) - truth;
       // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
