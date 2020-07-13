@@ -10,9 +10,9 @@ double bench(int batch_sz)
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
-  //  net.init_decay("step", 1, 2);
+  net.init_decay("step", 1, 2);
   net.initialize();
-  // checks(net);
+  //  checks(net);
   // for (int i = 0; i < 10; i++) {
   //   net.next_batch();
   //   net.feedforward();
@@ -20,12 +20,12 @@ double bench(int batch_sz)
   //   net.backpropagate();
   //   std::cout << net.cost() << " " << net.accuracy() << "\n";
   // }
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 25; i++) {
     net.train();
     //    net.list_net();
   }
-  std::cout << *net.layers[net.length-1].contents << "\n\n";
-  std::cout << *net.labels << "\n";
+  //  std::cout << *net.layers[net.length-1].contents << "\n\n";
+  //  std::cout << *net.labels << "\n";
   auto end = std::chrono::high_resolution_clock::now();
   //net.list_net();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);

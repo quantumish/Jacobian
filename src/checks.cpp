@@ -1,5 +1,6 @@
 void checks(Network net)
 {
+  Network original = net;
   int sanity_passed = 0;
   std::cout << "\u001b[4m\u001b[1mSANITY CHECKS:\u001b[0m\n";
   // Check if regularization strength increases loss (as it should).
@@ -20,7 +21,7 @@ void checks(Network net)
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
 
-  //  list_net();
+  //  net.list_net();
   
   // Check if zero cost is achievable on a batch
   std::cout << "Zero-cost sanity check...";
@@ -121,10 +122,18 @@ void checks(Network net)
     sanity_passed++;
   }
   else std::cout << " \u001b[31mFailed.\n\u001b[37m";
-  
-  std::cout << "\u001b[1m\nPassed " << sanity_passed << "/5" <<" sanity checks.\u001b[0m\n\n\n";
 
-  net.list_net();
+  // std::cout << "Side effects sanity check...";
+  
+  // if (net == original) {
+  //   std::cout << " \u001b[32mPassed!\n\u001b[37m";
+  //   sanity_passed++;
+  // }
+  // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+
+  std::cout << "\u001b[1m\nPassed " << sanity_passed << "/6" <<" sanity checks.\u001b[0m\n\n\n";
+  
+  //  net.list_net();
   
   // float epsilon = 0.0001;
   // Network copy = *this;
@@ -159,4 +168,5 @@ void checks(Network net)
   //   counter++;
   // }
   //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
+
 }

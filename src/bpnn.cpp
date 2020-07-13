@@ -10,7 +10,13 @@
 #define MAXLINE 1024
 #define ZERO_THRESHOLD pow(10, -8) // for checks
 
+#if (!RECKLESS)
 #define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+#else
+#define checknan(x, loc)
+#endif
+
+#include "checks.cpp"
 
 struct ValueError : public std::exception
 {
@@ -177,31 +183,20 @@ void Network::feedforward()
       }
     }
   }
-  //std::cout << (*layers[length-1].contents) << "\n";
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float sum = 0;
     Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
     Eigen::MatrixXf::Index maxRow, maxCol;
     float max = m.maxCoeff(&maxRow, &maxCol);
-    //    std::cout << m << "(before with max "<< max <<")\n";
     m = (m.array() - max).matrix();
-    //    std::cout << m << "(after with max "<< max <<")\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-#ifndef RECKLESS
       checknan(m(0,j), "input to final layer");
-#endif
-      //      if(m(0,j)==INFINITY || m(0,j)==NAN || m(0,j)== -INFINITY) throw ValueError("Detected NaN or inf value in layer", "input to final layer");
       sum += exp(m(0,j));
-#ifndef RECKLESS
       checknan(sum, "sum in Softmax operation");
-#endif
     }
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      //      std::cout << "(e^" << m(0,j) << ")/" << sum << " -> " << exp(m(0,j)) << "/" << sum << " -> " << exp((m(0,j)))/sum << "\n";
       m(0,j) = exp(m(0,j))/sum;
-#ifndef RECKLESS
       checknan(m(0,j), "output of Softmax operation");
-#endif
     }
     layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
   }
@@ -213,7 +208,7 @@ void Network::list_net()
   for (int i = 1; i < length-1; i++) {
     std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
   }
-  std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
+  std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
 float Network::cost()
@@ -269,6 +264,7 @@ void Network::backpropagate()
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+      checknan(error(i,j), "gradient of final layer");
       // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
@@ -405,15 +401,13 @@ float Network::test(char* path)
   return 0;
 }
 
-#include "checks.cpp"
-
 void Network::train()
 {
   rewind(data);
   float cost_sum = 0;
   float acc_sum = 0;
   for (int i = 0; i <= instances-batch_size; i+=batch_size) {
-    [[unlikely]] if (i != instances-batch_size) { // Don't try to advance batch on final batch.
+    if (i != instances-batch_size) { // Don't try to advance batch on final batch.
       next_batch();
     }
     feedforward();
