@@ -110,6 +110,7 @@ PYBIND11_MODULE(mrbpnn, m) {
     .def(py::init<char*, int, float, float, float, float>())
     .def("add_layer", &Network::add_layer, py::arg("nodes"), py::arg("activation"))
     .def("initialize", &Network::initialize)
+    .def("init_decay", &Network::init_decay, py::arg("type"), py::arg("a_0"), py::arg("k"))
     .def("set_activation", &Network::set_activation)
     .def("feedforward", &Network::feedforward)
     .def("backpropagate", &Network::backpropagate)

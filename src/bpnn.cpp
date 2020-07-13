@@ -10,6 +10,24 @@
 #define MAXLINE 1024
 #define ZERO_THRESHOLD pow(10, -8) // for checks
 
+#define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+
+struct ValueError : public std::exception
+{
+  const char* message;
+  const char* location;
+  ValueError(const char* msg, const char* loc)
+    :message{msg}, location{loc}
+  {
+  }
+  const char* what() const throw () {
+    char* error;
+    sprintf(error, "%s (thrown in %s).", message, location);
+    const char* error_message = error;
+    return error_message;
+  }
+};
+
 Layer::Layer(int batch_sz, int nodes)
 {
   contents = new Eigen::MatrixXf (batch_sz, nodes);
@@ -45,14 +63,11 @@ void Layer::init_weights(Layer next)
 }
 
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio)
+  :lambda{l}, learning_rate{learn_rate}, bias_lr{bias_rate}, batch_size{batch_sz}
 {
-  lambda = l;
-  learning_rate = learn_rate;
-  bias_lr = bias_rate;
   int total_instances = prep_file(path, SHUFFLED_PATH);
   test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
-  batch_size = batch_sz;
   data = fopen(TRAIN_PATH, "r");
   decay = [](float lr, float t) -> float {
     return lr;
@@ -172,11 +187,21 @@ void Network::feedforward()
     m = (m.array() - max).matrix();
     //    std::cout << m << "(after with max "<< max <<")\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+#ifndef RECKLESS
+      checknan(m(0,j), "input to final layer");
+#endif
+      //      if(m(0,j)==INFINITY || m(0,j)==NAN || m(0,j)== -INFINITY) throw ValueError("Detected NaN or inf value in layer", "input to final layer");
       sum += exp(m(0,j));
+#ifndef RECKLESS
+      checknan(sum, "sum in Softmax operation");
+#endif
     }
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       //      std::cout << "(e^" << m(0,j) << ")/" << sum << " -> " << exp(m(0,j)) << "/" << sum << " -> " << exp((m(0,j)))/sum << "\n";
       m(0,j) = exp(m(0,j))/sum;
+#ifndef RECKLESS
+      checknan(m(0,j), "output of Softmax operation");
+#endif
     }
     layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
   }
