@@ -3,6 +3,79 @@
 
 #define LARGE_NUM 1000000 // Remove me.
 
+int ReverseInt (int i)
+{
+    unsigned char ch1, ch2, ch3, ch4;
+    ch1=i&255;
+    ch2=(i>>8)&255;
+    ch3=(i>>16)&255;
+    ch4=(i>>24)&255;
+    return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
+}   
+
+void ReadMNIST(int NumberOfImages, int DataOfAnImage,std::vector<std::vector<double>> &arr)
+{
+    arr.resize(NumberOfImages,std::vector<double>(DataOfAnImage));
+    std::ifstream file ("./t10k-images-idx3-ubyte",std::ios::binary);
+    if (file.is_open())
+    {
+        int magic_number=0;
+        int number_of_images=0;
+        int n_rows=0;
+        int n_cols=0;
+        file.read((char*)&magic_number,sizeof(magic_number));
+        magic_number= ReverseInt(magic_number);
+        file.read((char*)&number_of_images,sizeof(number_of_images));
+        number_of_images= ReverseInt(number_of_images);
+        file.read((char*)&n_rows,sizeof(n_rows));
+        n_rows= ReverseInt(n_rows);
+        file.read((char*)&n_cols,sizeof(n_cols));
+        n_cols= ReverseInt(n_cols);
+        for(int i=0;i<number_of_images;++i)
+        {
+            for(int r=0;r<n_rows;++r)
+            {
+                for(int c=0;c<n_cols;++c)
+                {
+                    unsigned char temp=0;
+                    file.read((char*)&temp,sizeof(temp));
+                    arr[i][(n_rows*r)+c]= (double)temp;
+                }
+            }
+        }
+    }
+}
+
+unsigned char* read_mnist_labels(std::string full_path, int number_of_labels) {
+    auto reverseInt = [](int i) {
+        unsigned char c1, c2, c3, c4;
+        c1 = i & 255, c2 = (i >> 8) & 255, c3 = (i >> 16) & 255, c4 = (i >> 24) & 255;
+        return ((int)c1 << 24) + ((int)c2 << 16) + ((int)c3 << 8) + c4;
+    };
+
+    typedef unsigned char uchar;
+
+    std::ifstream file(full_path, std::ios::binary);
+
+    if(file.is_open()) {
+        int magic_number = 0;
+        file.read((char *)&magic_number, sizeof(magic_number));
+        magic_number = reverseInt(magic_number);
+
+        if(magic_number != 2049) throw std::runtime_error("Invalid MNIST label file!");
+
+        file.read((char *)&number_of_labels, sizeof(number_of_labels)), number_of_labels = reverseInt(number_of_labels);
+
+        uchar* _dataset = new uchar[number_of_labels];
+        for(int i = 0; i < number_of_labels; i++) {
+            file.read((char*)&_dataset[i], 1);
+        }
+        return _dataset;
+    } else {
+        throw std::runtime_error("Unable to open file `" + full_path + "`!");
+    }
+}
+
 class ConvLayer
 {
 public:
@@ -102,24 +175,30 @@ class ConvNet : public Network
 {
 public:
   int preprocess_length;
+  std::vector<std::vector<double>> data;
+  unsigned char* data_labels;
                 
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
   
-  ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
+  ConvNet(char* path, float learn_rate, float bias_rate, float l, float ratio);
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
+  void next_batch();
   void backpropagate();
+  void train();
   void add_conv_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void add_pool_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
   void set_label(Eigen::MatrixXf newlabels);
   void initialize();
 };
 
-ConvNet::ConvNet(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio) : Network(path, batch_sz, learn_rate, bias_rate, l, ratio)
+ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, float l, float ratio)
+  : Network(path, 1, learn_rate, bias_rate, l, ratio), preprocess_length{0}
 {
-  preprocess_length = 0;
-  labels = new Eigen::MatrixXf (batch_sz, 1);
+  ReadMNIST(10000,784,data);
+  data_labels = read_mnist_labels("./t10k-labels-idx1-ubyte",10000);
+  labels = new Eigen::MatrixXf (1, 1);
 }
 
 void ConvNet::add_conv_layer(int x, int y, int stride, int kern_x, int kern_y, int pad)
@@ -139,6 +218,14 @@ void ConvNet::initialize()
   for (int i = 0; i < length-1; i++) {
     layers[i].init_weights(layers[i+1]);
   }
+}
+
+void ConvNet::next_batch()
+{
+  for (int i = 0; i < 784; i++) {
+    (*conv_layers[0].input)(i/28, i%28) = data[batches][i];
+  }
+  (*labels)(0,0) = (float)(int)data_labels[batches];
 }
 
 void ConvNet::process()
@@ -226,52 +313,32 @@ void ConvNet::backpropagate()
   conv_layers[0].bias -= gradients[gradients.size()-1].sum();
 }
 
-using namespace std;
-int ReverseInt (int i)
+void ConvNet::train()
 {
-    unsigned char ch1, ch2, ch3, ch4;
-    ch1=i&255;
-    ch2=(i>>8)&255;
-    ch3=(i>>16)&255;
-    ch4=(i>>24)&255;
-    return((int)ch1<<24)+((int)ch2<<16)+((int)ch3<<8)+ch4;
-}
-void ReadMNIST(int NumberOfImages, int DataOfAnImage,vector<vector<double>> &arr)
-{
-    arr.resize(NumberOfImages,vector<double>(DataOfAnImage));
-    ifstream file ("./t10k-images-idx3-ubyte",ios::binary);
-    if (file.is_open())
-    {
-        int magic_number=0;
-        int number_of_images=0;
-        int n_rows=0;
-        int n_cols=0;
-        file.read((char*)&magic_number,sizeof(magic_number));
-        magic_number= ReverseInt(magic_number);
-        file.read((char*)&number_of_images,sizeof(number_of_images));
-        number_of_images= ReverseInt(number_of_images);
-        file.read((char*)&n_rows,sizeof(n_rows));
-        n_rows= ReverseInt(n_rows);
-        file.read((char*)&n_cols,sizeof(n_cols));
-        n_cols= ReverseInt(n_cols);
-        for(int i=0;i<number_of_images;++i)
-        {
-            for(int r=0;r<n_rows;++r)
-            {
-                for(int c=0;c<n_cols;++c)
-                {
-                    unsigned char temp=0;
-                    file.read((char*)&temp,sizeof(temp));
-                    arr[i][(n_rows*r)+c]= (double)temp;
-                }
-            }
-        }
+  float cost_sum = 0;
+  float acc_sum = 0;
+  for (int i = 0; i <= 10; i++) {
+    if (i != instances-batch_size) { // Don't try to advance batch on final batch.
+      next_batch();
     }
+    process();
+    feedforward();
+    backpropagate();
+    cost_sum += cost();
+    acc_sum += accuracy();
+    batches++;
+  }
+  epoch_acc = 1.0/(10000) * acc_sum;
+  epoch_cost = 1.0/(10000) * cost_sum;
+  printf("Epoch %i complete - cost %f - acc %f\n", epochs, epoch_cost, epoch_acc);
+  batches=0;
+  learning_rate = decay(learning_rate, epochs);
+  epochs++;
 }
 
 int main()
 {
-  ConvNet net ("../data_banknote_authentication.txt", 1, 0.05, 0.01, 0, 0.9);
+  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 0, 0.9);
   Eigen::MatrixXf labels (1,1);
   labels << 2;
   net.set_label(labels);
@@ -279,24 +346,13 @@ int main()
   //net.add_pool_layer(5,5,1,2,0);
   net.add_layer(625, "linear");
   net.add_layer(5, "relu");
-  net.add_layer(10, "resig");
-  net.init_decay("step", 1, 10);
+  net.add_layer(10, "linear");
+  net.init_decay("step", 1, 2);
   net.initialize();
 
-  Eigen::MatrixXf* input = new Eigen::MatrixXf (28,28);
-  vector<vector<double>> ar;
-  ReadMNIST(10000,784,ar);
-  for (int i = 0; i < 784; i++) {
-    (*input)(i/28, i%28) = ar[1][i];
-  }
-  std::cout << "\n\n" << *input << "\n";
-  
-  net.conv_layers[0].set_input(input);
-  net.process();
   for (int i = 0; i < 50; i++) {
-    net.feedforward();
-    net.backpropagate();
-    printf("'Epoch' %i complete - cost %f - acc %f\n", net.epochs, net.cost(), net.accuracy());
+    net.train();
   }
+  net.list_net();
   std::cout << *net.layers[net.length-1].contents << "\n";
 }
