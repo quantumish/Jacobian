@@ -7,32 +7,7 @@
 #define TEST_PATH "./test.txt"
 #define TRAIN_PATH "./train.txt"
 
-#define MAXLINE 1024
-#define ZERO_THRESHOLD pow(10, -8) // for checks
-
-#if (!RECKLESS)
-#define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
-#else
-#define checknan(x, loc)
-#endif
-
 #include "checks.cpp"
-
-struct ValueError : public std::exception
-{
-  const char* message;
-  const char* location;
-  ValueError(const char* msg, const char* loc)
-    :message{msg}, location{loc}
-  {
-  }
-  const char* what() const throw () {
-    char* error;
-    sprintf(error, "%s (thrown in %s).", message, location);
-    const char* error_message = error;
-    return error_message;
-  }
-};
 
 Layer::Layer(int batch_sz, int nodes)
 {
@@ -224,8 +199,10 @@ float Network::cost()
       if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
       // std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
       tempsum += truth * log((*layers[length-1].contents)(i,j));
+      checknan(tempsum, "summation for row inside cost calculation");
     }
     sum-=tempsum;
+    checknan(tempsum, "total summation inside cost calculation");
   }
   for (int i = 0; i < layers.size()-1; i++) {
     reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
@@ -258,12 +235,15 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
   // std::cout << (*layers[length-1].contents) << "\n\n\n";
+  //  std::cout << "OUTPUT:\n" << (*layers[length-1].contents) << "\n\n";
+  //  std::cout << "WEIGHT\n" << (*layers[length-2].weights) << "\n\n";
+  //  std::cout << "X:\n" << (*layers[length-2].contents) << "\n\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+      error(i,j) = truth - (*layers[length-1].contents)(i,j);
       checknan(error(i,j), "gradient of final layer");
       // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
@@ -279,6 +259,8 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
+  //  std::cout << "GRAD:\n"<< gradients[0] << "\n\n";
+  //  std::cout << "DELTA:\n"<< deltas[0] << "\n\n";
   // std::cout << "-------\nGRADS INCOMING" << "\n\n";
   // for (Eigen::MatrixXf i : gradients) {
   //   std::cout << i << "\n\n";
@@ -293,6 +275,7 @@ void Network::backpropagate()
     //*layers[length-2-i].weights += *layers[length-2-i].v;
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
+  //  std::cout << "NEW WEIGHT:\n" << (*layers[length-2].weights) << "\n\n\n\n";
 }
 
 void Network::update_layer(float* vals, int datalen, int index)

@@ -3,6 +3,12 @@
 
 #define LARGE_NUM 1000000 // Remove me.
 
+#if (!RECKLESS)
+#define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+#else
+#define checknan(x, loc)
+#endif
+
 int ReverseInt (int i)
 {
     unsigned char ch1, ch2, ch3, ch4;
@@ -279,6 +285,8 @@ void ConvNet::backpropagate()
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+      //      std::cout << error(i, j) << " " << (*layers[length-1].contents)(i,j) << " " << truth << "\n";
+      checknan(error(i, j), "gradient of final layer");
       // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
@@ -294,6 +302,7 @@ void ConvNet::backpropagate()
   }
   gradients.push_back((gradients[gradients.size()-1] * layers[0].weights->transpose()).cwiseProduct(*layers[0].dZ));
   for (int i = 0; i < length-1; i++) {
+    std::cout << learning_rate << " (LR) \n" << deltas[i] << "\n\n";
     *layers[length-2-i].weights -= learning_rate * deltas[i];   
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
@@ -317,7 +326,7 @@ void ConvNet::train()
 {
   float cost_sum = 0;
   float acc_sum = 0;
-  for (int i = 0; i <= 10; i++) {
+  for (int i = 0; i <= 1; i++) {
     if (i != instances-batch_size) { // Don't try to advance batch on final batch.
       next_batch();
     }
@@ -338,7 +347,7 @@ void ConvNet::train()
 
 int main()
 {
-  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 0, 0.9);
+  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 5, 0.9);
   Eigen::MatrixXf labels (1,1);
   labels << 2;
   net.set_label(labels);
@@ -350,9 +359,8 @@ int main()
   net.init_decay("step", 1, 2);
   net.initialize();
 
-  for (int i = 0; i < 50; i++) {
+  for (int i = 0; i < 1; i++) {
     net.train();
   }
-  net.list_net();
   std::cout << *net.layers[net.length-1].contents << "\n";
 }

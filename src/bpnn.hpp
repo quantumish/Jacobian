@@ -84,4 +84,29 @@ void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
 int split_file(char* path, int lines, float ratio);
 
+struct ValueError : public std::exception
+{
+  const char* message;
+  const char* location;
+  ValueError(const char* msg, const char* loc)
+    :message{msg}, location{loc}
+  {
+  }
+  const char* what() const throw () {
+    char* error;
+    sprintf(error, "%s (thrown in %s).", message, location);
+    const char* error_message = error;
+    return error_message;
+  }
+};
+
+#define MAXLINE 1024
+#define ZERO_THRESHOLD pow(10, -8) // for checks
+
+#if (!RECKLESS)
+#define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+#else
+#define checknan(x, loc)
+#endif
+
 #endif /* MODULE_H */
