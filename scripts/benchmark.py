@@ -1,3 +1,11 @@
+#
+#  benchmark.py
+#  Jacobian
+#
+#  Created by David Freifeld
+#  Copyright © 2020 David Freifeld. All rights reserved.
+#
+
 import mrbpnn
 import matplotlib.pyplot as plt
 import numpy

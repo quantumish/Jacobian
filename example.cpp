@@ -18,7 +18,7 @@ double bench(int batch_sz)
   net.add_layer(4, "linear");
   net.add_layer(6, "lecun_tanh");
   net.add_layer(2, "linear");
-  net.init_decay("step", 1, 2);
+  //  net.init_decay("step", 1, 2);
   net.initialize();
   //  checks(net);
   // for (int i = 0; i < 10; i++) {
@@ -28,7 +28,7 @@ double bench(int batch_sz)
   //   net.backpropagate();
   //   std::cout << net.cost() << " " << net.accuracy() << "\n";
   // }
-  for (int i = 0; i < 500; i++) {
+  for (int i = 0; i < 1; i++) {
     net.train();
     //    net.list_net();
   }

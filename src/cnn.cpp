@@ -285,15 +285,26 @@ void ConvNet::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+  //  std::cout << "\nTRUTH:\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
+      //std::cout << truth << " ";
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
       checknan(error(i, j), "gradient of final layer");
     }
+    //  std::cout << "\n";
   }
+  // std::cout << "\n\n";
+  // std::cout << "\nLABELS:\n";
+  // std::cout << *labels << "\n\n";
+  // std::cout << "\nPREDICTION:\n";
+  // std::cout << (*layers[length-1].contents) << "\n\n";
+  // std::cout << "\nERR:\n";
+  // std::cout << error << "\n\n";
+  // std::cout << "\n\n\n------------------\n\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -328,19 +339,22 @@ void ConvNet::train()
 {
   float cost_sum = 0;
   float acc_sum = 0;
-  for (int i = 0; i <= 10; i++) {
+  for (int i = 0; i <= 100; i++) {
     if (i != instances-batch_size) { // Don't try to advance batch on final batch.
       next_batch();
     }
     process();
     feedforward();
+    // if (batches == 0) list_net();
     backpropagate();
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
+    //    if (batches == 1) (1);
+    //    if (batches > 15) exit(1);
   }
-  epoch_acc = 1.0/(10) * acc_sum;
-  epoch_cost = 1.0/(10) * cost_sum;
+  epoch_acc = 1.0/(100) * acc_sum;
+  epoch_cost = 1.0/(100) * cost_sum;
   printf("Epoch %i complete - cost %f - acc %f\n", epochs, epoch_cost, epoch_acc);
   batches=0;
   learning_rate = decay(learning_rate, epochs);
@@ -353,16 +367,18 @@ int main()
   Eigen::MatrixXf labels (1,1);
   labels << 2;
   net.set_label(labels);
-  net.add_conv_layer(28,28,1,4,4,0);
+  net.add_conv_layer(28,28,1,14,14,0);
+  net.add_conv_layer(14,14,1,7,7,0);
   //net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(625, "linear");
-  net.add_layer(5, "relu");
-  net.add_layer(10, "linear");
+  net.add_layer(49, "resig");
+  net.add_layer(5, "lecun_tanh");
+  net.add_layer(10, "resig");
   //  net.init_decay("step", 1, 2);
+  net.list_net();
   net.initialize();
 
-  for (int i = 0; i < 10; i++) {
-    net.train();
-  }
+  // for (int i = 0; i < 50; i++) {
+  //   net.train();
+  // }
   std::cout << *net.layers[net.length-1].contents << "\n";
 }
