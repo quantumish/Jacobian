@@ -3,7 +3,6 @@
 //  Jacobian
 //
 //  Created by David Freifeld
-//  Copyright © 2020 David Freifeld. All rights reserved.
 //
 
 #include "bpnn.hpp"
@@ -286,31 +285,26 @@ void ConvNet::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  // std::cout << (*layers[length-1].contents) << "\n\n\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-      //      std::cout << error(i, j) << " " << (*layers[length-1].contents)(i,j) << " " << truth << "\n";
       checknan(error(i, j), "gradient of final layer");
-      // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
-    //std::cout << "--GRAD---\n" << gradients[counter-1] << "\n\n" << layers[i].weights->transpose() << "\n\n" << *layers[i].dZ << "\n\n";
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    //std::cout << "---DELTA---\n" << gradients[counter] << "\n\n" << layers[i].weights->transpose() << "\n\n" << *layers[i].dZ << "\n\n";
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
   gradients.push_back((gradients[gradients.size()-1] * layers[0].weights->transpose()).cwiseProduct(*layers[0].dZ));
   for (int i = 0; i < length-1; i++) {
-    std::cout << learning_rate << " (LR) \n" << deltas[i] << "\n\n";
+    //    std::cout << learning_rate << " (LR) \n" << deltas[i] << "\n\n";
     *layers[length-2-i].weights -= learning_rate * deltas[i];   
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
@@ -334,7 +328,7 @@ void ConvNet::train()
 {
   float cost_sum = 0;
   float acc_sum = 0;
-  for (int i = 0; i <= 1; i++) {
+  for (int i = 0; i <= 10; i++) {
     if (i != instances-batch_size) { // Don't try to advance batch on final batch.
       next_batch();
     }
@@ -345,8 +339,8 @@ void ConvNet::train()
     acc_sum += accuracy();
     batches++;
   }
-  epoch_acc = 1.0/(10000) * acc_sum;
-  epoch_cost = 1.0/(10000) * cost_sum;
+  epoch_acc = 1.0/(10) * acc_sum;
+  epoch_cost = 1.0/(10) * cost_sum;
   printf("Epoch %i complete - cost %f - acc %f\n", epochs, epoch_cost, epoch_acc);
   batches=0;
   learning_rate = decay(learning_rate, epochs);
@@ -364,10 +358,10 @@ int main()
   net.add_layer(625, "linear");
   net.add_layer(5, "relu");
   net.add_layer(10, "linear");
-  net.init_decay("step", 1, 2);
+  //  net.init_decay("step", 1, 2);
   net.initialize();
 
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 10; i++) {
     net.train();
   }
   std::cout << *net.layers[net.length-1].contents << "\n";

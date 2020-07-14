@@ -34,6 +34,7 @@ public:
 class Network {
 public:
   FILE* data;
+  FILE* test_data;
   int instances;
   int test_instances;
 

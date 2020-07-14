@@ -3,7 +3,6 @@
 //  Jacobian
 //
 //  Created by David Freifeld
-//  Copyright © 2020 David Freifeld. All rights reserved.
 //
 
 #include "bpnn.hpp"
@@ -58,6 +57,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, fl
   test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
   data = fopen(TRAIN_PATH, "r");
+  test_data = fopen(path, "r");
   decay = [](float lr, float t) -> float {
     return lr;
   };
@@ -242,25 +242,17 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  // std::cout << (*layers[length-1].contents) << "\n\n\n";
-  //  std::cout << "OUTPUT:\n" << (*layers[length-1].contents) << "\n\n";
-  //  std::cout << "WEIGHT\n" << (*layers[length-2].weights) << "\n\n";
-  //  std::cout << "X:\n" << (*layers[length-2].contents) << "\n\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      error(i,j) = truth - (*layers[length-1].contents)(i,j);
+      error(i,j) = (*layers[length-1].contents)(i,j) - truth;
       checknan(error(i,j), "gradient of final layer");
-      // std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
   }
-  //  std::cout << error << "\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-  //  std::cout << deltas[0] << "\n\n";
-  //  gradients[523] += error;
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
@@ -361,7 +353,6 @@ int split_file(char* path, int lines, float ratio)
 
 float Network::test(char* path)
 {
-  FILE* test_data = fopen(path, "r");
   float costsum = 0;
   float accsum = 0;
   for (int i = 0; i <= test_instances-batch_size; i+=batch_size) {
@@ -389,6 +380,7 @@ float Network::test(char* path)
   }
   val_acc = 1.0/((float) test_instances/batch_size) * accsum;
   val_cost = 1.0/((float) test_instances/batch_size) * costsum;
+  rewind(test_data);
   return 0;
 }
 
