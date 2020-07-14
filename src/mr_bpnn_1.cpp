@@ -1,3 +1,11 @@
+//
+//  mr_bpnn_1.cpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 #include "bpnn.hpp"
 
 struct pair* map (struct pair input_pair)

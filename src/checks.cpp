@@ -1,3 +1,11 @@
+//
+//  checks.cpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 void checks(Network net)
 {
   Network original = net;

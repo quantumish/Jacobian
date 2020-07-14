@@ -1,9 +1,14 @@
 //
-// strassen.cpp
-// Experimental benchmarking of Strassen's Algorithm vs plain Eigen matrix multipy
+//  strassen.cpp
+//  Jacobian
 //
-// While naive multiplication is O(n^3), Strassen's Algorithm for matrix multiply is O(n^2.8074)
-// which means significant differences will begin to manifest for large matrices. All faster algorithms are galactic.
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+//  Description:
+//  Experimental benchmarking of Strassen's Algorithm vs plain Eigen matrix multiply.
+//  While naive multiplication is O(n^3), Strassen's Algorithm for matrix multiply is O(n^2.8074)
+//  which means significant differences will begin to manifest for large matrices. All faster algorithms are galactic.
 //
 
 #include <Eigen/Dense>

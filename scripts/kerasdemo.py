@@ -1,3 +1,11 @@
+#
+#  kerasdemo.py
+#  Jacobian
+#
+#  Created by David Freifeld
+#  Copyright © 2020 David Freifeld. All rights reserved.
+#
+
 #+-----------------------------------------------------------------------------+
 # Keras benchmark code to compare with network.
 #

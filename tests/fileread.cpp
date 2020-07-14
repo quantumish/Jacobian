@@ -1,3 +1,11 @@
+//
+//  fileread.cpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 uintmax_t wc(char const *fname)
 {
     static const auto BUFFER_SIZE = 1024;

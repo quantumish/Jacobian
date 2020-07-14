@@ -1,3 +1,11 @@
+//
+//  example.cpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 #include "./src/bpnn.hpp"
 #include "./src/utils.hpp"
 #include "unistd.h"

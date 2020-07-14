@@ -1,3 +1,11 @@
+//
+//  mr_bpnn.cpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 #include "bpnn.hpp"
 #include "utils.hpp"
 

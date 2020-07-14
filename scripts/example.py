@@ -1,3 +1,11 @@
+#
+#  example.py
+#  Jacobian
+#
+#  Created by David Freifeld
+#  Copyright © 2020 David Freifeld. All rights reserved.
+#
+
 import importlib.util
 spec = importlib.util.spec_from_file_location("mrbpnn", "/Library/Frameworks/Python.framework/Versions/3.7/lib/python3.7/site-packages/mrbpnn/mrbpnn.cpython-37m-darwin.so")
 mrbpnn = importlib.util.module_from_spec(spec)

@@ -1,3 +1,11 @@
+#
+#  setup.py
+#  Jacobian
+#
+#  Created by David Freifeld
+#  Copyright © 2020 David Freifeld. All rights reserved.
+#
+
 from setuptools import setup, Distribution
 
 

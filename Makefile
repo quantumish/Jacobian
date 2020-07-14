@@ -1,3 +1,10 @@
+#
+#  Makefile
+#  Jacobian
+#
+#  Created by David Freifeld
+#  Copyright © 2020 David Freifeld. All rights reserved.
+#
 # ---------
 # TODO:
 # Start using CMake to make this less of a headache?

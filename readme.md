@@ -1,3 +1,10 @@
+
+  <!-- readme.md -->
+  <!-- Jacobian -->
+
+  <!-- Created by David Freifeld -->
+  <!-- Copyright © 2020 David Freifeld. All rights reserved. -->
+
 ![Banner](./pictures/banner.png)
 
 ## About

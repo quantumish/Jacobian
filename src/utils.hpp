@@ -1,3 +1,11 @@
+//
+//  utils.hpp
+//  Jacobian
+//
+//  Created by David Freifeld
+//  Copyright © 2020 David Freifeld. All rights reserved.
+//
+
 #ifndef UTILS_H
 #define UTILS_H
 
