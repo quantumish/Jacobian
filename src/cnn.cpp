@@ -247,9 +247,9 @@ void ConvNet::process()
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
-    pool_layers[i].input = conv_layers[i].output;
-    pool_layers[i].pool();
-    conv_layers[i+1].input = pool_layers[i].output;
+    //    pool_layers[i].input = conv_layers[i].output;
+    //    pool_layers[i].pool();
+    conv_layers[i+1].input = conv_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute(); 
   //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
@@ -319,20 +319,30 @@ void ConvNet::backpropagate()
     *layers[length-2-i].weights -= learning_rate * deltas[i];   
     *layers[length-1-i].bias -= bias_lr * gradients[i];
   }
-  //  list_net();
-  // std::cout << "GRADIENT LIST\n";
-  // for (int i = 0; i < gradients.size(); i++) {
-  //   std::cout  << gradients[i] << "\n\n";
-  // }
   Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
-  //std::cout << gradients[gradients.size()-1].cols() << " " << conv_layers[0].input->cols() << " " << conv_layers[0].input->cols() - gradients[length-1].cols()+1 << "\n";
-  for (int i = 0; i < conv_layers[0].input->cols() - gradients[length-1].cols()+1; i+=conv_layers[0].stride_len) {
-    for (int j = 0; j < conv_layers[0].input->rows() - gradients[length-1].rows()+1; j+=conv_layers[0].stride_len) {
-      (*conv_layers[0].kernel)(j, i) -= (gradients[length-1] * (conv_layers[0].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
+  std::vector<Eigen::MatrixXf> conv_deltas;
+  conv_deltas.emplace_back(conv_layers[conv_layers.size()-1].input->rows() - gradients[length-1].rows()+1 ,conv_layers[conv_layers.size()-1].input->cols() - gradients[length-1].cols()+1);
+  for (int i = 0; i < conv_deltas[0].cols(); i+=conv_layers[conv_layers.size()-1].stride_len) {
+    for (int j = 0; j < conv_deltas[0].rows(); j+=conv_layers[conv_layers.size()-1].stride_len) {
+      conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
     }
   }
-  conv_layers[0].bias -= gradients[gradients.size()-1].sum();
+  //  std::cout << conv_deltas[0] << "\n\n";
+  *conv_layers[conv_layers.size()-1].kernel -= conv_deltas[0];
+  conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
+  counter = 1;
+  for (int i = conv_layers.size()-2; i > 0; i--) {
+    conv_deltas.emplace_back(conv_layers[i].input->rows() - conv_deltas[counter-1].rows()+1 ,conv_layers[i].input->cols() - conv_deltas[counter-1].cols()+1);
+    for (int j = 0; j < conv_deltas[counter].cols(); j+=conv_layers[i].stride_len) {
+      for (int k = 0; k < conv_deltas[counter].rows(); k+=conv_layers[i].stride_len) {
+        conv_deltas[i](k,j) -= (conv_deltas[counter-1] * (conv_layers[i].input->block(j, i, conv_deltas[counter-1].rows(), conv_deltas[counter-1].cols()))).sum();
+      }
+    }
+    *conv_layers[i].kernel -= conv_deltas[counter];
+    conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
+    counter++;
+  }
 }
 
 void ConvNet::train()
@@ -367,18 +377,18 @@ int main()
   Eigen::MatrixXf labels (1,1);
   labels << 2;
   net.set_label(labels);
-  net.add_conv_layer(28,28,1,14,14,0);
-  net.add_conv_layer(14,14,1,7,7,0);
-  //net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(49, "resig");
+  net.add_conv_layer(28,28,1,15,15,0);
+  net.add_conv_layer(14,14,1,8,8,0);
+  //  net.add_pool_layer(5,5,1,2,0);
+  net.add_layer(49, "sigmoid");
   net.add_layer(5, "lecun_tanh");
   net.add_layer(10, "resig");
   //  net.init_decay("step", 1, 2);
-  net.list_net();
   net.initialize();
+  //net.list_net();
 
-  // for (int i = 0; i < 50; i++) {
-  //   net.train();
-  // }
-  std::cout << *net.layers[net.length-1].contents << "\n";
+  for (int i = 0; i < 5; i++) {
+    net.train();
+  }
+  net.list_net();
 }
