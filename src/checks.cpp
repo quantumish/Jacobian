@@ -78,6 +78,7 @@ void checks(Network net)
         }
       }
     }
+    return false;
   };
   if (check_gradients(gradients) == false && check_gradients(deltas) == false) {
     std::cout << " \u001b[32mPassed!\n\u001b[37m";

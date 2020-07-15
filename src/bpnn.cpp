@@ -169,11 +169,11 @@ void Network::feedforward()
   //  std::cout << "\nSOFTMAX INPUT\n" << *layers[length-1].contents << "\n\n";
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float sum = 0;
-    Eigen::MatrixXf m = *layers[length-1].contents;//->block(i,0,1,layers[length-1].contents->cols());
-    // Eigen::MatrixXf::Index maxRow, maxCol;
-    // float max = m.maxCoeff(&maxRow, &maxCol);
-    // m = (m.array() - max).matrix();
-    //    std::cout << "\nGETTING SUM\n";
+    Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
+    Eigen::MatrixXf::Index maxRow, maxCol;
+    float max = m.maxCoeff(&maxRow, &maxCol);
+    m = (m.array() - max).matrix();
+    //   std::cout << "\nGETTING SUM\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       checknan(m(0,j), "input to final layer");
       sum += exp(m(0,j));
@@ -182,8 +182,7 @@ void Network::feedforward()
     }
     //    std::cout << "\nFINAL ACTIVATION\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-      (*layers[length-1].contents)(i,j) = exp(m(0,j))/sum;
-      float test = exp(m(0,j))/sum;
+      m(0,j) = exp(m(0,j))/sum;
       //      std::cout << "Calculating " << exp(m(0,j)) << "/" << sum << " to be " << (*layers[length-1].contents)(i,j) << "(aka " << test<<")\n";
       checknan(m(0,j), "output of Softmax operation");
     }
@@ -249,26 +248,26 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  std::cout << "\nTRUTH:\n";
+  //  std::cout << "\nTRUTH:\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      std::cout << truth << " ";
+      //      std::cout << truth << " ";
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
       checknan(error(i,j), "gradient of final layer");
       //  std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
-    std::cout << "\n";
+    //    std::cout << "\n";
   }
-  std::cout << "\n\n";
-  std::cout << "\nLABELS:\n";
-  std::cout << *labels << "\n\n";
-  std::cout << "\nPREDICTION:\n";
-  std::cout << (*layers[length-1].contents) << "\n\n";
-  std::cout << "\nERR:\n";
-  std::cout << error << "\n\n";
+  // std::cout << "\n\n";
+  // std::cout << "\nLABELS:\n";
+  // std::cout << *labels << "\n\n";
+  // std::cout << "\nPREDICTION:\n";
+  // std::cout << (*layers[length-1].contents) << "\n\n";
+  // std::cout << "\nERR:\n";
+  // std::cout << error << "\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;

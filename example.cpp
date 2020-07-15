@@ -28,7 +28,7 @@ double bench(int batch_sz)
   //   net.backpropagate();
   //   std::cout << net.cost() << " " << net.accuracy() << "\n";
   // }
-  for (int i = 0; i < 1; i++) {
+  for (int i = 0; i < 50; i++) {
     net.train();
     //    net.list_net();
   }
