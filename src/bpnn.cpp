@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include <ctime>
 #include <random>
+#include <Eigen/MatrixFunctions>
 
 #define SHUFFLED_PATH "./shuffled.txt"
 #define TEST_PATH "./test.txt"
@@ -146,6 +147,7 @@ void Network::set_activation(int index, std::function<float(float)> custom, std:
 void Network::feedforward()
 {
   for (int j = 0; j < layers[0].contents->rows(); j++) {
+    if (strcmp(layers[0].activation_str, "linear") == 0) break;
     for (int k = 0; k < layers[0].contents->cols(); k++) {
       (*layers[0].dZ)(j,k) = layers[0].activation_deriv((*layers[0].contents)(j,k));
       (*layers[0].contents)(j,k) = layers[0].activation((*layers[0].contents)(j,k));
@@ -160,6 +162,7 @@ void Network::feedforward()
   }
   for (int i = 1; i < length; i++) {
     for (int j = 0; j < layers[i].contents->rows(); j++) {
+      if (strcmp(layers[i].activation_str, "linear") == 0) break;
       for (int k = 0; k < layers[i].contents->cols(); k++) {
         (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
         (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
