@@ -105,10 +105,9 @@ public:
 };
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
+  :padding(pad), stride_len(stride)
 {
-  padding = pad;
   pad*=2;
-  stride_len = stride;
   input = new Eigen::MatrixXf (x+pad,y+pad);
   for (int i = 0; i < (x+pad)*(y+pad); i++) {
     (*input)((int)i / (y+pad),i%(y+pad)) = 0;
@@ -126,8 +125,9 @@ ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
 
 void ConvLayer::convolute()
 {
-  for (int i = 0; i < input->cols() - kernel->cols()+1; i+=stride_len) {
-    for (int j = 0; j < input->rows() - kernel->rows()+1; j+=stride_len) {
+  for (int i = 0; i < output->cols(); i+=stride_len) {
+    for (int j = 0; j < output->rows(); j+=stride_len) {
+      std::cout << j << ","<< i<< " vs "<< output->rows() << "," << output->cols() << "\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
@@ -154,9 +154,12 @@ public:
 
 // Will eventually be different from ConvLayer
 PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
+  :padding(pad), stride_len(stride)
 {
-  padding = pad;
-  stride_len = stride;
+  input = new Eigen::MatrixXf (x+pad,y+pad);
+  for (int i = 0; i < (x+pad)*(y+pad); i++) {
+    (*input)((int)i / (y+pad),i%(y+pad)) = 0;
+  }
   kernel = new Eigen::MatrixXf (kern_x, kern_y);
   for (int i = 0; i < kern_x*kern_y; i++) {
     (*kernel)((int)i / kern_y,i%kern_y) = (float) rand()/RAND_MAX;
@@ -247,13 +250,13 @@ void ConvNet::process()
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
-    //    pool_layers[i].input = conv_layers[i].output;
-    //    pool_layers[i].pool();
+    pool_layers[i].input = conv_layers[i].output;
+    pool_layers[i].pool();
     conv_layers[i+1].input = conv_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute(); 
-  //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
-  //pool_layers[preprocess_length-1].pool();
+  pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
+  pool_layers[preprocess_length-1].pool();
   //  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
   Eigen::Map<Eigen::RowVectorXf> flattened (conv_layers[preprocess_length-1].output->data(), conv_layers[preprocess_length-1].output->size());
   // std::cout << "Flattened:\n" << flattened << "\n\n";
@@ -271,7 +274,7 @@ void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
     std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\u001b[31mBIAS:\x1B[0;37m\n" << conv_layers[i].bias << "\n\n\n";
-    //std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
+    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
@@ -375,19 +378,19 @@ int main()
 {
   ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 5, 0.9);
   Eigen::MatrixXf labels (1,1);
-  labels << 2;
-  net.set_label(labels);
-  net.add_conv_layer(28,28,1,15,15,0);
-  net.add_conv_layer(14,14,1,8,8,0);
-  //  net.add_pool_layer(5,5,1,2,0);
-  net.add_layer(49, "sigmoid");
+  net.add_conv_layer(28,28,1,9,9,0);
+  net.add_pool_layer(20,20,1,6,6,0);
+  net.add_conv_layer(15,15,1,6,6,0);
+  net.add_pool_layer(10,10,1,2,2,0);
+  net.add_layer(81, "sigmoid");
   net.add_layer(5, "lecun_tanh");
   net.add_layer(10, "resig");
+  //  net.list_net();
   //  net.init_decay("step", 1, 2);
   net.initialize();
   //net.list_net();
 
-  for (int i = 0; i < 5; i++) {
+  for (int i = 0; i < 1; i++) {
     net.train();
   }
   net.list_net();
