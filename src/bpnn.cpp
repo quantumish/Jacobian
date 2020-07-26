@@ -10,6 +10,7 @@
 #include <ctime>
 #include <random>
 #include <Eigen/MatrixFunctions>
+#include <Eigen/unsupported/CXX11/Tensor>
 
 #define SHUFFLED_PATH "./shuffled.txt"
 #define TEST_PATH "./test.txt"
@@ -378,7 +379,6 @@ float Network::test(char* path)
     int label = -1;
     for (int i = 0; i < batch_size; i++) {
       fgets(line, MAXLINE, test_data);
-      //if (strcmp(line, "\n")==0) continue;
       char *p;
       p = strtok(line,",");
       for (int j = 0; j < inputs; j++) {

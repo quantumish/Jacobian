@@ -13,10 +13,10 @@
 
 double bench(int batch_sz)
 {
-  auto start = std::chrono::high_resolution_clock::now();
+  //auto start = std::chrono::high_resolution_clock::now();
   Network net ("./data_banknote_authentication.txt", batch_sz, 0.05, 0.03, 0, 0.9);
   net.add_layer(4, "linear");
-  net.add_layer(6, "lecun_tanh");
+  net.add_layer(6, "relu");
   net.add_layer(2, "linear");
   //  net.init_decay("step", 1, 2);
   net.initialize();
@@ -34,9 +34,10 @@ double bench(int batch_sz)
   }
   //  std::cout << *net.layers[net.length-1].contents << "\n\n";
   //  std::cout << *net.labels << "\n";
-  auto end = std::chrono::high_resolution_clock::now();
+  //auto end = std::chrono::high_resolution_clock::now();
   //net.list_net();
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
+  return 0;
+  //return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }
 
 int main()

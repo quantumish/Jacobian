@@ -16,15 +16,15 @@ import numpy
 import time
 import wandb
 
-data_split = 0.75
+data_split = 0.9
 
-hyperparameter_defaults = dict(batch_size = 10,
+hyperparameter_defaults = dict(batch_size = 16,
                                hidden_layers = 1,
                                epochs = 50,
-                               learning_rate = 0.0155,
+                               learning_rate = 0.05,
                                bias_lr = 0.03,
                                activation = "lecun_tanh",
-                               neurons = 10,
+                               neurons = 6,
                                l = 0)
 
 wandb.init(project="jacobian", config=hyperparameter_defaults)
@@ -35,7 +35,7 @@ net = mrbpnn.Network("../data_banknote_authentication.txt", config.batch_size, c
 net.add_layer(4, "linear")
 for i in range(config.hidden_layers):
     net.add_layer(config.neurons, config.activation)
-net.add_layer(1, "resig")
+net.add_layer(2, "resig")
 net.initialize()
 
 for i in range(config.epochs):

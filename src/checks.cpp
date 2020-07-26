@@ -16,8 +16,8 @@ void checks(Network net)
 
   //  list_net();
   
-  Network copy1 = net;
-  Network copy2 = net;
+  Network copy1 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+  Network copy2 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
   copy1.lambda += 1;
   copy1.next_batch();
   copy1.feedforward();
@@ -33,14 +33,14 @@ void checks(Network net)
   
   // Check if zero cost is achievable on a batch
   std::cout << "Zero-cost sanity check...";
-  copy1 = net;
-  copy1.lambda = 0;
-  copy1.next_batch();
+  Network copy3 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+  copy3.lambda = 0;
+  copy3.next_batch();
   float finalcost;
   for (int i = 0; i < 10000; i++) {
-    copy1.feedforward();
-    copy1.backpropagate();
-    finalcost = copy1.cost();
+    copy3.feedforward();
+    copy3.backpropagate();
+    finalcost = copy3.cost();
     if (finalcost <= ZERO_THRESHOLD) {
       break;
     }
@@ -54,18 +54,18 @@ void checks(Network net)
   //  list_net();
   
   std::cout << "Gradient floating-point sanity check...";
-  copy1 = net;
-  copy1.next_batch();
-  copy1.feedforward();
+  Network copy4 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+  copy4.next_batch();
+  copy4.feedforward();
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
-  Eigen::MatrixXf error = ((*copy1.layers[copy1.length-1].contents) - (*copy1.labels));
-  gradients.push_back(error.cwiseProduct(*copy1.layers[copy1.length-1].dZ));
-  deltas.push_back((*copy1.layers[copy1.length-2].contents).transpose() * gradients[0]);
+  Eigen::MatrixXf error = ((*copy4.layers[copy4.length-1].contents) - (*copy1.labels));
+  gradients.push_back(error.cwiseProduct(*copy4.layers[copy4.length-1].dZ));
+  deltas.push_back((*copy4.layers[copy4.length-2].contents).transpose() * gradients[0]);
   int counter = 1;
-  for (int i = copy1.length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * copy1.layers[i].weights->transpose()).cwiseProduct(*copy1.layers[i].dZ));
-    deltas.push_back(copy1.layers[i-1].contents->transpose() * gradients[counter]);
+  for (int i = copy4.length-2; i >= 1; i--) {
+    gradients.push_back((gradients[counter-1] * copy4.layers[i].weights->transpose()).cwiseProduct(*copy4.layers[i].dZ));
+    deltas.push_back(copy4.layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
   auto check_gradients = [](std::vector<Eigen::MatrixXf> vec) -> bool {
@@ -89,10 +89,11 @@ void checks(Network net)
   //  list_net();
   
   std::cout << "Expected loss sanity check...";
-  copy1 = net;
-  copy1.next_batch();
-  copy1.feedforward();
-  if (copy1.cost() <= 1) {
+  
+  Network copy5 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+  copy5.next_batch();
+  copy5.feedforward();
+  if (copy5.cost() <= 1) {
     std::cout << " \u001b[32mPassed!\n\u001b[37m";
     sanity_passed++;
   }
@@ -101,17 +102,11 @@ void checks(Network net)
   //  list_net();
   
   std::cout << "Layer updates sanity check...";
-  copy1 = net;
-  copy2 = net;
-  copy1.next_batch();
-  copy1.feedforward();
-  copy2.next_batch();
-  copy2.feedforward();
-  copy1.backpropagate();
-  int passed = 1;
-  //list_net();
+  Network copy6 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+  Network copy7 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
   //copy2.list_net();
   //copy1.list_net();
+  int passed;
   for (int i = 0; i < copy1.layers.size()-1; i++) {
     if (*copy1.layers[i].weights == *copy2.layers[i].weights) {
       //      std::cout << *copy2.layers[i].weights <<"uninitweight\n\n";

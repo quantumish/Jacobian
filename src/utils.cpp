@@ -16,12 +16,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 #include <Eigen/Dense>
+#include <Eigen/MatrixFunctions>
 
 // A bunch of hardcoded activation functions. Avoids much of the slowness of custom functions.
 // Although the std::function makes it not the fastest way, the functionality is worth it.
 // Yes, these functions may be a frustrating to read but they're just equations and I want to conserve space.
-
-//float tanhapprox(float x) {return x - (1/3 * pow(x, 3)) + (2/15 * pow(x, 5)) - (17/315 * pow(x, 7));}
 
 float sigmoid(float x) {return 1.0/(1+exp(-x));}
 float sigmoid_deriv(float x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));}
