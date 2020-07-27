@@ -18,7 +18,7 @@ def bench(batch_sz):
         X_train.append(i[:-1])
         y_train.append(i[-1])
 
-    clf = MLPClassifier(solver="sgd", batch_size=batch_sz)
+    clf = MLPClassifier(solver="sgd", batch_size=batch_sz, hidden_layer_sizes=(5))
     clf.fit(X_train, y_train)
     end = time.time()
     return end-start

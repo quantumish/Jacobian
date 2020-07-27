@@ -43,15 +43,15 @@ for i in range(1):
 # plt.show()
 # print(y)
 
-# x = ['Keras', 'Scikit-Learn', 'Jacobian']
-# speed = [3.22842907906, 2.2518157958984375 ,0.043680644035339354]
+x = ['Keras', 'Scikit-Learn', 'Jacobian (Python)', 'Jacobian (C++)']
+speed = [4.71297559738, 2.074756145477295,0.05295228958129883, 0.0521543]
 
-# x_pos = [i for i, _ in enumerate(x)]
+x_pos = [i for i, _ in enumerate(x)]
 
-# plt.bar(x_pos, speed, color='green')
-# plt.ylabel("Time (s)")
-# plt.title("Average Runtime (10 trials)")
+plt.bar(x_pos, speed, color='green')
+plt.ylabel("Time (s)")
+plt.title("Runtime for Task")
 
-# plt.xticks(x_pos, x)
+plt.xticks(x_pos, x)
 
-# plt.show()
+plt.show()
