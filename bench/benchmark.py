@@ -16,7 +16,7 @@ def bench(batch_sz, layers):
     net = mrbpnn.Network("../data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 0, 0.9)
     net.add_layer(4, "linear")
     for i in range(layers):
-        net.add_layer(5, "lecun_tanh")
+        net.add_layer(5, "relu")
     net.add_layer(2, "linear")
     net.initialize()
     initend = time.time()
@@ -25,8 +25,8 @@ def bench(batch_sz, layers):
     end = time.time()
     return (end-init)
 
-for i in range(5):
-    print(bench(10,1))
+for i in range(1):
+    print(bench(16,1))
 
 # x = []
 # y = []
@@ -42,3 +42,16 @@ for i in range(5):
 # plt.legend()
 # plt.show()
 # print(y)
+
+# x = ['Keras', 'Scikit-Learn', 'Jacobian']
+# speed = [3.22842907906, 2.2518157958984375 ,0.043680644035339354]
+
+# x_pos = [i for i, _ in enumerate(x)]
+
+# plt.bar(x_pos, speed, color='green')
+# plt.ylabel("Time (s)")
+# plt.title("Average Runtime (10 trials)")
+
+# plt.xticks(x_pos, x)
+
+# plt.show()

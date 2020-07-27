@@ -3,9 +3,7 @@
 #  Jacobian
 #
 #  Created by David Freifeld
-#  Copyright © 2020 David Freifeld. All rights reserved.
 #
-
 #+-----------------------------------------------------------------------------+
 # Keras benchmark code to compare with network.
 #
@@ -36,7 +34,7 @@ def kerasbench(batch_sz, layers):
     model.add(Dense(4, input_dim=4, activation='linear'))
     for i in range(layers):
         model.add(Dense(5, activation='relu'))
-    model.add(Dense(1, activation='sigmoid'))
+    model.add(Dense(1, activation='linear'))
     opt = keras.optimizers.SGD(lr=0.0155)
     model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
     model.fit(X, y, epochs=50, batch_size=batch_sz)
@@ -53,4 +51,4 @@ y2.append(kerasbench(1, 1))
 y2.append(kerasbench(5, 1))
 y2.append(kerasbench(10, 1))
 y2.append(kerasbench(15, 1))
-print(y2)
+print(kerasbench(16,1))
