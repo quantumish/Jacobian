@@ -16,9 +16,9 @@ Batch size of model vs. total runtime for this project and Keras (Keras was slow
 
 ![Batch Size vs. Runtime](./pictures/batch_size.png)
 
-Average runtime for batch size of 10 for 10 trials:
+Here's a runtime comparison for a simple example task (banknote dataset with batch size 16) between Jacobian and some other popular ML libraries:
 
-![Runtime Comparison](./pictures/runtime.png)
+![Runtime Comparison](./pictures/runtime2.png)
 
 **Coming soon:** A more detailed and current rundown of the speed of Jacobian vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
 
@@ -45,17 +45,17 @@ First, call the Network constructor (from henceforth all functions will be prese
 Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
 ```
 
-Then add your layers one by one, similar to Keras. You'll need to specify how many neurons there are in the layer and the layer's activation. 
+Then add your layers one by one, similar to Keras. You'll need to specify how many neurons there are in the layer and the layer's activation.
 ```c++
 void add_layer(int nodes, char* activation);
 ```
 Optionally, one can overwrite the activation of a layer with their own function:
 ```c++
-void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv); 
+void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
 ```
-At this point could also specify a learning rate decay function as well by calling `init_decay`. 
+At this point could also specify a learning rate decay function as well by calling `init_decay`.
 ```c++
-void init_decay(char* type, float a_0, float k); 
+void init_decay(char* type, float a_0, float k);
 ```
 Next, call `initialize()` to initialize the network's weights.
 Finally, train your network for one epoch with `train()`. Training one epoch at a time allows you control over the accuracy reporting (with functions like `get_cost()`, `get_accuracy()`, `get_val_cost()`, and `get_val_accuracy()`) and also allows effective use of services like W&B.
@@ -87,7 +87,7 @@ There are 5 build configurations, each one prioritizing program speed more than 
 Simply builds the project with no optimization at all. Use this if you don't want to wait long for the library to compile and don't care too much about speed in the moment.
 
 #### Level 2: `make fast`
-  - Builds the project with the O3 optimization setting, essentially the highest optimization configuration without manually passing optimization flags (Ofast can prove slower). 
+  - Builds the project with the O3 optimization setting, essentially the highest optimization configuration without manually passing optimization flags (Ofast can prove slower).
 
 Use this if you want some speed but shorter build commands and compile times.
 
@@ -97,8 +97,8 @@ Enables a whole slew of extra optimizations, some of which include:
   - Optimizing for native architecture.
   - Instructing compiler to fetch data for CPU cache earlier.
   - Unrolling loops.
-  - Links with Intel's Math Kernel Library (make sure you have this!). Provides an extra boost to speed. 
-  
+  - Links with Intel's Math Kernel Library (make sure you have this!). Provides an extra boost to speed.
+
   Use this if you care a lot about speed but are not willing to sacrifice anything but compile time for it.
 
 #### Level 4: `make tradeoffs`
@@ -117,7 +117,7 @@ In the future this setting may try to parallelize operations (even if the networ
 This option is not implemented as of now.
 
 Planned features include:
-    - Adding all the aforementioned compiler options as well as compiler options that are potentially unsafe. 
+    - Adding all the aforementioned compiler options as well as compiler options that are potentially unsafe.
     - Defining the `RECKLESS` macro which will skip anything that is not absolutely necessary in the code (with preprocessor statements like `#ifndef`). Will skip all sort of testing and checking before training.
 
 ## The Future
