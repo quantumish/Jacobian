@@ -50,9 +50,32 @@ float step_deriv(float x) {return 0;}
 float bipolar(float x)
 {
   if (x > 0) return 1;
+  else if (x == 0) return 0;
   else return -1;
 }
 float bipolar_deriv(float x) {return 0;}
+
+float bipolar_sigmoid(float x) {return (1-exp(-x))/(1+exp(-x))}
+float bipolar_sigmoid_deriv(float x) {return (2*exp(x))/(pow(exp(x)+1,2));}
+
+float hard_tanh(float x) {return max(-1, min(1,x))}
+float hard_tanh_deriv(float x)
+{
+  if (-1 < x && x < 1) return 1;
+  else return 0;
+}
+
+float leaky_relu(float x)
+{
+  if (x > 0) return x;
+  else return 0.01 * x;
+}
+
+float leaky_relu_deriv(float x)
+{
+  if (x > 0) return 1;
+  else return 0.01;
+}
 
 std::function<float(float)> rectifier(float (*activation)(float))
 {

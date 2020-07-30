@@ -30,6 +30,12 @@ float softplus(float x);
 float softplus_deriv(float x);
 float inverse_logit(float x);
 float inverse_logit_deriv(float x);
+float hard_tanh(float x);
+float hard_tanh_deriv(float x);
+float bipolar_sigmoid(float x);
+float bipolar_sigmoid_deriv(float x);
+float leaky_relu(float x);
+float leaky_relu_deriv(float x);
 std::function<float(float)> rectifier(float (*activation)(float));
 
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
