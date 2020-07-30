@@ -18,7 +18,7 @@
 
 #include "checks.cpp"
 
-Layer::Layer(int batch_sz, int nodes, int a=0)
+Layer::Layer(int batch_sz, int nodes, float a)
   :alpha(a)
 {
   contents = new Eigen::MatrixXf (batch_sz, nodes);
@@ -39,7 +39,6 @@ Layer::Layer(int batch_sz, int nodes, int a=0)
 void Layer::init_weights(Layer next)
 {
   weights = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
-  v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
   int n = contents->cols() + next.contents->cols();
   std::normal_distribution<float> d(0,sqrt(1.0/n));
@@ -47,9 +46,6 @@ void Layer::init_weights(Layer next)
     std::random_device rd;
     std::mt19937 gen(rd()); 
     (*weights)((int)i / nodes, i%nodes) = d(gen);
-  }
-  for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
-    (*v)((int)i / nodes, i%nodes) = 0;
   }
 }
 
@@ -89,7 +85,7 @@ void Network::add_prelu_layer(int nodes, float a)
 {
   length++;
   layers.emplace_back(batch_size, nodes, a);
-  strcpy(layers[length-1].activation_str, name);
+  strcpy(layers[length-1].activation_str, "prelu");
   layers[length-1].activation = [a](float x) -> float
   {
     if (x > 0) return x;
@@ -149,12 +145,12 @@ void Network::add_layer(int nodes, char* name)
     layers[length-1].activation_deriv = bipolar_sigmoid_deriv;
   }
   else if (strcmp(name, "tanh") == 0) {
-    layers[length-1].activation = tanh();
-    layers[length-1].activation_deriv = [](float x) -> float {1.0/cosh(x)};
+    layers[length-1].activation = [](float x) -> float {return tanh(x);};
+    layers[length-1].activation_deriv = [](float x) -> float {return 1.0/cosh(x);};
   }
   else if (strcmp(name, "hard_tanh") == 0) {
-    layers[length-1].activation = hard_tanh();
-    layers[length-1].activation_deriv = hard_tanh_deriv();
+    layers[length-1].activation = hard_tanh;
+    layers[length-1].activation_deriv = hard_tanh_deriv;
   }
   else if (strcmp(name, "resig") == 0) {
     layers[length-1].activation = rectifier(sigmoid);
@@ -304,13 +300,23 @@ void Network::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
-      for (int i = 0; i < layers[length-2-i].rows(); i++) {
-        for (int j = 0; j < layers[length-2-i].cols(); j++) {
+      for (int i = 0; i < layers[length-2-i].contents->rows(); i++) {
+        for (int j = 0; j < layers[length-2-i].contents->cols(); j++) {
           if ((*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha <= 0) sum += gradients[i](i,j) * (*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha;
         }
       }
       layers[length-2-i].alpha += learning_rate * sum;
-      layers[length-2-i].activation = [layers[length-2-i].alpha]()
+      float a = layers[length-2-i].alpha;
+      layers[length-2-i].activation = [a](float x) -> float
+      {
+        if (x > 0) return x;
+        else return a * x;
+      };
+      layers[length-2-i].activation_deriv = [a](float x) -> float
+      {
+        if (x > 0) return 1;
+        else return a;
+      };
     }
   }
 }

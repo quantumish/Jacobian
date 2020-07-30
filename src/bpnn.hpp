@@ -10,6 +10,7 @@
 #include <iostream>
 #include <string>
 #include <cstdio>
+#include <cmath>
 #include <fstream>
 #include <random>
 #include <algorithm>
@@ -27,8 +28,8 @@ public:
   // PReLU layers shouldn't be Layers but inherit from them! Fix me!!
   float alpha;
   
-  Layer(int rows, int columns);
-  Layer(float* vals, int rows, int columns, int a=0);
+  Layer(int rows, int columns, float a=0);
+  Layer(float* vals, int rows, int columns);
   void init_weights(Layer next);
 };
 
@@ -60,6 +61,7 @@ public:
 
   Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
   void add_layer(int nodes, char* activation);
+  void add_prelu_layer(int nodes, float a);
   void init_decay(char* type, float a_0, float k);
   void initialize();
   void update_layer(float* vals, int datalen, int index);

@@ -55,10 +55,10 @@ float bipolar(float x)
 }
 float bipolar_deriv(float x) {return 0;}
 
-float bipolar_sigmoid(float x) {return (1-exp(-x))/(1+exp(-x))}
+float bipolar_sigmoid(float x) {return (1-exp(-x))/(1+exp(-x));}
 float bipolar_sigmoid_deriv(float x) {return (2*exp(x))/(pow(exp(x)+1,2));}
 
-float hard_tanh(float x) {return max(-1, min(1,x))}
+float hard_tanh(float x) {return fmax(-1, fmin(1,x));}
 float hard_tanh_deriv(float x)
 {
   if (-1 < x && x < 1) return 1;
