@@ -302,16 +302,14 @@ void Network::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
-      std::cout << "\n\nGRAD:\n\n" << gradients[i] << "\n\n\n";
       for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
         for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
           if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
-            sum += gradients[i](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
-            std::cout << "SUM += " << gradients[i](j,k) << " * " << (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha << "\n";
+            // Choice of using index i+1 here is questionable. TODO: REVIEW
+            sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
           }
         }
       }
-      std::cout << "SUM: " << sum << "\n";
       layers[length-2-i].alpha += learning_rate * sum;
       float a = layers[length-2-i].alpha;
       layers[length-2-i].activation = [a](float x) -> float
@@ -447,12 +445,11 @@ void Network::train()
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
-    list_net();
     // if (i > batch_size * 10) {
     //   list_net();
     //   exit(1);
     // }
-    layers[10000000].alpha = 2;
+    //    layers[10000000].alpha = 2;
   }
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;

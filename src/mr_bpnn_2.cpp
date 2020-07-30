@@ -118,6 +118,7 @@ PYBIND11_MODULE(mrbpnn, m) {
   py::class_<Network>(m, "Network")
     .def(py::init<char*, int, float, float, float, float>())
     .def("add_layer", &Network::add_layer, py::arg("nodes"), py::arg("activation"))
+    .def("add_prelu_layer", &Network::add_prelu_layer, py::arg("nodes"), py::arg("a"))
     .def("initialize", &Network::initialize)
     .def("init_decay", &Network::init_decay, py::arg("type"), py::arg("a_0"), py::arg("k"))
     .def("set_activation", &Network::set_activation)
