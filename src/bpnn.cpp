@@ -196,21 +196,21 @@ void Network::feedforward()
       (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
     }
   }
-  //  std::cout << "\nSOFTMAX INPUT\n" << *layers[length-1].contents << "\n\n";
+  std::cout << "\nSOFTMAX INPUT\n" << *layers[length-1].contents << "\n\n";
   for (int i = 0; i < layers[length-1].contents->rows(); i++) {
     float sum = 0;
     Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
     Eigen::MatrixXf::Index maxRow, maxCol;
     float max = m.maxCoeff(&maxRow, &maxCol);
     m = (m.array() - max).matrix();
-    //   std::cout << "\nGETTING SUM\n";
+    std::cout << "\nGETTING SUM\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       checknan(m(0,j), "input to final layer");
       sum += exp(m(0,j));
-      //      std::cout << "Adding " << exp(m(0,j)) << "(aka e^"<< m(0, j) << ")\n";
+      std::cout << "Adding " << exp(m(0,j)) << "(aka e^"<< m(0, j) << ")\n";
       checknan(sum, "sum in Softmax operation");
     }
-    //    std::cout << "\nFINAL ACTIVATION\n";
+    std::cout << "\nFINAL ACTIVATION\n";
     for (int j = 0; j < layers[length-1].contents->cols(); j++) {
       m(0,j) = exp(m(0,j))/sum;
       //      std::cout << "Calculating " << exp(m(0,j)) << "/" << sum << " to be " << (*layers[length-1].contents)(i,j) << "(aka " << test<<")\n";
@@ -225,7 +225,9 @@ void Network::list_net()
 {
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
-    std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
+    std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str;
+    if (strcmp(layers[i].activation_str, "prelu") == 0) std::cout << "\x1B[0;37m\nAlpha (a) value: " << layers[i].alpha;
+    std::cout << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
   }
   std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
@@ -300,9 +302,9 @@ void Network::backpropagate()
     *layers[length-1-i].bias -= bias_lr * gradients[i];
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
-      for (int i = 0; i < layers[length-2-i].contents->rows(); i++) {
-        for (int j = 0; j < layers[length-2-i].contents->cols(); j++) {
-          if ((*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha <= 0) sum += gradients[i](i,j) * (*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha;
+      for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
+        for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
+          if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) sum += gradients[i](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
         }
       }
       layers[length-2-i].alpha += learning_rate * sum;
