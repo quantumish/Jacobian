@@ -51,6 +51,7 @@ public:
   float learning_rate;
   float bias_lr;
   float lambda;
+  int reg_type;
   int batch_size;
 
   int epochs = 0;
@@ -59,7 +60,7 @@ public:
 
   std::function<float(float, float)> decay;
 
-  Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
+  Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio);
   void add_layer(int nodes, char* activation);
   void add_prelu_layer(int nodes, float a);
   void init_decay(char* type, float a_0, float k);

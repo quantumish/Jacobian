@@ -16,7 +16,7 @@
 #define TEST_PATH "./test.txt"
 #define TRAIN_PATH "./train.txt"
 
-#include "checks.cpp"
+//#include "checks.cpp"
 
 Layer::Layer(int batch_sz, int nodes, float a)
   :alpha(a)
@@ -49,9 +49,10 @@ void Layer::init_weights(Layer next)
   }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio)
-  :lambda{l}, learning_rate{learn_rate}, bias_lr{bias_rate}, batch_size{batch_sz}
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio)
+  :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization)
 {
+  assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
   int total_instances = prep_file(path, SHUFFLED_PATH);
   test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
@@ -243,7 +244,6 @@ float Network::cost()
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
       if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
-      // std::cout << truth << " VS " << (*layers[length-1].contents)(i,j) << " SO " << truth * log((*layers[length-1].contents)(i,j)) << "\n";
       tempsum += truth * log((*layers[length-1].contents)(i,j));
       checknan(tempsum, "summation for row inside cost calculation");
     }
@@ -251,7 +251,8 @@ float Network::cost()
     checknan(tempsum, "total summation inside cost calculation");
   }
   for (int i = 0; i < layers.size()-1; i++) {
-    reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
+    if (reg_type == 2) reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
+    else if (reg_type == 1) reg += (layers[i].weights->array().abs().matrix()).sum();
   }
   return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
 }
@@ -266,13 +267,23 @@ float Network::accuracy()
       if ((*layers[length-1].contents)(i, j) > ans) {
         ans = (*layers[length-1].contents)(i, j);
         index = j;
-        //std::cout << "UPDATE ANS: " << index << " as "<< (*layers[length-1].contents)(i, j) << " so " << ans << "\n";
       }
     }
-    //std::cout << (*labels)(i, 0) << " " << index << "\n";
     if ((*labels)(i, 0) == index) correct += 1;
   }
   return (1.0/batch_size) * correct;
+}
+
+Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
+{
+  Eigen::MatrixXf r(m.rows(), m.cols());
+  for (int i = 0; i < m.rows(); i++) {
+    for (int j = 0; j < m.cols(); j++) {
+      if (m(i,j) == 0) r(i,j) = 0;
+      else r(i,j) = 1;
+    }
+  }
+  return r;
 }
 
 void Network::backpropagate()
@@ -298,7 +309,8 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
+    if (reg_type == 2) *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
+    else if (reg_type == 1) *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
     *layers[length-1-i].bias -= bias_lr * gradients[i];
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
