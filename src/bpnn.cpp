@@ -282,26 +282,15 @@ void Network::backpropagate()
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  //  std::cout << "\nTRUTH:\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      //      std::cout << truth << " ";
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
       checknan(error(i,j), "gradient of final layer");
-      //  std::cout << truth << "[as label is "<< (*labels)(i,0) <<"] - " << (*layers[length-1].contents)(i,j) << "[aka index " << i << " " << j << "] = " << error(i,j) << "\n";
     }
-    //    std::cout << "\n";
   }
-  // std::cout << "\n\n";
-  // std::cout << "\nLABELS:\n";
-  // std::cout << *labels << "\n\n";
-  // std::cout << "\nPREDICTION:\n";
-  // std::cout << (*layers[length-1].contents) << "\n\n";
-  // std::cout << "\nERR:\n";
-  // std::cout << error << "\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
@@ -310,23 +299,20 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
-  //  std::cout << "GRAD:\n"<< gradients[0] << "\n\n";
-  //  std::cout << "DELTA:\n"<< deltas[0] << "\n\n";
-  // std::cout << "-------\nGRADS INCOMING" << "\n\n";
-  // for (Eigen::MatrixXf i : gradients) {
-  //   std::cout << i << "\n\n";
-  // }
-  // std::cout << "-------\nDELTAS INCOMING" << "\n\n";
-  // for (Eigen::MatrixXf i : deltas) {
-  //   std::cout << i << "\n\n";
-  // }
   for (int i = 0; i < length-1; i++) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
-    //*layers[length-2-i].v = (0.9 * *layers[length-2-i].v) - ((learning_rate * deltas[i]));
-    //*layers[length-2-i].weights += *layers[length-2-i].v;
     *layers[length-1-i].bias -= bias_lr * gradients[i];
+    if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
+      float sum = 0;
+      for (int i = 0; i < layers[length-2-i].rows(); i++) {
+        for (int j = 0; j < layers[length-2-i].cols(); j++) {
+          if ((*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha <= 0) sum += gradients[i](i,j) * (*layers[length-2-i].contents)(i,j)/layers[length-2-i].alpha;
+        }
+      }
+      layers[length-2-i].alpha += learning_rate * sum;
+      layers[length-2-i].activation = [layers[length-2-i].alpha]()
+    }
   }
-  //  std::cout << "NEW WEIGHT:\n" << (*layers[length-2].weights) << "\n\n\n\n";
 }
 
 void Network::update_layer(float* vals, int datalen, int index)
