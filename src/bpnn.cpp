@@ -84,6 +84,7 @@ void Network::init_decay(char* type, float a_0, float k)
   }
 }
 
+// Gross code inbound
 void Network::add_layer(int nodes, char* name)
 {
   length++;
@@ -120,6 +121,22 @@ void Network::add_layer(int nodes, char* name)
   else if (strcmp(name, "relu") == 0) {
     layers[length-1].activation = rectifier(linear);
     layers[length-1].activation_deriv = rectifier(linear_deriv);
+  }
+  else if (strcmp(name, "leaky_relu") == 0) {
+    layers[length-1].activation = leaky_relu;
+    layers[length-1].activation_deriv = leaky_relu_deriv;
+  }
+  else if (strcmp(name, "bipolar_sigmoid") == 0) {
+    layers[length-1].activation = bipolar_sigmoid;
+    layers[length-1].activation_deriv = bipolar_sigmoid_deriv;
+  }
+  else if (strcmp(name, "tanh") == 0) {
+    layers[length-1].activation = tanh();
+    layers[length-1].activation_deriv = [](float x) -> float {1.0/cosh(x)};
+  }
+  else if (strcmp(name, "hard_tanh") == 0) {
+    layers[length-1].activation = hard_tanh();
+    layers[length-1].activation_deriv = hard_tanh_deriv();
   }
   else if (strcmp(name, "resig") == 0) {
     layers[length-1].activation = rectifier(sigmoid);
