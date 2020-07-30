@@ -18,16 +18,17 @@ class Layer {
 public:
   Eigen::MatrixXf* contents;
   Eigen::MatrixXf* weights;
-  Eigen::MatrixXf* v;
   Eigen::MatrixXf* bias;
   Eigen::MatrixXf* dZ;
   std::vector<Eigen::MatrixXf> prev_updates;
   std::function<float(float)> activation;
   std::function<float(float)> activation_deriv;
   char activation_str[1024];
+  // PReLU layers shouldn't be Layers but inherit from them! Fix me!!
+  float alpha;
   
   Layer(int rows, int columns);
-  Layer(float* vals, int rows, int columns);
+  Layer(float* vals, int rows, int columns, int a=0);
   void init_weights(Layer next);
 };
 

@@ -18,7 +18,8 @@
 
 #include "checks.cpp"
 
-Layer::Layer(int batch_sz, int nodes)
+Layer::Layer(int batch_sz, int nodes, int a=0)
+  :alpha(a)
 {
   contents = new Eigen::MatrixXf (batch_sz, nodes);
   dZ = new Eigen::MatrixXf (batch_sz, nodes);
@@ -82,6 +83,23 @@ void Network::init_decay(char* type, float a_0, float k)
       return a_0/(1+(k*t));
     };
   }
+}
+
+void Network::add_prelu_layer(int nodes, float a)
+{
+  length++;
+  layers.emplace_back(batch_size, nodes, a);
+  strcpy(layers[length-1].activation_str, name);
+  layers[length-1].activation = [a](float x) -> float
+  {
+    if (x > 0) return x;
+    else return a * x;
+  };
+  layers[length-1].activation_deriv = [a](float x) -> float
+  {
+    if (x > 0) return 1;
+    else return a;
+  };
 }
 
 // Gross code inbound
