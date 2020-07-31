@@ -14,7 +14,7 @@
 double bench(int batch_sz)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 2, 0.1, 0.9);
+  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 2, 0.01, 0.9);
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
@@ -22,7 +22,7 @@ double bench(int batch_sz)
   std::vector<float> vals;
   for (int i = 0; i < 50; i++) {
     net.train();
-    vals.push_back(net.get_cost());
+    vals.push_back(net.get_val_acc());
   }
   std::cout <<  "[";
   for (int i = 0; i < vals.size(); i++) {

@@ -38,9 +38,12 @@ def kerasbench(batch_sz, layers):
     model.add(Dense(1, activation='linear'))
     opt = keras.optimizers.SGD(lr=0.0155)
     model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
-    history = model.fit(X, y, epochs=50, batch_size=batch_sz)
+    history = model.fit(X, y, epochs=50, validation_split=0.1, batch_size=batch_sz)
     end = time.time()
     print(history.history['loss'])
+    print(history.history['acc'])
+    print(history.history['val_loss'])
+    print(history.history['val_acc'])
     return (end-init)
 
 # sum = 0

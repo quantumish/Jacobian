@@ -57,7 +57,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
   test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
   instances = total_instances - test_instances;
   data = fopen(TRAIN_PATH, "r");
-  test_data = fopen(path, "r");
+  test_data = fopen(TEST_PATH, "r");
   decay = [](float lr, float t) -> float {
     return lr;
   };
