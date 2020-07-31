@@ -17,6 +17,7 @@
 
 import time
 import numpy
+import matplotlib.pyplot as plt
 # import tensorflow
 from numpy import loadtxt
 import keras
@@ -37,8 +38,9 @@ def kerasbench(batch_sz, layers):
     model.add(Dense(1, activation='linear'))
     opt = keras.optimizers.SGD(lr=0.0155)
     model.compile(loss='mse', optimizer=opt, metrics=['accuracy'])
-    model.fit(X, y, epochs=50, batch_size=batch_sz)
+    history = model.fit(X, y, epochs=50, batch_size=batch_sz)
     end = time.time()
+    print(history.history['loss'])
     return (end-init)
 
 # sum = 0
@@ -46,9 +48,4 @@ def kerasbench(batch_sz, layers):
 #     sum += kerasbench(10, 1)
 # print(sum/10)
     
-y2 = []
-y2.append(kerasbench(1, 1))
-y2.append(kerasbench(5, 1))
-y2.append(kerasbench(10, 1))
-y2.append(kerasbench(15, 1))
 print(kerasbench(16,1))

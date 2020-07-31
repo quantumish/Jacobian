@@ -19,9 +19,17 @@ double bench(int batch_sz)
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
   net.initialize();
+  std::vector<float> vals;
   for (int i = 0; i < 50; i++) {
     net.train();
+    vals.push_back(net.get_cost());
   }
+  std::cout <<  "[";
+  for (int i = 0; i < vals.size(); i++) {
+    if (i == 49) std::cout << vals[i];
+    else std::cout << vals[i] << ", ";
+  }
+  std::cout <<  "]";
   auto end = std::chrono::high_resolution_clock::now();
   return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }

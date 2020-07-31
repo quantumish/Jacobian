@@ -12,13 +12,13 @@ Jacobian is a work-in-progress machine learning library written in C++ designed 
 
 ## Benchmark Info
 
-Batch size of model vs. total runtime for this project and Keras (Keras was slow enough that it moves in steps of 20 and starts at a batch size of 20. In reality, the spike at the beginning is much larger for lower batch sizes but it throws the graph off so much you can't see any detail from Jacobian):
+One of the tradeoffs of Jacobian is that as of now it doesn't train nearly as close to perfection as other available libraries (with the benefit being the added speed. Here's a graph of Jacobian's loss over epochs on a simple task (banknote dataset with batch size 16) as compared to other libraries.
 
-![Batch Size vs. Runtime](./pictures/batch_size.png)
+![Loss vs. Epochs](./pictures/loss.png)
 
-Here's a runtime comparison for a simple example task (banknote dataset with batch size 16) between Jacobian and some other popular ML libraries:
+Here's a runtime comparison for a simple example task (same as before) between Jacobian and some other popular ML libraries:
 
-![Runtime Comparison](./pictures/runtime2.png)
+![Runtime Comparison](./pictures/updated_runtime.png)
 
 **Coming soon:** A more detailed and current rundown of the speed of Jacobian vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
 
