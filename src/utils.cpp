@@ -23,7 +23,7 @@
 // Yes, these functions may be a frustrating to read but they're just equations and I want to conserve space.
 
 float sigmoid(float x) {return 1.0/(1+exp(-x));}
-float sigmoid_deriv(float x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(x)));}
+float sigmoid_deriv(float x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(-x)));}
 
 float linear(float x) {return x;}
 float linear_deriv(float x) {return 1;}
