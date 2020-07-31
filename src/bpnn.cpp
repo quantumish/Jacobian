@@ -38,6 +38,7 @@ Layer::Layer(int batch_sz, int nodes, float a)
 
 void Layer::init_weights(Layer next)
 {
+  v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   weights = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
   int n = contents->cols() + next.contents->cols();
@@ -46,6 +47,7 @@ void Layer::init_weights(Layer next)
     std::random_device rd;
     std::mt19937 gen(rd()); 
     (*weights)((int)i / nodes, i%nodes) = d(gen);
+    (*v)((int)i / nodes, i%nodes) = 0;
   }
 }
 
@@ -309,9 +311,15 @@ void Network::backpropagate()
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    if (reg_type == 2) *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/batch_size) * (*layers[length-2-i].weights));
-    else if (reg_type == 1) *layers[length-2-i].weights -= (learning_rate * deltas[i]) + ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
+    *layers[length-2-i].weights -= (0.9 * *layers[length-2-i].v) + (learning_rate * deltas[i]);
+
+    if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
+    else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
+
     *layers[length-1-i].bias -= bias_lr * gradients[i];
+    //std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
+    *layers[length-2-i].v = deltas[i];
+    
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
       for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
@@ -457,10 +465,10 @@ void Network::train()
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
-    // if (i > batch_size * 10) {
-    //   list_net();
-    //   exit(1);
-    // }
+    if (i > batch_size * 10) {
+      list_net();
+      exit(1);
+    }
     //    layers[10000000].alpha = 2;
   }
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
