@@ -8,6 +8,8 @@
 #include "bpnn.hpp"
 #include "utils.hpp"
 
+#include <Eigen/unsupported/CXX11/Tensor>
+
 #define LARGE_NUM 1000000 // Remove me.
 
 #if (!RECKLESS)
@@ -250,13 +252,13 @@ void ConvNet::process()
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
-    pool_layers[i].input = conv_layers[i].output;
-    pool_layers[i].pool();
+    //   pool_layers[i].input = conv_layers[i].output;
+    //   pool_layers[i].pool();
     conv_layers[i+1].input = conv_layers[i].output;
   }
   conv_layers[preprocess_length-1].convolute(); 
-  pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
-  pool_layers[preprocess_length-1].pool();
+  //pool_layers[preprocess_length-1].input = conv_layers[preprocess_length-1].output;
+  //pool_layers[preprocess_length-1].pool();
   //  std::cout << "Output:\n" << *pool_layers[preprocess_length-1].output << "\n\n";
   Eigen::Map<Eigen::RowVectorXf> flattened (conv_layers[preprocess_length-1].output->data(), conv_layers[preprocess_length-1].output->size());
   // std::cout << "Flattened:\n" << flattened << "\n\n";
@@ -379,10 +381,10 @@ int main()
   ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 5, 0.9);
   Eigen::MatrixXf labels (1,1);
   net.add_conv_layer(28,28,1,9,9,0);
-  net.add_pool_layer(20,20,1,6,6,0);
+  //  net.add_pool_layer(20,20,1,6,6,0);
   net.add_conv_layer(15,15,1,6,6,0);
-  net.add_pool_layer(10,10,1,2,2,0);
-  net.add_layer(81, "sigmoid");
+  //net.add_pool_layer(10,10,1,2,2,0);
+  net.add_layer(400, "sigmoid");
   net.add_layer(5, "lecun_tanh");
   net.add_layer(10, "resig");
   //  net.list_net();

@@ -13,23 +13,23 @@ int main()
   Eigen::MatrixXf a = Eigen::MatrixXf::Random(1, sz);
   Eigen::MatrixXf::Index maxRow, maxCol;
   float max = a.maxCoeff(&maxRow, &maxCol);
-  Eigen::MatrixXf m1 = ((a.array() - max) / ((a.array() - max).exp().sum())).matrix();
+  Eigen::MatrixXf m1 = ((a.array() - max).exp() / ((a.array() - max).exp().sum())).matrix();
   auto softmax_simd_start = std::chrono::high_resolution_clock::now();
   Eigen::MatrixXf a1 = (1 + (-1 * a.array()).exp()).pow(-1).matrix();
   auto softmax_simd_end = std::chrono::high_resolution_clock::now();
   auto softmax_start = std::chrono::high_resolution_clock::now();
-  float sum = 0;
+  // float sum = 0;
   Eigen::MatrixXf::Index maxRow2, maxCol2;
   float max2 = a.maxCoeff(&maxRow2, &maxCol2);
   Eigen::MatrixXf m2 = (a.array() - max2).matrix();
-  for (int j = 0; j < m2.cols(); j++) {
-    sum += exp(m2(0,j));
-  }
+  // for (int j = 0; j < m2.cols(); j++) {
+  //   sum += exp(m2(0,j));
+  // }
+  float sum = ((a.array() - max2).exp().sum());
   for (int j = 0; j < m2.cols(); j++) {
     m2(0,j) = exp(m2(0,j))/sum;
   }
   auto softmax_end = std::chrono::high_resolution_clock::now();
-  std::cout << m1 << " | " << m1.sum() << "\n\n" << m2 << " | " << m2.sum() << "\n\n";
   if (m1.isApprox(m2)) std::cout << "Softmax matrices are equal!\n\n";
 
   double eigen_time = std::chrono::duration_cast<std::chrono::nanoseconds>(softmax_simd_end - softmax_simd_start).count();

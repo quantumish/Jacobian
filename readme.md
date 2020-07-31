@@ -63,21 +63,16 @@ Finally, train your network for one epoch with `train()`. Training one epoch at 
 ### Examples
 In the `/scripts` directory there is a example of a neural network being used in conjuction with Weights & Biases, allowing for effective hyperparameter searches and accuracy reporting.
 
-## Compiling/Installing
+## Installing
 
-### Precompiled Libraries
-**Coming soon:**: Precompiled pyc files and binaries in 'Releases' section for you if you don't want to build from source.
-
-### Python Bindings
-
-1. Install both the C++ end of pybind11 and the python end.
-2. Build with your chosen configuration using `make`.
-3. Copy the `mrbpnn.cpython-37m-darwin.so` file into your personal project directory.
-4. Import `mrbpnn` from your Python code and use it.
-5. Look to the `example.py` file for simple usage of the library.
-
-**Coming soon:** A guide on how to properly install Jacobian as a python library.
-**Coming soon:** Availability through package managers or a less convoluted install process.
+### Main Steps
+Note: This is all ideally the process, but it's so confusing that I'm not sure. You're better off manually copying the .so file!
+1. Install the C++ library Eigen.
+2. Install the C++ and python ends of the pybind11 library.
+3. Run `make` with the configuration of your choosing.
+4. Run `python setup.py bdist_wheel`
+5. `cd` into `dist` and run `python3 -m pip install --upgrade Jacobian-1.0-cp37-cp37m-macosx_10_13_x86_64.whl`
+6. Be unhappy when it doesn't work out and resort to just copying .so files.
 
 ### Build Configurations (Building from Source)
 
