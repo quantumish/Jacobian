@@ -12,9 +12,9 @@ Jacobian is a work-in-progress machine learning library written in C++ designed 
 
 ## Benchmark Info
 
-One of the tradeoffs of Jacobian is that as of now it doesn't train nearly as close to perfection as other available libraries (with the benefit being the added speed. Here's a graph of Jacobian's loss over epochs on a simple task (banknote dataset with batch size 16) as compared to other libraries.
+One of the tradeoffs of Jacobian is that as of now it doesn't train nearly as close to perfection as other available libraries and doesn't maximize accuracy as much (with the benefit being the added speed. Here's a graph of Jacobian's model metrics over epochs on a simple task (banknote dataset with batch size 16) as compared to other libraries.
 
-![Loss vs. Epochs](./pictures/loss.png)
+![Loss vs. Epochs](./pictures/metrics.png)
 
 Here's a runtime comparison for a simple example task (same as before) between Jacobian and some other popular ML libraries:
 
