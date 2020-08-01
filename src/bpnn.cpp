@@ -39,6 +39,7 @@ Layer::Layer(int batch_sz, int nodes, float a)
 void Layer::init_weights(Layer next)
 {
   v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
+  m = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   weights = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
   int nodes = weights->cols();
   int n = contents->cols() + next.contents->cols();
@@ -48,6 +49,7 @@ void Layer::init_weights(Layer next)
     std::mt19937 gen(rd()); 
     (*weights)((int)i / nodes, i%nodes) = d(gen);
     (*v)((int)i / nodes, i%nodes) = 0;
+    (*m)((int)i / nodes, i%nodes) = 0;
   }
 }
 
@@ -92,11 +94,23 @@ void Network::init_optimizer(char* name, ...)
   va_list args;
   va_start(args, name);
   if (strcmp(name, "momentum") == 0) {
-    float beta = va_arg(args, double);
+    float mu = va_arg(args, double);
     va_end(args);
-    update = [this, beta](std::vector<Eigen::MatrixXf> deltas, int i) {
-      *layers[length-2-i].weights -= (beta * *layers[length-2-i].v) + (learning_rate * deltas[i]);
-      *layers[length-2-i].v = (learning_rate * deltas[i]);
+    update = [this, mu](std::vector<Eigen::MatrixXf> deltas, int i) {
+      *layers[length-2-i].weights -= (mu * *layers[length-2-i].m) + (learning_rate * deltas[i]);
+      *layers[length-2-i].m = (learning_rate * deltas[i]);
+    };
+  }
+  if (strcmp(name, "adam") == 0) {
+    float beta1 = va_arg(args, double);
+    float beta2 = va_arg(args, double);
+    float epsilon = va_arg(args, double);
+    va_end(args);
+    // TODO: Add bias correction (requires figuring out measuring t)
+    update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
+      *layers[length-2-i].weights -= (layers[length-2-i].m * learning_rate * (layers[length-2-i].v->cwiseSqrt() + epsilon).array().pow(-1).matrix()
+      *layers[length-2-i].m = (beta1 * m) + (1-beta1)*deltas[i];
+      *layers[length-2-i].v = (beta2 * v) + (1-beta2)*(deltas[i].cwiseProduct(deltas[i]));
     };
   }
 }
@@ -323,7 +337,9 @@ void Network::backpropagate()
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * (layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ)));
+    // TODO: Find nice way to add this
+    // *layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
+    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }

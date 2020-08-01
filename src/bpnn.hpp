@@ -19,6 +19,7 @@ class Layer {
 public:
   Eigen::MatrixXf* contents;
   Eigen::MatrixXf* v;
+  Eigen::MatrixXf* m;
   Eigen::MatrixXf* weights;
   Eigen::MatrixXf* bias;
   Eigen::MatrixXf* dZ;
