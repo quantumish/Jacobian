@@ -317,7 +317,7 @@ void Network::backpropagate()
     else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
 
     *layers[length-1-i].bias -= bias_lr * gradients[i];
-    //std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
+    std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
     *layers[length-2-i].v = deltas[i];
     
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
@@ -344,6 +344,7 @@ void Network::backpropagate()
       };
     }
   }
+  std::cout << "---------------------------------------------------------\n";
 }
 
 void Network::update_layer(float* vals, int datalen, int index)
@@ -466,7 +467,6 @@ void Network::train()
     acc_sum += accuracy();
     batches++;
     if (i > batch_size * 10) {
-      list_net();
       exit(1);
     }
     //    layers[10000000].alpha = 2;
