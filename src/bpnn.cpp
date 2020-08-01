@@ -63,6 +63,9 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
   decay = [](float lr, float t) -> float {
     return lr;
   };
+  update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
+    *layers[length-2-i].weights -= (learning_rate * deltas[i]);
+  };
 }
 
 void Network::init_decay(char* type, float a_0, float k)
@@ -80,6 +83,20 @@ void Network::init_decay(char* type, float a_0, float k)
   if (strcmp(type, "frac") == 0) {
     decay = [a_0, k](float lr, float t) -> float {
       return a_0/(1+(k*t));
+    };
+  }
+}
+
+void Network::init_optimizer(char* name, ...)
+{
+  va_list args;
+  va_start(args, name);
+  if (strcmp(name, "momentum") == 0) {
+    float beta = va_arg(args, double);
+    va_end(args);
+    update = [this, beta](std::vector<Eigen::MatrixXf> deltas, int i) {
+      *layers[length-2-i].weights -= (beta * *layers[length-2-i].v) + (learning_rate * deltas[i]);
+      *layers[length-2-i].v = (learning_rate * deltas[i]);
     };
   }
 }
@@ -306,19 +323,20 @@ void Network::backpropagate()
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+    gradients.push_back((gradients[counter-1] * (layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ)));
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
   for (int i = 0; i < length-1; i++) {
-    *layers[length-2-i].weights -= (0.9 * *layers[length-2-i].v) + (learning_rate * deltas[i]);
+    update(deltas, i);
+    //    *layers[length-2-i].weights -= (0.9 * *layers[length-2-i].v) + (learning_rate * deltas[i]);
+    //    *layers[length-2-i].v = (learning_rate * deltas[i]);
 
     if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
     else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
 
     *layers[length-1-i].bias -= bias_lr * gradients[i];
-    std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
-    *layers[length-2-i].v = deltas[i];
+    //    std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
     
     if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
       float sum = 0;
@@ -344,7 +362,7 @@ void Network::backpropagate()
       };
     }
   }
-  std::cout << "---------------------------------------------------------\n";
+  //  std::cout << "---------------------------------------------------------\n";
 }
 
 void Network::update_layer(float* vals, int datalen, int index)
@@ -466,9 +484,9 @@ void Network::train()
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
-    if (i > batch_size * 10) {
-      exit(1);
-    }
+    // if (i > batch_size * 10) {
+    //   exit(1);
+    // }
     //    layers[10000000].alpha = 2;
   }
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;

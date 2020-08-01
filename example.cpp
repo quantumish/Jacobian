@@ -18,6 +18,7 @@ double bench(int batch_sz)
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
+  net.init_optimizer("momentum", 0.9);
   net.initialize();
   std::vector<float> vals;
   for (int i = 0; i < 50; i++) {
