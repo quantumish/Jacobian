@@ -20,6 +20,7 @@ double bench(int batch_sz)
   net.add_layer(2, "linear");
   net.init_optimizer("demon", 0.9, 50);
   net.initialize();
+  net.grad_check();
   std::vector<float> vals;
   for (int i = 0; i < 50; i++) {
     net.train();

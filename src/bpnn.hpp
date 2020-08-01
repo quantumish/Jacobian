@@ -36,12 +36,13 @@ public:
 };
 
 class Network {
-public:
   FILE* data;
   FILE* test_data;
   int instances;
   int test_instances;
-
+  void numerical_grad(int i, float epsilon);
+  void update_layer(float* vals, int datalen, int index);
+public:
   std::vector<Layer> layers;
   int length = 0;
 
@@ -69,7 +70,7 @@ public:
   void init_decay(char* type, float a_0, float k);
   void init_optimizer(char* name, ...);
   void initialize();
-  void update_layer(float* vals, int datalen, int index);
+  void grad_check();
   void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
   
   void feedforward();
