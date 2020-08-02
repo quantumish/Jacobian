@@ -13,7 +13,7 @@
 #include <Eigen/unsupported/CXX11/Tensor>
 
 #define SHUFFLED_PATH "./shuffled.txt"
-#define TEST_PATH "./test.txt"
+#define VAL_PATH "./test.txt"
 #define TRAIN_PATH "./train.txt"
 
 //#include "checks.cpp"
@@ -58,10 +58,10 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
 {
   assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
   int total_instances = prep_file(path, SHUFFLED_PATH);
-  test_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
-  instances = total_instances - test_instances;
+  val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
+  instances = total_instances - val_instances;
   data = fopen(TRAIN_PATH, "r");
-  test_data = fopen(TEST_PATH, "r");
+  val_data = fopen(VAL_PATH, "r");
   decay = [this]() -> void {
     learning_rate = learning_rate;
   };
@@ -89,7 +89,7 @@ void Network::init_decay(char* type, ...)
     };
   }
   if (strcmp(type, "frac") == 0) {
-    float a_0 = va_arg(args, double);
+h    float a_0 = va_arg(args, double);
     float k = va_arg(args, double);
     decay = [this, a_0, k]() -> void {
       learning_rate = a_0 / (1+(k * epochs));
@@ -475,7 +475,7 @@ int prep_file(char* path, char* out_path)
 int split_file(char* path, int lines, float ratio)
 {
   FILE* src = fopen(path, "r");
-  FILE* test = fopen(TEST_PATH, "w");
+  FILE* test = fopen(VAL_PATH, "w");
   FILE* train = fopen(TRAIN_PATH, "w");
   int switch_line = round(ratio * lines);
   char line[MAXLINE];
@@ -493,18 +493,18 @@ int split_file(char* path, int lines, float ratio)
   return tests;
 }
 
-float Network::test(char* path)
+float Network::validate(char* path)
 {
   float costsum = 0;
   float accsum = 0;
-  for (int i = 0; i <= test_instances-batch_size; i+=batch_size) {
+  for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
     char line[MAXLINE];
     int inputs = layers[0].contents->cols();
     int datalen = batch_size * inputs;
     float batch[datalen];
     int label = -1;
     for (int i = 0; i < batch_size; i++) {
-      fgets(line, MAXLINE, test_data);
+      fgets(line, MAXLINE, val_data);
       char *p;
       p = strtok(line,",");
       for (int j = 0; j < inputs; j++) {
@@ -519,9 +519,9 @@ float Network::test(char* path)
     costsum += cost();
     accsum += accuracy();
   }
-  val_acc = 1.0/((float) test_instances/batch_size) * accsum;
-  val_cost = 1.0/((float) test_instances/batch_size) * costsum;
-  rewind(test_data);
+  val_acc = 1.0/((float) val_instances/batch_size) * accsum;
+  val_cost = 1.0/((float) val_instances/batch_size) * costsum;
+  rewind(val_data);
   return 0;
 }
 
@@ -542,11 +542,10 @@ void Network::train()
     // if (i > batch_size * 10) {
     //   exit(1);
     // }
-    //    layers[10000000].alpha = 2;
   }
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
-  test(TEST_PATH);
+  validate(VAL_PATH);
   printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);

@@ -37,8 +37,10 @@ public:
 
 class Network {
   FILE* data;
+  FILE* val_data;
   FILE* test_data;
   int instances;
+  int val_instances;
   int test_instances;
   Eigen::MatrixXf numerical_grad(int i, float epsilon);
   void update_layer(float* vals, int datalen, int index);
