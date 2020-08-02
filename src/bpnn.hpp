@@ -40,7 +40,7 @@ class Network {
   FILE* test_data;
   int instances;
   int test_instances;
-  void numerical_grad(int i, float epsilon);
+  Eigen::MatrixXf numerical_grad(int i, float epsilon);
   void update_layer(float* vals, int datalen, int index);
 public:
   std::vector<Layer> layers;

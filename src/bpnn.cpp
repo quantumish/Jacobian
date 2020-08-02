@@ -344,25 +344,30 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
   return r;
 }
 
-void Network::numerical_grad(int i, float epsilon)
+Eigen::MatrixXf Network::numerical_grad(int i, float epsilon)
 {
   Eigen::MatrixXf gradient (layers[i].weights->rows(), layers[i].weights->cols());
-  for (int i = 0; i < layers[i].weights->rows(); i++) {
-    for (int j = 0; j < layers[i].weights->cols(); j++) {
+  for (int j = 0; j < layers[i].weights->rows(); j++) {
+    for (int k = 0; k < layers[i].weights->cols(); k++) {
       float current_cost = cost();
       std::vector<Layer> backup = layers;
-      (*layers[i].contents)(i,j) += epsilon;
+      (*layers[i].weights)(j,k) += epsilon;
       feedforward();
       float end_cost = cost();
-      gradient(i,j) = end_cost / current_cost;
+      gradient(j,k) = (end_cost - current_cost)/epsilon;
       layers = backup;
       batches = 0;
     }
   }
+  return gradient;
 }
 
 void Network::grad_check()                      \
 {
+  std::vector<Layer> backup = layers;
+  feedforward();
+  layers = backup;
+  batches = 0;
   std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
@@ -375,13 +380,15 @@ void Network::grad_check()                      \
       checknan(error(i,j), "gradient of final layer");
     }
   }
+  int counter = 1;
   gradients.push_back(error);
+  deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   for (int i = length-2; i >= 1; i--) {
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+    std::cout << layers[i-1].contents->transpose() * gradients[counter];
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
-  std::cout << deltas[1] << "\n\n" << numerical_grad(1, 0.00001);
 }
 
 void Network::backpropagate()
@@ -408,6 +415,7 @@ void Network::backpropagate()
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
+  //  std::cout << deltas[0] << "\n\nNUMERIC\n\n" << numerical_grad(1, 0.000001) <<"\n\n\n-----------\n\n\n";
   for (int i = 0; i < length-1; i++) {
     update(deltas, i);
     //    *layers[length-2-i].weights -= (0.9 * *layers[length-2-i].v) + (learning_rate * deltas[i]);

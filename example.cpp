@@ -14,13 +14,13 @@
 double bench(int batch_sz)
 {
   auto start = std::chrono::high_resolution_clock::now();
-  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 2, 0.01, 0.9);
+  Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 2, 0, 0.9);
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
-  net.init_optimizer("demon", 0.9, 50);
+  //  net.init_optimizer("momentum", 0.9);
   net.initialize();
-  net.grad_check();
+  //net.grad_check();
   std::vector<float> vals;
   for (int i = 0; i < 50; i++) {
     net.train();
