@@ -89,7 +89,7 @@ void Network::init_decay(char* type, ...)
     };
   }
   if (strcmp(type, "frac") == 0) {
-h    float a_0 = va_arg(args, double);
+    float a_0 = va_arg(args, double);
     float k = va_arg(args, double);
     decay = [this, a_0, k]() -> void {
       learning_rate = a_0 / (1+(k * epochs));
@@ -417,7 +417,6 @@ void Network::backpropagate()
       };
     }
   }
-  //  std::cout << "---------------------------------------------------------\n";
 }
 
 void Network::update_layer(float* vals, int datalen, int index)

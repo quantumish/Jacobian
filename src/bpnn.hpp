@@ -36,6 +36,7 @@ public:
 };
 
 class Network {
+public:
   FILE* data;
   FILE* val_data;
   FILE* test_data;
@@ -44,7 +45,7 @@ class Network {
   int test_instances;
   Eigen::MatrixXf numerical_grad(int i, float epsilon);
   void update_layer(float* vals, int datalen, int index);
-public:
+  
   std::vector<Layer> layers;
   int length = 0;
 
@@ -82,7 +83,7 @@ public:
   float accuracy();
   void backpropagate();
   int next_batch();
-  float test(char* path);
+  float validate(char* path);
   void train();
 
   float get_acc();
@@ -111,6 +112,8 @@ struct ValueError : public std::exception
     return error_message;
   }
 };
+
+Eigen::MatrixXf l1_deriv(Eigen::MatrixXf);
 
 #define MAXLINE 1024
 #define ZERO_THRESHOLD pow(10, -8) // for checks

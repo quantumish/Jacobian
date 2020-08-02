@@ -129,7 +129,7 @@ void ConvLayer::convolute()
 {
   for (int i = 0; i < output->cols(); i+=stride_len) {
     for (int j = 0; j < output->rows(); j+=stride_len) {
-      std::cout << j << ","<< i<< " vs "<< output->rows() << "," << output->cols() << "\n";
+      //      std::cout << j << ","<< i<< " vs "<< output->rows() << "," << output->cols() << "\n";
       (*output)(j, i) = (*kernel * (input->block(j, i, kernel->rows(), kernel->cols()))).sum();
     }
   }
@@ -199,7 +199,7 @@ public:
   std::vector<ConvLayer> conv_layers;
   std::vector<PoolingLayer> pool_layers;
   
-  ConvNet(char* path, float learn_rate, float bias_rate, float l, float ratio);
+  ConvNet(char* path, float learn_rate, float bias_rate, int reg, float l, float ratio);
   void list_net();
   void process(); // Runs the convolutional and pooling layers.
   void next_batch();
@@ -211,8 +211,8 @@ public:
   void initialize();
 };
 
-ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, float l, float ratio)
-  : Network(path, 1, learn_rate, bias_rate, l, ratio), preprocess_length{0}
+ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, int reg, float l, float ratio)
+  : Network(path, 1, learn_rate, bias_rate, reg, l, ratio), preprocess_length{0}
 {
   ReadMNIST(10000,784,data);
   data_labels = read_mnist_labels("./t10k-labels-idx1-ubyte",10000);
@@ -248,7 +248,6 @@ void ConvNet::next_batch()
 
 void ConvNet::process()
 {
-  //  std::cout << preprocess_length << "\n";
   // Assumes pooling is immediately after any conv layer.
   for (int i = 0; i < preprocess_length-1; i++) {
     conv_layers[i].convolute();
@@ -276,7 +275,7 @@ void ConvNet::list_net()
 {
   for (int i = 0; i < preprocess_length; i++) {
     std::cout << "-----------------------\nCONVOLUTIONAL LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << conv_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding <<  "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *conv_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n" << *conv_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *conv_layers[i].output << "\n\n\u001b[31mBIAS:\x1B[0;37m\n" << conv_layers[i].bias << "\n\n\n";
-    std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
+    //std::cout << "-----------------------\nPOOLING LAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nStride: " << pool_layers[i].stride_len << "\nPadding: " << conv_layers[i].padding << "\n\n\u001b[31mINPUT:\x1B[0;37m\n" << *pool_layers[i].input << "\n\n\u001b[31mKERNEL:\x1B[0;37m\n-" << *pool_layers[i].kernel << "\n\n\u001b[31mOUTPUT:\x1B[0;37m\n" << *pool_layers[i].output << "\n\n\n";
   }
   std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
   for (int i = 1; i < length-1; i++) {
@@ -287,56 +286,72 @@ void ConvNet::list_net()
 
 void ConvNet::backpropagate()
 {
-  std::vector<Eigen::MatrixXf> gradients;
+std::vector<Eigen::MatrixXf> gradients;
   std::vector<Eigen::MatrixXf> deltas;
   Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  //  std::cout << "\nTRUTH:\n";
   for (int i = 0; i < error.rows(); i++) {
     for (int j = 0; j < error.cols(); j++) {
       float truth;
       if (j==(*labels)(i,0)) truth = 1;
       else truth = 0;
-      //std::cout << truth << " ";
       error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-      checknan(error(i, j), "gradient of final layer");
+      checknan(error(i,j), "gradient of final layer");
     }
-    //  std::cout << "\n";
   }
-  // std::cout << "\n\n";
-  // std::cout << "\nLABELS:\n";
-  // std::cout << *labels << "\n\n";
-  // std::cout << "\nPREDICTION:\n";
-  // std::cout << (*layers[length-1].contents) << "\n\n";
-  // std::cout << "\nERR:\n";
-  // std::cout << error << "\n\n";
-  // std::cout << "\n\n\n------------------\n\n\n";
   gradients.push_back(error);
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
+    // TODO: Find nice way to add this
+    // *layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
   }
-  gradients.push_back((gradients[gradients.size()-1] * layers[0].weights->transpose()).cwiseProduct(*layers[0].dZ));
   for (int i = 0; i < length-1; i++) {
-    //    std::cout << learning_rate << " (LR) \n" << deltas[i] << "\n\n";
-    *layers[length-2-i].weights -= learning_rate * deltas[i];   
+    update(deltas, i);
+    if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
+    else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
     *layers[length-1-i].bias -= bias_lr * gradients[i];
+    if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
+      float sum = 0;
+      for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
+        for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
+          if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
+            // Choice of using index i+1 here is questionable. TODO: REVIEW
+            sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
+          }
+        }
+      }
+      layers[length-2-i].alpha += learning_rate * sum;
+      float a = layers[length-2-i].alpha;
+      layers[length-2-i].activation = [a](float x) -> float
+      {
+        if (x > 0) return x;
+        else return a * x;
+      };
+      layers[length-2-i].activation_deriv = [a](float x) -> float
+      {
+        if (x > 0) return 1;
+        else return a;
+      };
+    }
   }
   Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
   gradients[gradients.size()-1] = reshaped;
   std::vector<Eigen::MatrixXf> conv_deltas;
-  conv_deltas.emplace_back(conv_layers[conv_layers.size()-1].input->rows() - gradients[length-1].rows()+1 ,conv_layers[conv_layers.size()-1].input->cols() - gradients[length-1].cols()+1);
+  conv_deltas.emplace_back(conv_layers[conv_layers.size()-1].input->rows() - gradients[length-1].rows()+1, conv_layers[conv_layers.size()-1].input->cols() - gradients[length-1].cols()+1);
   for (int i = 0; i < conv_deltas[0].cols(); i+=conv_layers[conv_layers.size()-1].stride_len) {
     for (int j = 0; j < conv_deltas[0].rows(); j+=conv_layers[conv_layers.size()-1].stride_len) {
-      conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols()))).sum();
+      // Transpose here is sketchy
+      conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols())).transpose()).sum();
     }
   }
-  //  std::cout << conv_deltas[0] << "\n\n";
+  std::cout << *conv_layers[conv_layers.size()-1].kernel << "\n\n" << conv_deltas[conv_deltas.size()-1];
   *conv_layers[conv_layers.size()-1].kernel -= conv_deltas[0];
   conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
   counter = 1;
+  std::cout << "?\n";
   for (int i = conv_layers.size()-2; i > 0; i--) {
     conv_deltas.emplace_back(conv_layers[i].input->rows() - conv_deltas[counter-1].rows()+1 ,conv_layers[i].input->cols() - conv_deltas[counter-1].cols()+1);
     for (int j = 0; j < conv_deltas[counter].cols(); j+=conv_layers[i].stride_len) {
@@ -372,13 +387,13 @@ void ConvNet::train()
   epoch_cost = 1.0/(100) * cost_sum;
   printf("Epoch %i complete - cost %f - acc %f\n", epochs, epoch_cost, epoch_acc);
   batches=0;
-  learning_rate = decay(learning_rate, epochs);
+  decay();
   epochs++;
 }
 
 int main()
 {
-  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 5, 0.9);
+  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 2, 0, 0.9);
   Eigen::MatrixXf labels (1,1);
   net.add_conv_layer(28,28,1,9,9,0);
   //  net.add_pool_layer(20,20,1,6,6,0);
