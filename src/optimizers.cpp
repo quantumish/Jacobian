@@ -22,7 +22,6 @@ void Network::init_optimizer(char* name, ...)
     float max_ep = va_arg(args, int);
     float beta = beta_init;
     int prev_epoch = -1;
-    va_end(args);
     update = [this, max_ep, prev_epoch, beta_init, beta](std::vector<Eigen::MatrixXf> deltas, int i) mutable {
       if (epochs > prev_epoch) {
         beta = beta_init * (1-(epochs/max_ep)) / ((beta_init * (1-(epochs/max_ep))) + (1-beta_init));
@@ -36,7 +35,6 @@ void Network::init_optimizer(char* name, ...)
     float beta1 = va_arg(args, double);
     float beta2 = va_arg(args, double);
     float epsilon = va_arg(args, double);
-    va_end(args);
     // TODO: Add bias correction (requires figuring out measuring t)
     // TODO: cwiseProduct here is sketchy, look into me
     update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
@@ -49,7 +47,6 @@ void Network::init_optimizer(char* name, ...)
     float beta1 = va_arg(args, double);
     float beta2 = va_arg(args, double);
     float epsilon = va_arg(args, double);
-    va_end(args);
     // TODO: Add bias correction for m (requires figuring out measuring t)
     update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
       *layers[length-2-i].m = (beta1 * *layers[length-2-i].m) + ((1-beta1)*deltas[i]);
@@ -59,4 +56,5 @@ void Network::init_optimizer(char* name, ...)
       *layers[length-2-i].weights -= learning_rate * (layers[length-2-i].v->array().pow(-1).cwiseProduct(layers[length-2-i].m->array())).matrix();
     };
   }
+  va_end(args);
 }

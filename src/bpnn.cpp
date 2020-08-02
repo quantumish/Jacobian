@@ -62,31 +62,46 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
   instances = total_instances - test_instances;
   data = fopen(TRAIN_PATH, "r");
   test_data = fopen(TEST_PATH, "r");
-  decay = [](float lr, float t) -> float {
-    return lr;
+  decay = [this]() -> void {
+    learning_rate = learning_rate;
   };
   update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]);
   };
 }
 
-void Network::init_decay(char* type, float a_0, float k)
+void Network::init_decay(char* type, ...)
 {
+  va_list args;
+  va_start(args, type);
   if (strcmp(type, "step") == 0) {
-    decay = [a_0, k](float lr, float t) -> float {
-      return lr/k;
+    float a_0 = va_arg(args, double);
+    float k = va_arg(args, double);
+    decay = [this, a_0, k]() -> void {
+      learning_rate = a_0 * learning_rate/k;
     };
   }
   if (strcmp(type, "exp") == 0) {
-    decay = [a_0, k](float lr, float t) -> float {
-      return a_0 * exp(-k*t);
+    float a_0 = va_arg(args, double);
+    float k = va_arg(args, double);
+    decay = [this, a_0, k]() -> void {
+      learning_rate = a_0 * exp(-k * epochs);
     };
   }
   if (strcmp(type, "frac") == 0) {
-    decay = [a_0, k](float lr, float t) -> float {
-      return a_0/(1+(k*t));
+    float a_0 = va_arg(args, double);
+    float k = va_arg(args, double);
+    decay = [this, a_0, k]() -> void {
+      learning_rate = a_0 / (1+(k * epochs));
     };
   }
+  if (strcmp(type, "linear") == 0) {
+    int max_ep = va_arg(args, double);
+    decay = [this, max_ep]() -> void {
+      learning_rate = 1 - epochs/max_ep;
+    };
+  }
+  va_end(args);
 }
 
 #include "optimizers.cpp"
@@ -535,7 +550,7 @@ void Network::train()
   printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
-  learning_rate = decay(learning_rate, epochs);
+  decay();
   epochs++;
 }
 

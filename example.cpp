@@ -19,6 +19,7 @@ double bench(int batch_sz)
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
   net.init_optimizer("demon", 0.9, 50);
+  net.init_decay("step", 1, 2);
   net.initialize();
   //net.grad_check();
   std::vector<float> vals;
