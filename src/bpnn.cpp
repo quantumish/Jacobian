@@ -216,6 +216,7 @@ void Network::feedforward()
   }
   for (int j = 0; j < layers[length-1].contents->rows(); j++) {
     if (strcmp(layers[length-1].activation_str, "linear") == 0) break;
+    #pragma omp simd
     for (int k = 0; k < layers[length-1].contents->cols(); k++) {
       (*layers[length-1].dZ)(j,k) = layers[length-1].activation_deriv((*layers[length-1].contents)(j,k));
       (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
@@ -545,7 +546,7 @@ void Network::train()
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
   validate(VAL_PATH);
-  printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+  //  printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
   decay();
