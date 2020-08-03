@@ -3,7 +3,7 @@
 
 #include <Eigen/Dense>
 
-#include "../../mapreduce/mapreduce.hpp"
+#include "../../mapreduce/mapreduce.h"
 
 #include <vector>
 #include <array>
