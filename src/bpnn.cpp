@@ -65,6 +65,9 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
   decay = [this]() -> void {
     learning_rate = learning_rate;
   };
+  grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
+    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+  };
   update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
     *layers[length-2-i].weights -= (learning_rate * deltas[i]);
   };
@@ -377,7 +380,8 @@ void Network::backpropagate()
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
     // TODO: Find nice way to add this
-    // *layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
+    // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
+    grad_calc(gradients, counter, i);
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
@@ -546,7 +550,7 @@ void Network::train()
   epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
   epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
   validate(VAL_PATH);
-  //  printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+  printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
   batches=1;
   rewind(data);
   decay();

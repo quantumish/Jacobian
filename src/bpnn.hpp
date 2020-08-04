@@ -65,6 +65,7 @@ public:
   Eigen::MatrixXf* labels;
 
   std::function<void(void)> decay;
+  std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
   std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
 
   Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio);

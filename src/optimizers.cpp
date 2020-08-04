@@ -17,6 +17,18 @@ void Network::init_optimizer(char* name, ...)
       *layers[length-2-i].m = (learning_rate * deltas[i]);
     };
   }
+  // TODO: split into functions to remove reundant code
+  if (strcmp(name, "nesterov") == 0) {
+    float beta = va_arg(args, double);
+    va_end(args);
+    grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
+      gradients.push_back((gradients[counter-1] * (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()).cwiseProduct(*layers[i].dZ));
+    };
+    update = [this, beta](std::vector<Eigen::MatrixXf> deltas, int i) {
+      *layers[length-2-i].weights -= (beta * *layers[length-2-i].m) + (learning_rate * deltas[i]);
+      *layers[length-2-i].m = (learning_rate * deltas[i]);
+    };
+  }
   else if (strcmp(name, "demon") == 0) {
     float beta_init = va_arg(args, double);
     float max_ep = va_arg(args, int);

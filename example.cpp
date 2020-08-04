@@ -17,6 +17,7 @@ double bench(int batch_sz)
   net.add_layer(4, "linear");
   net.add_layer(5, "relu");
   net.add_layer(2, "linear");
+  net.init_optimizer("nesterov", 0.9);
   net.initialize();
   for (int i = 0; i < 50; i++) {
     net.train();
@@ -27,6 +28,5 @@ double bench(int batch_sz)
 
 int main()
 {
-  sleep(40);
   bench(16);
 }
