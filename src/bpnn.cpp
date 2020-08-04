@@ -54,8 +54,8 @@ void Layer::init_weights(Layer next)
   }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio)
-  :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization)
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio, bool early_exit, float cutoff)
+  :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
 {
   assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
   int total_instances = prep_file(path, SHUFFLED_PATH);
@@ -536,6 +536,7 @@ void Network::train()
   float cost_sum = 0;
   float acc_sum = 0;
   for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+    if (early_stop == true && get_val_cost() < threshold) return;
     if (i != instances-batch_size) { // Don't try to advance batch on final batch.
       next_batch();
     }
