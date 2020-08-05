@@ -42,16 +42,16 @@ float cloglog_deriv(float x) {return exp(x-exp(x));}
 
 float step(float x)
 {
-  if (x > 0) return 1;
-  else return 0;
+    if (x > 0) return 1;
+    else return 0;
 }
 float step_deriv(float x) {return 0;}
 
 float bipolar(float x)
 {
-  if (x > 0) return 1;
-  else if (x == 0) return 0;
-  else return -1;
+    if (x > 0) return 1;
+    else if (x == 0) return 0;
+    else return -1;
 }
 float bipolar_deriv(float x) {return 0;}
 
@@ -61,29 +61,44 @@ float bipolar_sigmoid_deriv(float x) {return (2*exp(x))/(pow(exp(x)+1,2));}
 float hard_tanh(float x) {return fmax(-1, fmin(1,x));}
 float hard_tanh_deriv(float x)
 {
-  if (-1 < x && x < 1) return 1;
-  else return 0;
+    if (-1 < x && x < 1) return 1;
+    else return 0;
 }
 
 float leaky_relu(float x)
 {
-  if (x > 0) return x;
-  else return 0.01 * x;
+    if (x > 0) return x;
+    else return 0.01 * x;
 }
 
 float leaky_relu_deriv(float x)
 {
-  if (x > 0) return 1;
-  else return 0.01;
+    if (x > 0) return 1;
+    else return 0.01;
 }
 
 std::function<float(float)> rectifier(float (*activation)(float))
 {
-  auto rectified = [activation](float x) -> float
-  { 
-    if (x > 0) return (*activation)(x);
-    else return 0; 
-  };
-  return rectified;
+    auto rectified = [activation](float x) -> float
+    { 
+        if (x > 0) return (*activation)(x);
+        else return 0; 
+    };
+    return rectified;
 }
 
+// Intel intrinsics for the win!
+Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
+{
+#ifndef RECKLESS
+    assert(a.rows() == b.rows() && a.cols() == b.rows());
+#endif
+    float arr1[(((a.rows() * a.cols()) % 8) * 8) + 8] = a.data();
+    float arr2[(((b.rows() * b.cols()) % 8) * 8) + 8] = b.data();
+    for (int i = 0; i < (((a.rows() * a.cols()) % 8) * 8) + 8; i++) {
+        _mm256_store_ps(arr1, _mm256_mul_ps(_mm256_load_ps(arr1+i*8),
+                                            _mm256_load_ps(arr2+i*8)));
+    }
+    Eigen::MatrixXf dst (vec1, a.rows(), a.cols());
+    return dst;
+}

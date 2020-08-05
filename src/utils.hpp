@@ -3,13 +3,13 @@
 //  Jacobian
 //
 //  Created by David Freifeld
-//  Copyright © 2020 David Freifeld. All rights reserved.
 //
 
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <functional>
+#include <functional
+#include <immintrin.h>
 
 // A zoo of activation functions.
 float sigmoid(float x);
@@ -37,6 +37,8 @@ float bipolar_sigmoid_deriv(float x);
 float leaky_relu(float x);
 float leaky_relu_deriv(float x);
 std::function<float(float)> rectifier(float (*activation)(float));
+
+Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b);
 
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 
