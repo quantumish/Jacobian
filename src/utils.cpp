@@ -117,3 +117,66 @@ Eigen::MatrixXf avx_exp(Eigen::MatrixXf m)
     Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
     return dst;
 }
+
+Eigen::MatrixXf avx_div(Eigen::MatrixXf m, float denom)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        __m256 denom_vec = _mm256_broadcast_ss(denom);
+        _mm256_store_ps(arr1+i*8, _mm256_div_ps(_mm256_load_ps(arr1+i*8), denom_vec));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
+    return dst;
+}
+
+Eigen::MatrixXf avx_log(Eigen::MatrixXf m)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        _mm256_store_ps(arr1+i*8, _mm256_log_ps(_mm256_load_ps(arr1+i*8)));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
+    return dst;
+}
+
+Eigen::MatrixXf avx_pow(Eigen::MatrixXf m, float exponent)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        __m256 exponent_vec = _mm256_broadcast_ss(exponent);
+        _mm256_store_ps(arr1+i*8, _mm256_pow_ps(_mm256_load_ps(arr1+i*8), exponent_vec));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
+    return dst;
+}
+
+
+Eigen::MatrixXf avx_tanh(Eigen::MatrixXf m)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        _mm256_store_ps(arr1+i*8, _mm256_tanh_ps(_mm256_load_ps(arr1+i*8)));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
+    return dst;
+}
+
+Eigen::MatrixXf avx_cosh(Eigen::MatrixXf m)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        _mm256_store_ps(arr1+i*8, _mm256_cosh_ps(_mm256_load_ps(arr1+i*8)));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
+    return dst;
+}
