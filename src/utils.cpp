@@ -97,14 +97,25 @@ Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
 #endif
     int size = ((a.rows() * a.cols()) + 7) & (-8);
     float arr1[size];
-    //memcpy(arr1, a.data(), sizeof(float)*a.cols()*a.rows());    
-    std::copy(a.data(), a.data()+(a.rows()*a.cols()), arr1);
+    std::cout << a.cols()*a.rows() <<"\n";
+    memcpy(arr1, a.data(), sizeof(float)*a.cols()*a.rows());    
     float arr2[size];
-    std::copy(b.data(), b.data()+(b.rows()*b.cols()), arr2);
-    //memcpy(arr1, b.data(), sizeof(float)*b.cols()*a.rows());    
-    for (int i = 0; i < (((a.rows() * a.cols()) % 8) * 8) + 8; i++) {
-        _mm256_store_ps(arr1, _mm256_mul_ps(_mm256_load_ps(arr1+i*8), _mm256_load_ps(arr2+i*8)));
+    memcpy(arr2, b.data(), sizeof(float)*b.cols()*b.rows());
+    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr1[i] << " ";
+    std::cout << "\n";
+    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr2[i] << " ";
+    std::cout << "\n\n";
+    for (int i = 0; i < size/8; i++) {
+        __m256 product = _mm256_mul_ps(_mm256_load_ps(arr1+i*8), _mm256_load_ps(arr2+i*8));
+        std::cout << "Product:\n";
+        for (int i = 0; i < 8; i++) std::cout << product[i] << " ";
+        std::cout << "\n";
+        _mm256_store_ps(arr1, product);
     }
+    std::cout << "Product (final):\n";
+    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr1[i] << " ";
+    std::cout << "\n\n\n\n";
     Eigen::Map<Eigen::MatrixXf> dst (arr1, a.rows(), a.cols());
+    //std::cout << a << "\n\n" <<  b << "\n\n" << dst << "\n\n\n\n";
     return dst;
 }

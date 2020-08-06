@@ -67,7 +67,8 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
         learning_rate = learning_rate;
     };
     grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
-        gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
+        //gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
+        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
     };
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
@@ -236,7 +237,7 @@ void Network::feedforward()
         // std::cout << "\nGETTING SUM\n";
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             checknan(m(0,j), "input to final layer");
-            sum += exp(m(0,j));.
+            sum += exp(m(0,j));
             // std::cout << "Adding " << exp(m(0,j)) << "(aka e^"<< m(0, j) << ")\n";
             checknan(sum, "sum in Softmax operation");
         }
@@ -382,7 +383,8 @@ void Network::backpropagate()
     for (int i = length-2; i >= 1; i--) {
         // TODO: Find nice way to add this
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
-        grad_calc(gradients, counter, i);
+        //grad_calc(gradients, counter, i);
+        gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
     }
