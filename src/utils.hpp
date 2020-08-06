@@ -8,7 +8,7 @@
 #ifndef UTILS_H
 #define UTILS_H
 
-#include <functional
+#include <functional>
 #include <immintrin.h>
 
 // A zoo of activation functions.

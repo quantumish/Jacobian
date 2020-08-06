@@ -67,7 +67,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
         learning_rate = learning_rate;
     };
     grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
-        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+        gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
     };
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
@@ -236,7 +236,7 @@ void Network::feedforward()
         // std::cout << "\nGETTING SUM\n";
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             checknan(m(0,j), "input to final layer");
-            sum += exp(m(0,j));
+            sum += exp(m(0,j));.
             // std::cout << "Adding " << exp(m(0,j)) << "(aka e^"<< m(0, j) << ")\n";
             checknan(sum, "sum in Softmax operation");
         }
@@ -280,7 +280,7 @@ float Network::cost()
         checknan(tempsum, "total summation inside cost calculation");
     }
     for (int i = 0; i < layers.size()-1; i++) {
-        if (reg_type == 2) reg += (layers[i].weights->cwiseProduct(*layers[i].weights)).sum();
+        if (reg_type == 2) reg += avx_product(*layers[i].weights,*layers[i].weights).sum();
         else if (reg_type == 1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
     return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
@@ -355,7 +355,7 @@ void Network::grad_check()                      \
     gradients.push_back(error);
     deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
     for (int i = length-2; i >= 1; i--) {
-        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+        gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(),*layers[i].dZ));
         std::cout << layers[i-1].contents->transpose() * gradients[counter];
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
@@ -383,7 +383,6 @@ void Network::backpropagate()
         // TODO: Find nice way to add this
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         grad_calc(gradients, counter, i);
-        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
     }
@@ -552,7 +551,7 @@ void Network::train()
     epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
     validate(VAL_PATH);
-    //printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+    printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     rewind(data);
     decay();

@@ -88,17 +88,20 @@ std::function<float(float)> rectifier(float (*activation)(float))
 }
 
 // Intel intrinsics for the win!
+// TODO: Investigate weird memory problems!
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
 {
 #ifndef RECKLESS
     assert(a.rows() == b.rows() && a.cols() == b.rows());
 #endif
-    float arr1[(((a.rows() * a.cols()) % 8) * 8) + 8] = a.data();
-    float arr2[(((b.rows() * b.cols()) % 8) * 8) + 8] = b.data();
+    float arr1[(((a.rows() * a.cols()) % 8) * 8) + 8];
+    memcpy(arr1, a.data(), sizeof(float)*a.cols()*a.rows());    
+    float arr2[(((b.rows() * b.cols()) % 8) * 8) + 8];
+    memcpy(arr1, b.data(), sizeof(float)*b.cols()*a.rows());    
     for (int i = 0; i < (((a.rows() * a.cols()) % 8) * 8) + 8; i++) {
         _mm256_store_ps(arr1, _mm256_mul_ps(_mm256_load_ps(arr1+i*8),
                                             _mm256_load_ps(arr2+i*8)));
     }
-    Eigen::MatrixXf dst (vec1, a.rows(), a.cols());
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, a.rows(), a.cols());
     return dst;
 }
