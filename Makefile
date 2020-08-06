@@ -11,9 +11,9 @@
 
 GEN_FLAGS = -fpic
 
-CXX = /usr/local/opt/llvm/bin/clang
+CXX = icpc
 CXXFLAGS = -shared -std=c++17 -undefined dynamic_lookup `python3 -m pybind11 --includes` ./src/pybind.cpp ./src/bpnn.cpp ./src/utils.cpp mapreduce.a -o mrbpnn`python3-config --extension-suffix`
-LDFLAGS = -L/usr/local/opt/llvm/lib -lc++
+#LDFLAGS = -L/usr/local/opt/llvm/lib -lc++
 
 all: compile
 

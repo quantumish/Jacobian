@@ -40,6 +40,12 @@ std::function<float(float)> rectifier(float (*activation)(float));
 
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b);
 Eigen::MatrixXf avx_exp(Eigen::MatrixXf m);
+Eigen::MatrixXf avx_cdiv(Eigen::MatrixXf m, float denom);
+Eigen::MatrixXf avx_log(Eigen::MatrixXf m);
+Eigen::MatrixXf avx_cpow(Eigen::MatrixXf m, float exponent);
+Eigen::MatrixXf avx_tanh(Eigen::MatrixXf m);
+Eigen::MatrixXf avx_cosh(Eigen::MatrixXf m);
+
 
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 

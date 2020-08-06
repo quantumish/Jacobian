@@ -232,11 +232,12 @@ void Network::feedforward()
         // std::cout << "\nGETTING SUM\n";
         float sum = avx_exp(m).sum();
         //std::cout << "\nFINAL ACTIVATION\n";
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-            m(0,j) = exp(m(0,j))/sum;
-            //      std::cout << "Calculating " << exp(m(0,j)) << "/" << sum << " to be " << (*layers[length-1].contents)(i,j) << "(aka " << test<<")\n";
-            checknan(m(0,j), "output of Softmax operation");
-        }
+        // for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+        //     m(0,j) = exp(m(0,j))/sum;
+        //     //      std::cout << "Calculating " << exp(m(0,j)) << "/" << sum << " to be " << (*layers[length-1].contents)(i,j) << "(aka " << test<<")\n";
+        //     checknan(m(0,j), "output of Softmax operation");
+        // }
+        m = avx_cdiv(avx_exp(m), sum);
         layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
     }
     // std::cout << "\n\n";
@@ -543,7 +544,7 @@ void Network::train()
     epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
     validate(VAL_PATH);
-    printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+    //    printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     rewind(data);
     decay();
