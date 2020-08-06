@@ -95,14 +95,29 @@ Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
     assert(a.rows() == b.rows() && a.cols() == b.rows());
 #endif
     int size = ((a.rows() * a.cols()) + 7) & (-8);
+    auto start = std::chrono::high_resolution_clock::now();
     float arr1[size];
     memcpy(arr1, a.data(), sizeof(float)*a.cols()*a.rows());    
     float arr2[size];
     memcpy(arr2, b.data(), sizeof(float)*b.cols()*b.rows());
+    auto end = std::chrono::high_resolution_clock::now();
+    double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    auto calc_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < size/8; i++) {
         _mm256_store_ps(arr1+i*8, _mm256_mul_ps(_mm256_load_ps(arr1+i*8), _mm256_load_ps(arr2+i*8)));
     }
+    auto calc_end = std::chrono::high_resolution_clock::now();
+    double calc_time = std::chrono::duration_cast<std::chrono::nanoseconds>(calc_end - calc_start).count();
+    auto conv_start = std::chrono::high_resolution_clock::now();
     Eigen::Map<Eigen::MatrixXf> dst (arr1, a.rows(), a.cols());
+    auto conv_end = std::chrono::high_resolution_clock::now();
+    double conv_time = std::chrono::duration_cast<std::chrono::nanoseconds>(conv_end - conv_start).count();
+    double total_time = conv_time+calc_time+time;
+    auto eigen_start = std::chrono::high_resolution_clock::now();
+    a = a.cwiseProduct(b);
+    auto eigen_end = std::chrono::high_resolution_clock::now();
+    double eigen_time = std::chrono::duration_cast<std::chrono::nanoseconds>(eigen_end - eigen_start).count();
+    std::cout << "Copy:" << time << "ns\nCalculation: " << calc_time << "ns\nConversion:" << conv_time << "ns\nTotal: " << total_time << "ns\nEigen time: " << eigen_time << "ns\n\n";
     return dst;
 }
 
