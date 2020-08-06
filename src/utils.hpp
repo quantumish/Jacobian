@@ -39,6 +39,7 @@ float leaky_relu_deriv(float x);
 std::function<float(float)> rectifier(float (*activation)(float));
 
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b);
+Eigen::MatrixXf avx_exp(Eigen::MatrixXf m);
 
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 

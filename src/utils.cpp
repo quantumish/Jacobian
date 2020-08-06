@@ -89,7 +89,6 @@ std::function<float(float)> rectifier(float (*activation)(float))
 }
 
 // Intel intrinsics for the win!
-// TODO: Investigate weird memory problems!
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
 {
 #ifndef RECKLESS
@@ -97,25 +96,24 @@ Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
 #endif
     int size = ((a.rows() * a.cols()) + 7) & (-8);
     float arr1[size];
-    std::cout << a.cols()*a.rows() <<"\n";
     memcpy(arr1, a.data(), sizeof(float)*a.cols()*a.rows());    
     float arr2[size];
     memcpy(arr2, b.data(), sizeof(float)*b.cols()*b.rows());
-    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr1[i] << " ";
-    std::cout << "\n";
-    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr2[i] << " ";
-    std::cout << "\n\n";
     for (int i = 0; i < size/8; i++) {
-        __m256 product = _mm256_mul_ps(_mm256_load_ps(arr1+i*8), _mm256_load_ps(arr2+i*8));
-        std::cout << "Product:\n";
-        for (int i = 0; i < 8; i++) std::cout << product[i] << " ";
-        std::cout << "\n";
-        _mm256_store_ps(arr1, product);
+        _mm256_store_ps(arr1+i*8, _mm256_mul_ps(_mm256_load_ps(arr1+i*8), _mm256_load_ps(arr2+i*8)));
     }
-    std::cout << "Product (final):\n";
-    for (int i = 0; i < a.cols()*a.rows(); i++) std::cout << arr1[i] << " ";
-    std::cout << "\n\n\n\n";
     Eigen::Map<Eigen::MatrixXf> dst (arr1, a.rows(), a.cols());
-    //std::cout << a << "\n\n" <<  b << "\n\n" << dst << "\n\n\n\n";
+    return dst;
+}
+
+Eigen::MatrixXf avx_exp(Eigen::MatrixXf m)
+{
+    int size = ((m.rows() * m.cols()) + 7) & (-8);
+    float arr1[size];
+    memcpy(arr1, m.data(), sizeof(float)*m.cols()*m.rows());    
+    for (int i = 0; i < size/8; i++) {
+        _mm256_store_ps(arr1+i*8, _mm256_exp_ps(_mm256_load_ps(arr1+i*8)));
+    }
+    Eigen::Map<Eigen::MatrixXf> dst (arr1, m.rows(), m.cols());
     return dst;
 }

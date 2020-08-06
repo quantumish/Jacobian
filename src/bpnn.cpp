@@ -66,10 +66,6 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
     decay = [this]() -> void {
         learning_rate = learning_rate;
     };
-    grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
-        //gradients.push_back(avx_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
-        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    };
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
@@ -229,18 +225,12 @@ void Network::feedforward()
     }
     //  std::cout << "\nSOFTMAX INPUT\n" << *layers[length-1].contents << "\n\n";
     for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-        float sum = 0;
         Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
         Eigen::MatrixXf::Index maxRow, maxCol;
         float max = m.maxCoeff(&maxRow, &maxCol);
         m = (m.array() - max).matrix();
         // std::cout << "\nGETTING SUM\n";
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-            checknan(m(0,j), "input to final layer");
-            sum += exp(m(0,j));
-            // std::cout << "Adding " << exp(m(0,j)) << "(aka e^"<< m(0, j) << ")\n";
-            checknan(sum, "sum in Softmax operation");
-        }
+        float sum = avx_exp(m).sum();
         //std::cout << "\nFINAL ACTIVATION\n";
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
