@@ -5,10 +5,10 @@
 //  Created by David Freifeld
 //
 
-#include <indicators/cursor_control.hpp>
-#include <indicators/progress_bar.hpp>
-#include <indicators/block_progress_bar.hpp>
-using namespace indicators;
+// #include <indicators/cursor_control.hpp>
+// #include <indicators/progress_bar.hpp>
+// #include <indicators/block_progress_bar.hpp>
+// using namespace indicators;
 
 #include "./src/bpnn.hpp"
 #include "./src/utils.hpp"

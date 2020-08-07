@@ -1,4 +1,4 @@
-name: C/C++ CI
+name: macos-latest
 
 on:
   push:
@@ -13,6 +13,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - name: install
+      run: sh install.sh
     - name: cmake .
       run: cmake .
     - name: make
