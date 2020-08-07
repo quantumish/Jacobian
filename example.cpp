@@ -32,7 +32,7 @@ double bench(int batch_sz)
 
 int main()
 {
-    std::cout << bench(16) << "\n";
+    std::cout << bench(10) << "\n";
     // show_console_cursor(false);
     // BlockProgressBar bar{
     //   option::BarWidth{80},

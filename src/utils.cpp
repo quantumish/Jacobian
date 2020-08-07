@@ -99,6 +99,7 @@ Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
         _mm256_store_ps(a.data()+i*8, _mm256_mul_ps(_mm256_load_ps(a.data()+i*8), _mm256_load_ps(b.data()+i*8)));
     }
     for (int i = size-8; i < a.cols()*a.rows(); i++) *(a.data()+i) = *(a.data()+i) * *(b.data()+i);
+    b = a.cwiseProduct(b);
     return a;
 }
 
