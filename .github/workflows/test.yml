@@ -23,13 +23,11 @@ jobs:
       # make check -j 4
       # make
       # sudo make install
-    - name: cmake .
+    - name: cmake-build
       run: cmake .
-    - name: make
+    - name: make-build
       run: make
-
-    extended-checks:
-      - name: ctest
-        run: ctest
+    - name: ctest 
+      run: ctest
 
     
