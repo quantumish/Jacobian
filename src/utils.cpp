@@ -98,6 +98,7 @@ Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
     for (int i = 0; i < (size-8)/8; i++) {
         _mm256_store_ps(a.data()+i*8, _mm256_mul_ps(_mm256_load_ps(a.data()+i*8), _mm256_load_ps(b.data()+i*8)));
     }
+    for (int i = size-8; i < a.cols()*a.rows(); i++) *(a.data()+i) = *(a.data()+i) * *(b.data()+i);
     return a;
 }
 
@@ -107,6 +108,7 @@ Eigen::MatrixXf avx_exp(Eigen::MatrixXf m)
     for (int i = 0; i < (size-8)/8; i++) {
         _mm256_store_ps(m.data()+i*8, _mm256_exp_ps(_mm256_load_ps(m.data()+i*8)));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = exp(*(m.data()+i));
     return m;
 }
 
@@ -117,6 +119,7 @@ Eigen::MatrixXf avx_cdiv(Eigen::MatrixXf m, float denom)
         __m256 denom_vec = _mm256_broadcast_ss(&denom);
         _mm256_store_ps(m.data()+i*8, _mm256_div_ps(_mm256_load_ps(m.data()+i*8), denom_vec));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = *(m.data()+i) / denom;
     return m;
 }
 
@@ -126,6 +129,7 @@ Eigen::MatrixXf avx_log(Eigen::MatrixXf m)
     for (int i = 0; i < (size-8)/8; i++) {
         _mm256_store_ps(m.data()+i*8, _mm256_log_ps(_mm256_load_ps(m.data()+i*8)));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = log(*(m.data()+i));
     return m;
 }
 
@@ -137,6 +141,7 @@ Eigen::MatrixXf avx_pow(Eigen::MatrixXf m, float exponent)
         __m256 exponent_vec = _mm256_broadcast_ss(&exponent);
         _mm256_store_ps(m.data()+i*8, _mm256_pow_ps(_mm256_load_ps(m.data()+i*8), exponent_vec));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = pow(*(m.data()+i), exponent);
     return m;
 }
 
@@ -147,6 +152,7 @@ Eigen::MatrixXf avx_tanh(Eigen::MatrixXf m)
     for (int i = 0; i < (size-8)/8; i++) {
         _mm256_store_ps(m.data()+i*8, _mm256_tanh_ps(_mm256_load_ps(m.data()+i*8)));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = tanh(*(m.data()+i));
     return m;
 }
 
@@ -156,5 +162,6 @@ Eigen::MatrixXf avx_cosh(Eigen::MatrixXf m)
     for (int i = 0; i < (size-8)/8; i++) {
         _mm256_store_ps(m.data()+i*8, _mm256_cosh_ps(_mm256_load_ps(m.data()+i*8)));
     }
+    for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = cosh(*(m.data()+i));
     return m;
 }
