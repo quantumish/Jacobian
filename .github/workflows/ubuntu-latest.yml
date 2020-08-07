@@ -1,0 +1,34 @@
+name: ubuntu-latest
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest    
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: install
+      run:  sudo apt install libeigen3-dev
+      sudo apt install cmake
+      # python 3 -m pip install pytest
+      # git clone https://github.com/pybind/pybind11.git
+      # mkdir build
+      # cd build
+      # cmake ..
+      # make check -j 4
+      # make
+      # sudo make install
+    - name: cmake-build
+      run: cmake .
+    - name: make-build
+      run: make
+    - name: ctest 
+      run: ctest
+
+    

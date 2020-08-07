@@ -2,9 +2,6 @@ cmake_minimum_required(VERSION 3.10.0)
 #find_package(pybind11 CONFIG REQUIRED)
 #include_directories(${pybind11_INCLUDE_DIRS})
 
-set(CMAKE_C_COMPILER "icc")
-set(CMAKE_CXX_COMPILER "/usr/local/bin/icpc")
-
 set(COMPILE_FLAGS, "-w")
 
 if (!FAST)
