@@ -8,19 +8,17 @@
 
 from setuptools import setup, Distribution
 
-
 class BinaryDistribution(Distribution):
     def has_ext_modules(foo):
         return True
 
-
 setup(
     name='Jacobian',
     version='1.0',
-    description='Python Library for Neural Nets.',
-    packages=['mrbpnn'],
+    description='A library for neural networks.',
+    packages=['jacobian'],
     package_data={
-        'mrbpnn': ['mrbpnn.cpython-37m-darwin.so'],
+        'jacobian': ['jacobian.cpython-37m-darwin.so'],
     },
     distclass=BinaryDistribution
 )

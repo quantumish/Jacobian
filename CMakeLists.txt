@@ -1,6 +1,9 @@
 cmake_minimum_required(VERSION 3.10.0)
-#find_package(pybind11 CONFIG REQUIRED)
-#include_directories(${pybind11_INCLUDE_DIRS})
+
+set(CMAKE_CXX_COMPILER "g++")
+
+set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 set(COMPILE_FLAGS, "-w")
 
@@ -20,15 +23,15 @@ if (!AVX)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -D AVX")
 endif (!AVX)
 
-SET(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}")
 
 project (jacobian)
-set(CMAKE_CXX_STANDARD 11)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
+find_package(pybind11 CONFIG REQUIRED)
+include_directories(${pybind11_INCLUDE_DIRS})
 #add_library(utils ./src/utils.cpp)
 #add_library(bpnn ./src/bpnn.cpp)
 
-add_executable(jacobian example.cpp ./src/bpnn.cpp ./src/utils.cpp)
+pybind11_add_module(jacobian example.cpp ./src/bpnn.cpp ./src/utils.cpp)
 #target_link_libraries(jacobian PUBLIC utils bpnn)
 
 enable_testing()
