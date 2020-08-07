@@ -26,6 +26,7 @@
 //#include "checks.cpp"
 
 Layer::Layer(int batch_sz, int nodes, float a)
+    
     :alpha(a)
 {
     contents = new Eigen::MatrixXf (batch_sz, nodes);
@@ -228,6 +229,7 @@ void Network::feedforward()
             (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
         }
     }
+    //    std::cout << "begin softmax" << "\n";
     for (int i = 0; i < layers[length-1].contents->rows(); i++) {
         Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
         Eigen::MatrixXf::Index maxRow, maxCol;
@@ -237,11 +239,14 @@ void Network::feedforward()
         float sum = avx_exp(m).sum();
         m = avx_cdiv(avx_exp(m), sum);
 #else
+        // std::cout << "begin sum" << "\n";
+        // std::cout << m << "\n";
         float sum = 0;
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
             sum += exp(m(0,j));
         }
+        //  std::cout << "begin norm" << "\n";
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
             checknan(m(0,j), "output of Softmax operation");

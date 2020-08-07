@@ -23,7 +23,7 @@ double bench(int batch_sz)
     net.add_layer(5, "relu");
     net.add_layer(2, "linear");
     net.initialize();
-    for (int i = 0; i < 50; i++) {
+    for (int i = 0; i < 1000; i++) {
         net.train();
     }
     auto end = std::chrono::high_resolution_clock::now();
@@ -32,7 +32,7 @@ double bench(int batch_sz)
 
 int main()
 {
-    std::cout << bench(10) << "\n";
+    std::cout << bench(16) << "\n";
     // show_console_cursor(false);
     // BlockProgressBar bar{
     //   option::BarWidth{80},

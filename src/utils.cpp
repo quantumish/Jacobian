@@ -88,11 +88,12 @@ std::function<float(float)> rectifier(float (*activation)(float))
     return rectified;
 }
 
+#if (AVX)
 // Intel intrinsics for the win!
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)
 {
 #ifndef RECKLESS
-    assert(a.rows() == b.rows() && a.cols() == b.rows());
+    assert(a.rows() == b.rows() && a.cols() == b.cols());
 #endif
     int size = ((a.rows() * a.cols()) + 7) & (-8);
     for (int i = 0; i < (size-8)/8; i++) {
@@ -166,3 +167,4 @@ Eigen::MatrixXf avx_cosh(Eigen::MatrixXf m)
     for (int i = size-8; i < m.cols()*m.rows(); i++) *(m.data()+i) = cosh(*(m.data()+i));
     return m;
 }
+#endif

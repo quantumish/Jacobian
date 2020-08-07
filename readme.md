@@ -12,7 +12,7 @@ Jacobian is a work-in-progress machine learning library written in C++ designed 
 ## The Chopping Block
 What's next for Jacobian?
 
-1. **Full AVX support.** This will make time-consuming parts of the code like activation functions (most notably softmax) and coefficient-wise multiplications 2-4x faster. This will only work on processors supporting AVX instructions.
+1. **Polish.** Preparing for an 1.0 release and ensuring Jacobian actually works well and can be reliably used are on the agenda. This would comprise of proper gradient and sanity checks, testing Jacobian on a variety of classification problems, lots of bugfixes, and starting to prioritize stability of the master branch (i.e. consistently using branches for new features, using Github Workflows for automated checks, improving the build system with CMake...).
 
 2. **Usable CNNs.** CNNs have been supported for a bit now, but in their current state have not been very practical or stable. Fixes and additions to the CNN backprop, proper pooling layer support, and tensors will enable CNNs to behave more like their stable ANN brethren. Expect small CNN-oriented features as well.
 
@@ -21,6 +21,8 @@ What's next for Jacobian?
 **The farther future** may hold initial implementations of RNN-like architectures, GPU support/optimizations, transfer learning, and autodifferentiation a la PyTorch.
 
 **Some smaller features** coming up may include a proper Python install via `pip`, more complex gradient descent optimizers, proper sanity/gradient checks, and more in-depth benchmarks.
+
+**Shelved right now** is AVX support (and more explicit SIMD calls), as it seems that the O3 optimization layer does a better job of this on its own. Lower level optimizations as a whole are on pause as investigations into which types of optimizations are valuable as well as reliable methods of benchmarking small changes in speed are required. 
 
 ## Benchmarks
 
