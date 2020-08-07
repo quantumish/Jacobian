@@ -32,10 +32,7 @@ double bench(int batch_sz)
 
 int main()
 {
-    Eigen::MatrixXf a = Eigen::MatrixXf::Random(150,150);
-    Eigen::MatrixXf b = Eigen::MatrixXf::Random(150,150);
-    avx_product(a,b);
-    //    std::cout << bench(16) << "\n";
+    std::cout << bench(16) << "\n";
     // show_console_cursor(false);
     // BlockProgressBar bar{
     //   option::BarWidth{80},
