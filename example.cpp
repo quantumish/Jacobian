@@ -15,7 +15,7 @@ using namespace indicators;
 #include "unistd.h"
 #include <ctime>
 
-double bench(int batch_sz)
+double bench(int batch_sz, int epochs)
 {
     auto start = std::chrono::high_resolution_clock::now();
     Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, 2, 0, 0.9);
@@ -23,16 +23,16 @@ double bench(int batch_sz)
     net.add_layer(5, "relu");
     net.add_layer(2, "linear");
     net.initialize();
-    for (int i = 0; i < 1000; i++) {
+    for (int i = 0; i < epochs; i++) {
         net.train();
     }
     auto end = std::chrono::high_resolution_clock::now();
     return std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
 }
 
-int main()
+int main(int argc, char** argv)
 {
-    std::cout << bench(16) << "\n";
+    std::cout << bench(strtol(argv[1], NULL, 10), strtol(argv[2], NULL, 10)) << "\n";
     // show_console_cursor(false);
     // BlockProgressBar bar{
     //   option::BarWidth{80},
