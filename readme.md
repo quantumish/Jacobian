@@ -98,7 +98,7 @@ The five main configurations correspond to differing levels of optimization.
 - `cmake . -DFAST=ON`: Enables the O3 optimization layer in the compiler.
 - `cmake . -DFASTER=ON`: Enables O3 as well as extra individual flags.
 - `cmake . -DTRADEOFFS=ON`: All previous optimizations as well as ones that sacrifice precision.
-- `cmake . -DRECKLESS=ON`: Like `TRADEOFFS`, but defines the RECKLESS macro which skips all checks within the code.
+- `cmake . -DRECKLESS=ON`: Like `TRADEOFFS`, but defines the RECKLESS macro (and NDEBUG) which skips all checks within the code.
 
 One you've selected a main optimization level, extra configurations can be passed in.
 

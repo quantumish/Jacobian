@@ -26,7 +26,6 @@
 //#include "checks.cpp"
 
 Layer::Layer(int batch_sz, int nodes, float a)
-    
     :alpha(a)
 {
     contents = new Eigen::MatrixXf (batch_sz, nodes);
@@ -64,12 +63,17 @@ void Layer::init_weights(Layer next)
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio, bool early_exit, float cutoff)
     :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
 {
+    assert( > 0 || batch_size < total_instances);
     assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
-    int total_instances = prep_file(path, SHUFFLED_PATH);
-    val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
+    try {
+        int total_instances = prep_file(path, SHUFFLED_PATH);
+        val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
+        data = fopen(TRAIN_PATH, "r");
+        val_data = fopen(VAL_PATH, "r");
+    }
+    catch (...) std::cout << "Exception occured when loading data file." << "\n";
     instances = total_instances - val_instances;
-    data = fopen(TRAIN_PATH, "r");
-    val_data = fopen(VAL_PATH, "r");
+    assert(batch_size > 0 || batch_size < instances);
     decay = [this]() -> void {
         learning_rate = learning_rate;
     };
@@ -89,26 +93,27 @@ void Network::init_decay(char* type, ...)
             learning_rate = a_0 * learning_rate/k;
         };
     }
-    if (strcmp(type, "exp") == 0) {
+    else if (strcmp(type, "exp") == 0) {
         float a_0 = va_arg(args, double);
         float k = va_arg(args, double);
         decay = [this, a_0, k]() -> void {
             learning_rate = a_0 * exp(-k * epochs);
         };
     }
-    if (strcmp(type, "frac") == 0) {
+    else if (strcmp(type, "frac") == 0) {
         float a_0 = va_arg(args, double);
         float k = va_arg(args, double);
         decay = [this, a_0, k]() -> void {
             learning_rate = a_0 / (1+(k * epochs));
         };
     }
-    if (strcmp(type, "linear") == 0) {
+    else if (strcmp(type, "linear") == 0) {
         int max_ep = va_arg(args, double);
         decay = [this, max_ep]() -> void {
             learning_rate = 1 - epochs/max_ep;
         };
     }
+    else std::cout << "Invalid  << "\n";
     va_end(args);
 }
 
@@ -190,7 +195,7 @@ void Network::add_layer(int nodes, char* name)
         layers[length-1].activation_deriv = rectifier(sigmoid_deriv);
     }
     else {
-        std::cout << "Warning! Incorrect activation specified. Exiting...\n\nIf this is coming up and you don't know why, try defining your own activation function.\n";
+        std::cout << "Warning! Incorrect activation specified. Exiting.\n";
         exit(1);
     }
 }
@@ -229,7 +234,6 @@ void Network::feedforward()
             (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
         }
     }
-    //    std::cout << "begin softmax" << "\n";
     for (int i = 0; i < layers[length-1].contents->rows(); i++) {
         Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
         Eigen::MatrixXf::Index maxRow, maxCol;
@@ -239,14 +243,11 @@ void Network::feedforward()
         float sum = avx_exp(m).sum();
         m = avx_cdiv(avx_exp(m), sum);
 #else
-        // std::cout << "begin sum" << "\n";
-        // std::cout << m << "\n";
         float sum = 0;
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
             sum += exp(m(0,j));
         }
-        //  std::cout << "begin norm" << "\n";
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
             checknan(m(0,j), "output of Softmax operation");
@@ -392,18 +393,11 @@ void Network::backpropagate()
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
     }
-    //  std::cout << deltas[0] << "\n\nNUMERIC\n\n" << numerical_grad(1, 0.000001) <<"\n\n\n-----------\n\n\n";
     for (int i = 0; i < length-1; i++) {
         update(deltas, i);
-        //    *layers[length-2-i].weights -= (0.9 * *layers[length-2-i].v) + (learning_rate * deltas[i]);
-        //    *layers[length-2-i].v = (learning_rate * deltas[i]);
-
         if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-
         *layers[length-1-i].bias -= bias_lr * gradients[i];
-        //    std::cout << *layers[length-2-i].v << "\n\n" << *layers[length-2-i].weights << "\n\n" << deltas[i] << "\n\n\n\n";
-    
         if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
             float sum = 0;
             for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
@@ -432,9 +426,7 @@ void Network::backpropagate()
 
 void Network::update_layer(float* vals, int datalen, int index)
 {
-    for (int i = 0; i < datalen; i++) {
-        (*layers[index].contents)((int)i / layers[index].contents->cols(),i%layers[index].contents->cols()) = vals[i];
-    }
+    for (int i = 0; i < datalen; i++) (*layers[index].contents)((int)i / layers[index].contents->cols(),i%layers[index].contents->cols()) = vals[i];
 }
 
 int Network::next_batch()
