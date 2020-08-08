@@ -54,7 +54,7 @@ for i in range(50):sr
 ### Rundown
 What's happening in those seven lines?
 
-First, call the Network constructor (from henceforth all functions will be presented in their C++ form). This is where many of the hyperparameters are defined, and you'll need to pass in the path to your data, the desired batch size, learning rate, bias learning rate (which should usually be smaller), regularization strength, and train-val ratio.
+First, call the Network constructor (from henceforth all functions will be presented in their C++ form for clarity). This is where many of the hyperparameters are defined, and you'll need to pass in the path to your data, the desired batch size, learning rate, bias learning rate (which should usually be smaller), regularization strength, and train-val ratio.
 ```c++
 Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
 ```
@@ -88,30 +88,26 @@ Note: This is all ideally the process for manual building, but it's so confusing
 5. `cd` into `dist` and run `python3 -m pip install --upgrade Jacobian-1.0-cp37-cp37m-macosx_10_13_x86_64.whl`
 6. Be unhappy when it doesn't work out and resort to just copying .so files.
 
-### Build Configurations (Building from Source)
+### Building with CMake
 
-There are 5 build configurations, each one prioritizing program speed more than the last. **NOTE:** These options change very frequently as I experiment, so this describes the features that have remained generally invariant.
+There are two target languages, five main build configurations, and a number of toggleable build 'attributes'. The preferred target language can be specified by setting a CMake  variable from the command-line: `-DCXX=ON` or `-DPYTHON=ON`.
 
-#### Level 1: `make`
-Simply builds the project with no optimization at all. Use this if you don't want to wait long for the library to compile and don't care too much about speed in the moment.
+The five main configurations correspond to differing levels of optimization.
+    
+- `cmake .`: No compiler optimizations.
+- `cmake . -DFAST=ON`: Enables the O3 optimization layer in the compiler.
+- `cmake . -DFASTER=ON`: Enables O3 as well as extra individual flags.
+- `cmake . -DTRADEOFFS=ON`: All previous optimizations as well as ones that sacrifice precision.
+- `cmake . -DRECKLESS=ON`: Like `TRADEOFFS`, but defines the RECKLESS macro which skips all checks within the code.
 
-#### Level 2: `make fast`
-  - Builds the project with the O3 optimization setting.
+One you've selected a main optimization level, extra configurations can be passed in.
 
-Use this if you want some speed but shorter build commands and compile times.
+- `-DDEBUG=ON` enables debugging features in the compiler (and shows warnings).
+- `-DAVX=ON` enables explicit AVX function calls within the code. **Warning: this will not work without the Intel C++ Compiler!**
 
-#### Level 3: `make faster`
-Enables extra optimizations, some of which include:
-  - Building the project with O3.
-  - Optimizing for native architecture.
+A sample build process would look like this: 
 
-  Use this if you care a lot about speed but are not willing to sacrifice anything but compile time for it.
-
-#### Level 4: `make tradeoffs`
-Some of the new compiler optimizations include:
-   - Enabling the `-ffast-math` flag.
-
-In the future this setting may try to parallelize operations (even if the network is already parallelized with MapReduce).
-
-#### Level 5: `make reckless`
-- Defines the `RECKLESS` macro which skips checks anywhere in the program.
+```
+cmake . -DCXX=ON -DFASTER=ON -DAVX=ON -DDEBUG=ON
+make
+```

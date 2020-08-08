@@ -24,7 +24,7 @@ jobs:
       # make
       # sudo make install
     - name: cmake-build
-      run: cmake .
+      run: cmake . -DCXX=ON
     - name: make-build
       run: make
     - name: ctest 
