@@ -14,7 +14,7 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: install
-      run: git clone https://gitlab.com/libeigen/eigen.git
+      run: git clone https://gitlab.com/libeigen/eigen.git && cd eigen && cp -R Eigen /usr/local/include/ && cd ..
       # python 3 -m pip install pytest
       # git clone https://github.com/pybind/pybind11.git
       # mkdir build

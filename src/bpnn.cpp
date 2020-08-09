@@ -9,9 +9,6 @@
 #include "utils.hpp"
 #include <ctime>
 #include <random>
-#include <Eigen/MatrixFunctions>
-#include <Eigen/unsupported/CXX11/Tensor>
-#include <indicators/progress_bar.hpp>
 
 #define SHUFFLED_PATH "./shuffled.txt"
 #define VAL_PATH "./test.txt"
@@ -63,15 +60,11 @@ void Layer::init_weights(Layer next)
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio, bool early_exit, float cutoff)
     :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
 {
-    assert( > 0 || batch_size < total_instances);
     assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
-    try {
-        int total_instances = prep_file(path, SHUFFLED_PATH);
-        val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
-        data = fopen(TRAIN_PATH, "r");
-        val_data = fopen(VAL_PATH, "r");
-    }
-    catch (...) std::cout << "Exception occured when loading data file." << "\n";
+    int total_instances = prep_file(path, SHUFFLED_PATH);
+    val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
+    data = fopen(TRAIN_PATH, "r");
+    val_data = fopen(VAL_PATH, "r");
     instances = total_instances - val_instances;
     assert(batch_size > 0 || batch_size < instances);
     decay = [this]() -> void {
@@ -113,7 +106,7 @@ void Network::init_decay(char* type, ...)
             learning_rate = 1 - epochs/max_ep;
         };
     }
-    else std::cout << "Invalid  << "\n";
+    else std::cout << "Invalid decay function." << "\n";
     va_end(args);
 }
 
