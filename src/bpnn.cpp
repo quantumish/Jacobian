@@ -20,8 +20,6 @@
 #define cwise_product(a,b) (a).cwiseProduct(b)
 #endif
 
-#include "checks.cpp"
-
 Layer::Layer(int batch_sz, int nodes, float a)
     :alpha(a)
 {

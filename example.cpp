@@ -12,6 +12,7 @@
 
 #include "./src/bpnn.hpp"
 #include "./src/utils.hpp"
+#include "./checks.cpp"
 #include "unistd.h"
 #include <ctime>
 
@@ -23,7 +24,6 @@ double bench(int batch_sz, int epochs)
     net.add_layer(5, "lecun_tanh");
     net.add_layer(2, "linear");
     net.initialize();
-    checks();
     for (int i = 0; i < epochs; i++) {
         net.train();
     }
@@ -33,9 +33,21 @@ double bench(int batch_sz, int epochs)
 
 int main(int argc, char** argv)
 {
-    if (argc < 3) {
-        std::cout << "Invalid command! Pass two integers - batch_size and epochs (in that order)."  << "\n";
+    if (argc < 2) {
+        std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
         exit(1);
     }
-    std::cout << bench(strtol(argv[1], NULL, 10), strtol(argv[2], NULL, 10)) << "\n";
+    else if (strcmp(argv[1], "sanity-checks") == 0) {
+        sanity_checks();
+    }
+    else if (strcmp(argv[1], "grad-checks") == 0) {
+        grad_checks();
+    }
+    else if (argc < 3) {
+        std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
+        exit(1);
+    }
+    else {
+        std::cout << bench(strtol(argv[1], NULL, 10), strtol(argv[2], NULL, 10)) << "\n";
+    }
 }

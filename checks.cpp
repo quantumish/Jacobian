@@ -5,6 +5,20 @@
 //  Created by David Freifeld
 //
 
+#include "./src/bpnn.hpp"
+ 
+#define ZERO_THRESHOLD pow(10, -5)
+
+Network default_net()
+{
+    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    net.add_layer(4, "linear");
+    net.add_layer(5, "lecun_tanh");
+    net.add_layer(2, "linear");
+    net.initialize();
+    return net;
+}
+
 Network explicit_copy(Network src)
 {
     Network dst ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
@@ -17,11 +31,7 @@ Network explicit_copy(Network src)
 
 void regularization_check(int& sanity_passed, int& total_checks)
 {
-    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    net.add_layer(4, "linear");
-    net.add_layer(5, "lecun_tanh");
-    net.add_layer(2, "linear");
-    net.initialize();
+    Network net = default_net();
     std::cout << "\u001b[4m\u001b[1mSANITY CHECKS:\u001b[0m\n";
     // Check if regularization strength increases loss (as it should).
     std::cout << "Regularization sanity check...";
@@ -45,11 +55,7 @@ void regularization_check(int& sanity_passed, int& total_checks)
 
 void zero_check(int& sanity_passed, int& total_checks)
 {
-    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    net.add_layer(4, "linear");
-    net.add_layer(5, "lecun_tanh");
-    net.add_layer(2, "linear");
-    net.initialize();
+    Network net = default_net();
     std::cout << "Zero-cost sanity check...";
     net.next_batch();
     float finalcost;
@@ -71,11 +77,7 @@ void zero_check(int& sanity_passed, int& total_checks)
 
 void floating_point_check(int& sanity_passed, int& total_checks)
 {
-    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    net.add_layer(4, "linear");
-    net.add_layer(5, "lecun_tanh");
-    net.add_layer(2, "linear");
-    net.initialize();
+    Network net = default_net();
     std::cout << "Gradient floating-point sanity check...";
     net.next_batch();
     net.feedforward();
@@ -112,11 +114,7 @@ void floating_point_check(int& sanity_passed, int& total_checks)
 
 void expected_loss_check(int& sanity_passed, int& total_checks)
 {
-    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    net.add_layer(4, "linear");
-    net.add_layer(5, "lecun_tanh");
-    net.add_layer(2, "linear");
-    net.initialize();
+    Network net = default_net();
     std::cout << "Expected loss sanity check...";
     net.next_batch();
     net.feedforward();
@@ -157,10 +155,18 @@ void update_check(int& sanity_passed, int& total_checks)
     // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
 }
 
-void checks()
+void sanity_checks()
 {
     int sanity_passed = 0;
     int total_checks = 0;
     zero_check(sanity_passed, total_checks);
-    std::cout << "\u001b[1m\nPassed " << sanity_passed << "/" << total_checks <<" sanity checks.\u001b[0m\n\n\n";
+    std::cout << "\u001b[1m\nPassed " << sanity_passed << "/" << total_checks <<" sanity checks.\u001b[0m\n";
+    if ((float)sanity_passed/total_checks < 0.5) {
+        std::cout << "Majority of sanity checks failed. Exiting." << "\n";
+        exit(1);
+    }
+}
+
+void grad_checks()
+{
 }

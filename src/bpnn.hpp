@@ -97,8 +97,6 @@ public:
     float get_val_cost() {return val_cost;}
 };
 
-void checks();
-void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
 int split_file(char* path, int lines, float ratio);
 
@@ -119,7 +117,6 @@ struct ValueError : public std::exception
 };
 
 #define MAXLINE 1024
-#define ZERO_THRESHOLD pow(10, -5) // for checks
 
 #if (!RECKLESS)
 #define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
