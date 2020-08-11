@@ -8,22 +8,20 @@
 Network explicit_copy(Network src)
 {
     Network dst ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    dst.layers = src.layers;
-    assert(src.layers.size() == dst.layers.size());
+    dst = src;
     for (int i = 0; i < src.layers.size(); i++) {
         dst.layers[i] = src.layers[i];
     }
-    return src;
+    return dst;
 }
 
-void checks()
+void regularization_check(int& sanity_passed, int& total_checks)
 {
     Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
     net.add_layer(4, "linear");
     net.add_layer(5, "lecun_tanh");
     net.add_layer(2, "linear");
     net.initialize();
-    int sanity_passed = 0;
     std::cout << "\u001b[4m\u001b[1mSANITY CHECKS:\u001b[0m\n";
     // Check if regularization strength increases loss (as it should).
     std::cout << "Regularization sanity check...";
@@ -42,79 +40,96 @@ void checks()
         sanity_passed++;
     }
     else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+    total_checks++;
+}
 
-    // //  net.list_net();
-  
-    // // Check if zero cost is achievable on a batch
-    // std::cout << "Zero-cost sanity check...";
-    // Network copy3 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
-    // copy3.lambda = 0;
-    // copy3.next_batch();
-    // float finalcost;
-    // for (int i = 0; i < 10000; i++) {
-    //   copy3.feedforward();
-    //   copy3.backpropagate();
-    //   finalcost = copy3.cost();
-    //   if (finalcost <= ZERO_THRESHOLD) {
-    //     break;
-    //   }
-    // }
-    // if (finalcost <= ZERO_THRESHOLD) {
-    //   std::cout << " \u001b[32mPassed!\n\u001b[37m";
-    //   sanity_passed++;
-    // }
-    // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+void zero_check(int& sanity_passed, int& total_checks)
+{
+    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    net.add_layer(4, "linear");
+    net.add_layer(5, "lecun_tanh");
+    net.add_layer(2, "linear");
+    net.initialize();
+    std::cout << "Zero-cost sanity check...";
+    net.next_batch();
+    float finalcost;
+    for (int i = 0; i < 100000; i++) {
+      net.feedforward();
+      net.backpropagate();
+      finalcost = net.cost();
+      if (finalcost <= ZERO_THRESHOLD) {
+        break;
+      }
+    }
+    if (finalcost <= ZERO_THRESHOLD) {
+      std::cout << " \u001b[32mPassed!\n\u001b[37m";
+      sanity_passed++;
+    }
+    else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+    total_checks++;
+}
 
-    // //  list_net();
-  
-    // std::cout << "Gradient floating-point sanity check...";
-    // Network copy4 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
-    // copy4.next_batch();
-    // copy4.feedforward();
-    // std::vector<Eigen::MatrixXf> gradients;
-    // std::vector<Eigen::MatrixXf> deltas;
-    // Eigen::MatrixXf error = ((*copy4.layers[copy4.length-1].contents) - (*copy1.labels));
-    // gradients.push_back(error.cwiseProduct(*copy4.layers[copy4.length-1].dZ));
-    // deltas.push_back((*copy4.layers[copy4.length-2].contents).transpose() * gradients[0]);
-    // int counter = 1;
-    // for (int i = copy4.length-2; i >= 1; i--) {
-    //   gradients.push_back((gradients[counter-1] * copy4.layers[i].weights->transpose()).cwiseProduct(*copy4.layers[i].dZ));
-    //   deltas.push_back(copy4.layers[i-1].contents->transpose() * gradients[counter]);
-    //   counter++;
-    // }
-    // auto check_gradients = [](std::vector<Eigen::MatrixXf> vec) -> bool {
-    //   for (Eigen::MatrixXf i : vec) {
-    //     for (int j = 0; j < i.rows(); j++) {
-    //       for (int k = 0; k < i.cols(); k++) {
-    //         if (i(j,k) == -0 || i(j,k) == INFINITY || i(j,k) == NAN || i(j,k) == -INFINITY) {
-    //           return true;
-    //         }
-    //       }
-    //     }
-    //   }
-    //   return false;
-    // };
-    // if (check_gradients(gradients) == false && check_gradients(deltas) == false) {
-    //   std::cout << " \u001b[32mPassed!\n\u001b[37m";
-    //   sanity_passed++;
-    // }
-    // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+void floating_point_check(int& sanity_passed, int& total_checks)
+{
+    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    net.add_layer(4, "linear");
+    net.add_layer(5, "lecun_tanh");
+    net.add_layer(2, "linear");
+    net.initialize();
+    std::cout << "Gradient floating-point sanity check...";
+    net.next_batch();
+    net.feedforward();
+    std::vector<Eigen::MatrixXf> gradients;
+    std::vector<Eigen::MatrixXf> deltas;
+    Eigen::MatrixXf error = ((*net.layers[net.length-1].contents) - (*net.labels));
+    gradients.push_back(error.cwiseProduct(*net.layers[net.length-1].dZ));
+    deltas.push_back((*net.layers[net.length-2].contents).transpose() * gradients[0]);
+    int counter = 1;
+    for (int i = net.length-2; i >= 1; i--) {
+      gradients.push_back((gradients[counter-1] * net.layers[i].weights->transpose()).cwiseProduct(*net.layers[i].dZ));
+      deltas.push_back(net.layers[i-1].contents->transpose() * gradients[counter]);
+      counter++;
+    }
+    auto check_gradients = [](std::vector<Eigen::MatrixXf> vec) -> bool {
+      for (Eigen::MatrixXf i : vec) {
+        for (int j = 0; j < i.rows(); j++) {
+          for (int k = 0; k < i.cols(); k++) {
+            if (i(j,k) == -0 || i(j,k) == INFINITY || i(j,k) == NAN || i(j,k) == -INFINITY) {
+              return true;
+            }
+          }
+        }
+      }
+      return false;
+    };
+    if (check_gradients(gradients) == false && check_gradients(deltas) == false) {
+      std::cout << " \u001b[32mPassed!\n\u001b[37m";
+      sanity_passed++;
+    }
+    else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+    total_checks++;
+}
 
-    // //  list_net();
-  
-    // std::cout << "Expected loss sanity check...";
-  
-    // Network copy5 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
-    // copy5.next_batch();
-    // copy5.feedforward();
-    // if (copy5.cost() <= 1) {
-    //   std::cout << " \u001b[32mPassed!\n\u001b[37m";
-    //   sanity_passed++;
-    // }
-    // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+void expected_loss_check(int& sanity_passed, int& total_checks)
+{
+    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    net.add_layer(4, "linear");
+    net.add_layer(5, "lecun_tanh");
+    net.add_layer(2, "linear");
+    net.initialize();
+    std::cout << "Expected loss sanity check...";
+    net.next_batch();
+    net.feedforward();
+    if (net.cost() <= 1) {
+      std::cout << " \u001b[32mPassed!\n\u001b[37m";
+      sanity_passed++;
+    }
+    else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+    total_checks++;
+}
 
-    // //  list_net();
-  
+void update_check(int& sanity_passed, int& total_checks)
+{
     // std::cout << "Layer updates sanity check...";
     // Network copy6 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
     // Network copy7 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
@@ -140,51 +155,12 @@ void checks()
     //   sanity_passed++;
     // }
     // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
+}
 
-    // std::cout << "Side effects sanity check...";
-  
-    // if (net == original) {
-    //   std::cout << " \u001b[32mPassed!\n\u001b[37m";
-    //   sanity_passed++;
-    // }
-    // else std::cout << " \u001b[31mFailed.\n\u001b[37m";
-
-    std::cout << "\u001b[1m\nPassed " << sanity_passed << "/6" <<" sanity checks.\u001b[0m\n\n\n";
-  
-    //  net.list_net();
-  
-    // float epsilon = 0.0001;
-    // Network copy = *this;
-    // std::vector<Eigen::MatrixXf> approx_gradients;
-    // for (int i = 0; i < copy.layers.size()-1; i++) {
-    //   Eigen::MatrixXf current_approx = *copy.layers[i].weights;
-    //   for (int j = 0; i < copy.layers[i].weights->rows(); i++) {
-    //     for (int k = 0; i < copy.layers[i].weights->cols(); i++) {
-    //       Network sim1 = copy;
-    //       (*sim1.layers[i].contents)(j,k) += epsilon;
-    //       sim1.feedforward();
-    //       Network sim2 = copy;
-    //       (*sim2.layers[i].contents)(j,k) -= epsilon;
-    //       sim2.feedforward();
-    //       current_approx(j,k) = (sim1.cost() - sim2.cost())/(2*epsilon);
-    //     }
-    //   }
-    //   approx_gradients.push_back(current_approx);
-    // }
-    // for (Eigen::MatrixXf i : approx_gradients) {
-    //   std::cout << i << "\n\n";
-    // }
-    // std::vector<Eigen::MatrixXf> gradients;
-    // std::vector<Eigen::MatrixXf> deltas;
-    // Eigen::MatrixXf error = ((*layers[length-1].contents) - (*labels));
-    // gradients.push_back(error.cwiseProduct(*layers[length-1].dZ));
-    // deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-    // int counter = 1;
-    // for (int i = length-2; i >= 1; i--) {
-    //   gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    //   deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
-    //   counter++;
-    // }
-    //printf("Beginning train on %i instances for %i epochs...\n", instances, total_epochs);
-
+void checks()
+{
+    int sanity_passed = 0;
+    int total_checks = 0;
+    zero_check(sanity_passed, total_checks);
+    std::cout << "\u001b[1m\nPassed " << sanity_passed << "/" << total_checks <<" sanity checks.\u001b[0m\n\n\n";
 }

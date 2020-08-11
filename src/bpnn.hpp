@@ -119,7 +119,7 @@ struct ValueError : public std::exception
 };
 
 #define MAXLINE 1024
-#define ZERO_THRESHOLD pow(10, -8) // for checks
+#define ZERO_THRESHOLD pow(10, -5) // for checks
 
 #if (!RECKLESS)
 #define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)

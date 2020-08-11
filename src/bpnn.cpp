@@ -46,12 +46,12 @@ void Layer::operator=(const Layer& that)
     activation_deriv = that.activation_deriv;
     alpha = that.alpha;
     strcpy(activation_str, that.activation_str);
-    // *contents = *that.contents;
-    // *v = *that.v;
-    // *m = *that.m;
-    // *weights = *that.weights;
-    // *bias = *that.bias;
-    // *dZ = *that.dZ;
+    *contents = *that.contents;
+    *v = *that.v;
+    *m = *that.m;
+    *weights = *that.weights;
+    *bias = *that.bias;
+    *dZ = *that.dZ;
 }
 
 void Layer::init_weights(Layer next)
@@ -88,11 +88,6 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
 }
-
-// Network::Network(const Network& that)
-//     :name(that.name), age(that.age)
-// {
-// }
 
 void Network::init_decay(char* type, ...)
 {
