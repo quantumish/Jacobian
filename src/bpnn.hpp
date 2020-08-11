@@ -60,6 +60,7 @@ public:
     int reg_type;
     int batch_size;
 
+    bool silenced = false;
     int epochs = 0;
     int batches = 0;
     Eigen::MatrixXf* labels;

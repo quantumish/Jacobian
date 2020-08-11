@@ -37,6 +37,9 @@ int main(int argc, char** argv)
         std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
         exit(1);
     }
+    else if (strcmp(argv[1], "basic-checks") == 0) {
+        basic_checks();
+    }
     else if (strcmp(argv[1], "sanity-checks") == 0) {
         sanity_checks();
     }

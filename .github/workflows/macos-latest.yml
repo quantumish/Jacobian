@@ -27,7 +27,10 @@ jobs:
       run: cmake . -DCXX=ON
     - name: make-build
       run: make
-    - name: ctest 
-      run: ctest
-
+    - name: basic-checks 
+      run: ./jacobian_cli basic-checks
+    - name: sanity-checks
+      run: ./jacobian_cli sanity-checks
+    - name: grad-checks
+      run: ./jacobian_cli grad-checks
     
