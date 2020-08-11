@@ -6,9 +6,9 @@ import platform
 import subprocess
 
 from subprocess import CalledProcessError
-from distutils.version import LooseVersion
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
+from distutils.version import LooseVersion
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -42,15 +42,15 @@ kwargs = dict(
     author_email='freifeld.david@gmail.com',
     description='A Python library for neural networks.',
     long_description='',
-    ext_modules=[CMakeExtension('_jacobian')],
+    ext_modules=[CMakeExtension('jacobian._jacobian')],
     cmdclass=dict(build_ext=CMakeBuild),
-    zip_safe=True,
-    packages=['jacobian']
+    zip_safe=False,
+    package=['jacobian']
 )
 
 # likely there are more exceptions, take a look at yarl example
 try:
-    setup(**kwargs
+    setup(**kwargs)
         # name='Jacobian',
         # version='0.8',
         # author='David Freifeld',
@@ -61,7 +61,6 @@ try:
         # cmdclass=dict(build_ext=CMakeBuild),
         # zip_safe=True,
         # package=['jacobian']
-    )        
 except CalledProcessError:
     print('Failed to build extension!')
     del kwargs['ext_modules']
