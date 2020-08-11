@@ -32,6 +32,7 @@ public:
     Layer(int rows, int columns, float a=0);
     Layer(float* vals, int rows, int columns);
     Layer(const Layer& that);
+    void operator=(const Layer& that);
     void init_weights(Layer next);
 };
 

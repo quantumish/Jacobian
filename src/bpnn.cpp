@@ -41,9 +41,31 @@ Layer::Layer(int batch_sz, int nodes, float a)
 }
 
 Layer::Layer(const Layer& that)
-    :activation(that.activation), activation_deriv(that.activation_deriv), alpha(that.alpha)
 {
-    //strcpy(activation_str, that.activation_str);
+    contents = new Eigen::MatrixXf (that.contents->rows(), that.contents->cols());
+    dZ = new Eigen::MatrixXf (that.dZ->rows(), that.dZ->cols());
+    bias = new Eigen::MatrixXf (that.bias->rows(), that.bias->cols());
+    v = new Eigen::MatrixXf (that.v->rows(), that.v->cols());
+    m = new Eigen::MatrixXf (that.m->rows(), that.m->cols());
+    weights = new Eigen::MatrixXf (that.weights->rows(), that.weights->cols());
+    activation = that.activation;
+    activation_deriv = that.activation_deriv;
+    alpha = that.alpha;
+    strcpy(activation_str, that.activation_str);
+    *contents = *that.contents;
+    *v = *that.v;
+    *m = *that.m;
+    *weights = *that.weights;
+    *bias = *that.bias;
+    *dZ = *that.dZ;
+}
+
+void Layer::operator=(const Layer& that)
+{
+    activation = that.activation;
+    activation_deriv = that.activation_deriv;
+    alpha = that.alpha;
+    strcpy(activation_str, that.activation_str);
     *contents = *that.contents;
     *v = *that.v;
     *m = *that.m;

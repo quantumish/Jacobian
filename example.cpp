@@ -33,5 +33,9 @@ double bench(int batch_sz, int epochs)
 
 int main(int argc, char** argv)
 {
+    if (argc < 3) {
+        std::cout << "Invalid command! Pass two integers - batch_size and epochs (in that order)."  << "\n";
+        exit(1);
+    }
     std::cout << bench(strtol(argv[1], NULL, 10), strtol(argv[2], NULL, 10)) << "\n";
 }
