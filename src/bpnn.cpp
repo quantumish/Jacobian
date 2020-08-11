@@ -20,7 +20,7 @@
 #define cwise_product(a,b) (a).cwiseProduct(b)
 #endif
 
-//#include "checks.cpp"
+#include "checks.cpp"
 
 Layer::Layer(int batch_sz, int nodes, float a)
     :alpha(a)
@@ -38,6 +38,18 @@ Layer::Layer(int batch_sz, int nodes, float a)
             (*bias)(j, i) = 0;
         }
     }
+}
+
+Layer::Layer(const Layer& that)
+    :activation(that.activation), activation_deriv(that.activation_deriv), alpha(that.alpha)
+{
+    //strcpy(activation_str, that.activation_str);
+    *contents = *that.contents;
+    *v = *that.v;
+    *m = *that.m;
+    *weights = *that.weights;
+    *bias = *that.bias;
+    *dZ = *that.dZ;
 }
 
 void Layer::init_weights(Layer next)
@@ -74,6 +86,11 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
 }
+
+// Network::Network(const Network& that)
+//     :name(that.name), age(that.age)
+// {
+// }
 
 void Network::init_decay(char* type, ...)
 {
@@ -548,8 +565,3 @@ void Network::train()
     decay();
     epochs++;
 }
-
-float Network::get_acc() {return epoch_acc;}
-float Network::get_val_acc() {return val_acc;}
-float Network::get_cost() {return epoch_cost;}
-float Network::get_val_cost() {return val_cost;}

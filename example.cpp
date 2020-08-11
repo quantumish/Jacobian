@@ -23,6 +23,7 @@ double bench(int batch_sz, int epochs)
     net.add_layer(5, "lecun_tanh");
     net.add_layer(2, "linear");
     net.initialize();
+    checks(net);
     for (int i = 0; i < epochs; i++) {
         net.train();
     }
