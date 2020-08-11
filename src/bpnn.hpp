@@ -31,7 +31,6 @@ public:
   
     Layer(int rows, int columns, float a=0);
     Layer(float* vals, int rows, int columns);
-    Layer(const Layer& that);
     void operator=(const Layer& that);
     void init_weights(Layer next);
 };
@@ -98,7 +97,7 @@ public:
     float get_val_cost() {return val_cost;}
 };
 
-void checks(Network net);
+void checks();
 void demo(int total_epochs);
 int prep_file(char* path, char* out_path);
 int split_file(char* path, int lines, float ratio);
