@@ -90,6 +90,8 @@ Note: This is all ideally the process for manual building, but it's so confusing
 
 ### Building with CMake
 
+**Don't forget to delete `CMakeCache.txt` after each compilation if you plan on switching things up!**
+
 There are two target languages, five main build configurations, and a number of toggleable build 'attributes'. The preferred target language can be specified by setting a CMake  variable from the command-line: `-DCXX=ON` or `-DPYTHON=ON`.
 
 The five main configurations correspond to differing levels of optimization.
