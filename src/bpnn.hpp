@@ -26,7 +26,7 @@ public:
     std::function<float(float)> activation;
     std::function<float(float)> activation_deriv;
     char activation_str[1024];
-    // PReLU layers shouldn't be Layers but inherit from them! Fix me!!
+    // TODO: Fix PReLU layer inheritance | -p C -m PReLU layers shouldn't be Layers but inherit from them!
     float alpha;
   
     Layer(int rows, int columns, float a=0);

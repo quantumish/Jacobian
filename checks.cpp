@@ -236,6 +236,49 @@ void basic_checks()
     }
 }
 
-void grad_checks()
-{
-}
+// Eigen::MatrixXf Network::numerical_grad(int i, float epsilon)
+// {
+//     Eigen::MatrixXf gradient (layers[i].weights->rows(), layers[i].weights->cols());
+//     for (int j = 0; j < layers[i].weights->rows(); j++) {
+//         for (int k = 0; k < layers[i].weights->cols(); k++) {
+//             float current_cost = cost();
+//             std::vector<Layer> backup = layers;
+//             (*layers[i].weights)(j,k) += epsilon;
+//             feedforward();
+//             float end_cost = cost();
+//             gradient(j,k) = (end_cost - current_cost)/epsilon;
+//             layers = backup;
+//             batches = 0;
+//         }
+//     }
+//     return gradient;
+// }
+
+// void Network::grad_check()
+// {
+//     std::vector<Layer> backup = layers;
+//     feedforward();
+//     layers = backup;
+//     batches = 0;
+//     std::vector<Eigen::MatrixXf> gradients;
+//     std::vector<Eigen::MatrixXf> deltas;
+//     Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+//     for (int i = 0; i < error.rows(); i++) {
+//         for (int j = 0; j < error.cols(); j++) {
+//             float truth;
+//             if (j==(*labels)(i,0)) truth = 1;
+//             else truth = 0;
+//             error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+//             checknan(error(i,j), "gradient of final layer");
+//         }
+//     }
+//     int counter = 1;
+//     gradients.push_back(error);
+//     deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+//     for (int i = length-2; i >= 1; i--) {
+//         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(),*layers[i].dZ));
+//         std::cout << layers[i-1].contents->transpose() * gradients[counter];
+//         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
+//         counter++;
+//     }
+// }

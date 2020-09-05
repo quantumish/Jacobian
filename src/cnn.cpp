@@ -302,8 +302,6 @@ std::vector<Eigen::MatrixXf> gradients;
   deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
   int counter = 1;
   for (int i = length-2; i >= 1; i--) {
-    // TODO: Find nice way to add this
-    // *layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
     gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
     deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
     counter++;
@@ -343,7 +341,7 @@ std::vector<Eigen::MatrixXf> gradients;
   conv_deltas.emplace_back(conv_layers[conv_layers.size()-1].input->rows() - gradients[length-1].rows()+1, conv_layers[conv_layers.size()-1].input->cols() - gradients[length-1].cols()+1);
   for (int i = 0; i < conv_deltas[0].cols(); i+=conv_layers[conv_layers.size()-1].stride_len) {
     for (int j = 0; j < conv_deltas[0].rows(); j+=conv_layers[conv_layers.size()-1].stride_len) {
-      // Transpose here is sketchy
+      // TODO: Investigate legitimacy of tranpose | -t :quality:
       conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols())).transpose()).sum();
     }
   }

@@ -46,13 +46,13 @@ Eigen::MatrixXf strassen_mul(Eigen::MatrixXf x, Eigen::MatrixXf y)
   Eigen::MatrixXf m6 = (a.block(a.rows()-block_len,0, block_len, block_len) - a.block(0,0, block_len, block_len)) * (b.block(0,0, block_len, block_len) + b.block(0,b.cols()-block_len, block_len, block_len));
   Eigen::MatrixXf m7 = (a.block(0,a.cols()-block_len, block_len, block_len) - a.block(a.rows()-block_len,a.cols()-block_len, block_len, block_len)) * (b.block(a.rows()-block_len,0, block_len, block_len) + b.block(b.rows()-block_len,b.cols()-block_len, block_len, block_len));
 
-  std::cout << m1 + m4 - m5 + m7 << "\n\n" << m3+m5 << "\n\n" << m2+m4 << "\n\n" << m1-m2+m3+m6;
+  //  std::cout << m1 + m4 - m5 + m7 << "\n\n" << m3+m5 << "\n\n" << m2+m4 << "\n\n" << m1-m2+m3+m6;
   
   result.block(0,0, block_len, block_len) =  m1 + m4 - m5 + m7;
   result.block(0,result.cols()-block_len, block_len, block_len) =  m3 + m5;
   result.block(result.rows()-block_len,0, block_len, block_len) =  m2 + m4;
   result.block(result.rows()-block_len,result.cols()-block_len, block_len, block_len) =  m1 -m2 + m3 + m6;
-
+  std::cout << "\nSTRASSEN_VER\n" << result << "\n\n\n";
   return result;
 }
 
@@ -72,6 +72,6 @@ int main()
   Eigen::MatrixXf sproduct = strassen_mul(a, b);
   auto strassen_end = std::chrono::high_resolution_clock::now();
   
-  std::cout << "EIGEN: " << std::chrono::duration_cast<std::chrono::nanoseconds>(eigen_end - eigen_begin).count() / pow(10,9) << " STRASSEN: " << std::chrono::duration_cast<std::chrono::nanoseconds>(strassen_end - strassen_begin).count() / pow(10,9) << "\n";
-  std::cout << "A:\n" << a << "\nB:\n" << b << "\nEigen:\n" << product << "\nStrassen:\n" << sproduct << "\n";
+  /* std::cout << "EIGEN: " << std::chrono::duration_cast<std::chrono::nanoseconds>(eigen_end - eigen_begin).count() / pow(10,9) << " STRASSEN: " << std::chrono::duration_cast<std::chrono::nanoseconds>(strassen_end - strassen_begin).count() / pow(10,9) << "\n"; */
+  /* std::cout << "A:\n" << a << "\nB:\n" << b << "\nEigen:\n" << product << "\nStrassen:\n" << sproduct << "\n"; */
 }

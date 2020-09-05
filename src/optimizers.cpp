@@ -17,7 +17,7 @@ void Network::init_optimizer(char* name, ...)
       *layers[length-2-i].m = (learning_rate * deltas[i]);
     };
   }
-  // TODO: split into functions to remove reundant code
+  // TODO: Remove redundant code | -t quality -m Attempt split into functions to remove reundant code
   if (strcmp(name, "nesterov") == 0) {
     float beta = va_arg(args, double);
     va_end(args);
@@ -47,8 +47,8 @@ void Network::init_optimizer(char* name, ...)
     float beta1 = va_arg(args, double);
     float beta2 = va_arg(args, double);
     float epsilon = va_arg(args, double);
-    // TODO: Add bias correction (requires figuring out measuring t)
-    // TODO: cwiseProduct here is sketchy, look into me
+    // TODO: Add bias correction to adam | -t coding -m (requires figuring out measuring t)
+    // TODO: Investigate cwiseProduct in code | -t quality -m cwiseProduct here is sketchy, look into me
     update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
       *layers[length-2-i].m = (beta1 * *layers[length-2-i].m) + ((1-beta1)*deltas[i]);
       *layers[length-2-i].v = (beta2 * *layers[length-2-i].v) + (1-beta2)*(deltas[i].cwiseProduct(deltas[i]));
@@ -59,10 +59,10 @@ void Network::init_optimizer(char* name, ...)
     float beta1 = va_arg(args, double);
     float beta2 = va_arg(args, double);
     float epsilon = va_arg(args, double);
-    // TODO: Add bias correction for m (requires figuring out measuring t)
+    // TODO: Add bias correction for adamax | -t coding -m (requires figuring out measuring t)
     update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
       *layers[length-2-i].m = (beta1 * *layers[length-2-i].m) + ((1-beta1)*deltas[i]);
-      // FIXME: Use of .sum() here is incredibly questionable. Do this correctly.
+      // TODO: Fix Adamax calculations | -p C -t quality -m Use of .sum() here is incredibly questionable. Do this correctly.
       if ((beta2 * *layers[length-2-i].v).sum() > deltas[i].array().abs().sum()) *layers[length-2-i].v = (beta2 * *layers[length-2-i].v);
       else *layers[length-2-i].v = deltas[i].array().abs().matrix();
       *layers[length-2-i].weights -= learning_rate * (layers[length-2-i].v->array().pow(-1).cwiseProduct(layers[length-2-i].m->array())).matrix();

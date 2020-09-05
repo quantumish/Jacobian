@@ -7,6 +7,8 @@
 
 #include "bpnn.hpp"
 #include "utils.hpp"
+#include <atomic>
+#include <chrono>
 #include <ctime>
 #include <random>
 
@@ -27,14 +29,12 @@ Layer::Layer(int batch_sz, int nodes, float a)
     dZ = new Eigen::MatrixXf (batch_sz, nodes);
     int datalen = batch_sz*nodes;
     for (int i = 0; i < datalen; i++) {
-        (*contents)((int)i / nodes,i%nodes) = 0;
-        (*dZ)((int)i / nodes,i%nodes) = 0;
+        (*contents)(static_cast<int>(i / nodes),i%nodes) = 0;
+        (*dZ)(static_cast<int>(i / nodes),i%nodes) = 0;
     }
     bias = new Eigen::MatrixXf (batch_sz, nodes);
     for (int i = 0; i < nodes; i++) {
-        for (int j = 0; j < batch_sz; j++) {
-            (*bias)(j, i) = 0;
-        }
+        for (int j = 0; j < batch_sz; j++) (*bias)(j, i) = 0;
     }
 }
 
@@ -64,8 +64,8 @@ void Layer::init_weights(Layer next)
         std::random_device rd;
         std::mt19937 gen(rd()); 
         (*weights)((int)i / nodes, i%nodes) = d(gen);
-        (*v)((int)i / nodes, i%nodes) = 0;
-        (*m)((int)i / nodes, i%nodes) = 0;
+        (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
+        (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
     }
 }
 
@@ -79,9 +79,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, in
     val_data = fopen(VAL_PATH, "r");
     instances = total_instances - val_instances;
     assert(batch_size > 0 || batch_size < instances);
-    decay = [this]() -> void {
-        learning_rate = learning_rate;
-    };
+    decay = [this]() -> void {};
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
@@ -141,76 +139,19 @@ void Network::add_prelu_layer(int nodes, float a)
     };
 }
 
-// Gross code inbound
-void Network::add_layer(int nodes, char* name)
+void Network::add_layer(int nodes, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     length++;
     layers.emplace_back(batch_size, nodes);
     strcpy(layers[length-1].activation_str, name);
-    if (strcmp(name, "sigmoid") == 0) {
-        layers[length-1].activation = sigmoid;
-        layers[length-1].activation_deriv = sigmoid_deriv;
-    }
-    else if (strcmp(name, "linear") == 0) {
-        layers[length-1].activation = linear;
-        layers[length-1].activation_deriv = linear_deriv;
-    }
-    else if (strcmp(name, "step") == 0) {
-        layers[length-1].activation = step;
-        layers[length-1].activation_deriv = step_deriv;
-    }
-    else if (strcmp(name, "lecun_tanh") == 0) {
-        layers[length-1].activation = lecun_tanh;
-        layers[length-1].activation_deriv = lecun_tanh_deriv;
-    }
-    else if (strcmp(name, "inverse_logit") == 0) {
-        layers[length-1].activation = inverse_logit;
-        layers[length-1].activation_deriv = inverse_logit_deriv;
-    }
-    else if (strcmp(name, "cloglog") == 0) {
-        layers[length-1].activation = cloglog;
-        layers[length-1].activation_deriv = cloglog_deriv;
-    }
-    else if (strcmp(name, "softplus") == 0) {
-        layers[length-1].activation = softplus;
-        layers[length-1].activation_deriv = softplus_deriv;
-    }
-    else if (strcmp(name, "relu") == 0) {
-        layers[length-1].activation = rectifier(linear);
-        layers[length-1].activation_deriv = rectifier(linear_deriv);
-    }
-    else if (strcmp(name, "leaky_relu") == 0) {
-        layers[length-1].activation = leaky_relu;
-        layers[length-1].activation_deriv = leaky_relu_deriv;
-    }
-    else if (strcmp(name, "bipolar_sigmoid") == 0) {
-        layers[length-1].activation = bipolar_sigmoid;
-        layers[length-1].activation_deriv = bipolar_sigmoid_deriv;
-    }
-    else if (strcmp(name, "tanh") == 0) {
-        layers[length-1].activation = [](float x) -> float {return tanh(x);};
-        layers[length-1].activation_deriv = [](float x) -> float {return 1.0/cosh(x);};
-    }
-    else if (strcmp(name, "hard_tanh") == 0) {
-        layers[length-1].activation = hard_tanh;
-        layers[length-1].activation_deriv = hard_tanh_deriv;
-    }
-    else if (strcmp(name, "resig") == 0) {
-        layers[length-1].activation = rectifier(sigmoid);
-        layers[length-1].activation_deriv = rectifier(sigmoid_deriv);
-    }
-    else {
-        std::cout << "Warning! Incorrect activation specified. Exiting.\n";
-        exit(1);
-    }
+    layers[length-1].activation = activation;
+    layers[length-1].activation_deriv = activation_deriv;
 }
 
 void Network::initialize()
 {
     labels = new Eigen::MatrixXf (batch_size,layers[length-1].contents->cols());
-    for (int i = 0; i < length-1; i++) {
-        layers[i].init_weights(layers[i+1]);
-    }
+    for (int i = 0; i < length-1; i++) layers[i].init_weights(layers[i+1]);
 }
 
 void Network::set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv)
@@ -326,53 +267,6 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
     return r;
 }
 
-Eigen::MatrixXf Network::numerical_grad(int i, float epsilon)
-{
-    Eigen::MatrixXf gradient (layers[i].weights->rows(), layers[i].weights->cols());
-    for (int j = 0; j < layers[i].weights->rows(); j++) {
-        for (int k = 0; k < layers[i].weights->cols(); k++) {
-            float current_cost = cost();
-            std::vector<Layer> backup = layers;
-            (*layers[i].weights)(j,k) += epsilon;
-            feedforward();
-            float end_cost = cost();
-            gradient(j,k) = (end_cost - current_cost)/epsilon;
-            layers = backup;
-            batches = 0;
-        }
-    }
-    return gradient;
-}
-
-void Network::grad_check()                      \
-{
-    std::vector<Layer> backup = layers;
-    feedforward();
-    layers = backup;
-    batches = 0;
-    std::vector<Eigen::MatrixXf> gradients;
-    std::vector<Eigen::MatrixXf> deltas;
-    Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-    for (int i = 0; i < error.rows(); i++) {
-        for (int j = 0; j < error.cols(); j++) {
-            float truth;
-            if (j==(*labels)(i,0)) truth = 1;
-            else truth = 0;
-            error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-            checknan(error(i,j), "gradient of final layer");
-        }
-    }
-    int counter = 1;
-    gradients.push_back(error);
-    deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-    for (int i = length-2; i >= 1; i--) {
-        gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(),*layers[i].dZ));
-        std::cout << layers[i-1].contents->transpose() * gradients[counter];
-        deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
-        counter++;
-    }
-}
-
 void Network::backpropagate()
 {
     std::vector<Eigen::MatrixXf> gradients;
@@ -390,10 +284,10 @@ void Network::backpropagate()
     gradients.push_back(error);
     deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
     int counter = 1;
-    for (int i = length-2; i >= 1; i--) {
-        // TODO: Find nice way to add this
+    for (int i = length-2; i >= 1; i--) { 
+        // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
-        //grad_calc(gradients, counter, i);
+        //grad_calc(gradients, counter, i)
         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
@@ -408,7 +302,7 @@ void Network::backpropagate()
             for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
                 for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
                     if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
-                        // Choice of using index i+1 here is questionable. TODO: REVIEW
+                        //  TODO: Review questionable code | -t quality -m Choice of using index i+1 here is sketchy.
                         sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
                     }
                 }
@@ -431,74 +325,10 @@ void Network::backpropagate()
 
 void Network::update_layer(float* vals, int datalen, int index)
 {
-    for (int i = 0; i < datalen; i++) (*layers[index].contents)((int)i / layers[index].contents->cols(),i%layers[index].contents->cols()) = vals[i];
+    for (int i = 0; i < datalen; i++) (*layers[index].contents)(static_cast<int>(i / layers[index].contents->cols()), i%layers[index].contents->cols()) = vals[i];
 }
 
-int Network::next_batch()
-{
-    char line[MAXLINE] = {' '};
-    int inputs = layers[0].contents->cols();
-    int datalen = batch_size * inputs;
-    float batch[datalen];
-    for (int i = 0; i < batch_size; i++) {
-        fgets(line, MAXLINE, data);
-        char *p;
-        p = strtok(line,",");
-        for (int j = 0; j < inputs; j++) {
-            batch[j + (i * inputs)] = strtod(p, NULL);
-            p = strtok(NULL,",");
-        }
-        (*labels)(i, 0) = strtod(p, NULL);
-    }
-    float* batchptr = batch;
-    update_layer(batchptr, datalen, 0);
-    return 0;
-}
-
-int prep_file(char* path, char* out_path)
-{
-    FILE* rptr = fopen(path, "r");
-    char line[MAXLINE];
-    std::vector<std::string> lines;
-    int count = 0;
-    while (fgets(line, MAXLINE, rptr) != NULL) {
-        lines.emplace_back(line);
-        count++;
-    }
-    lines[lines.size()-1] = lines[lines.size()-1] + "\n";
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::shuffle(lines.begin(), lines.end(), g);
-    fclose(rptr);
-    FILE* wptr = fopen(out_path, "w");
-    for (std::string & i : lines) {
-        const char* cstr = i.c_str();
-        fprintf(wptr,"%s", cstr);
-    }
-    fclose(wptr);
-    return count;
-}
-
-int split_file(char* path, int lines, float ratio)
-{
-    FILE* src = fopen(path, "r");
-    FILE* test = fopen(VAL_PATH, "w");
-    FILE* train = fopen(TRAIN_PATH, "w");
-    int switch_line = round(ratio * lines);
-    char line[MAXLINE];
-    int tests = 0;
-    for (int i = 0; fgets(line, MAXLINE, src) != NULL; i++) {
-        if (i > switch_line) {
-            fprintf(test, "%s", line);
-            tests++;
-        }
-        else fprintf(train, "%s", line);
-    }
-    fclose(src);
-    fclose(test);
-    fclose(train);
-    return tests;
-}
+#include "data.cpp"
 
 float Network::validate(char* path)
 {
@@ -539,17 +369,12 @@ void Network::train()
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
         if (early_stop == true && get_val_cost() < threshold) return;
-        if (i != instances-batch_size) { // Don't try to advance batch on final batch.
-            next_batch();
-        }
+        if (i != instances-batch_size) next_batch();
         feedforward();
         backpropagate();
         cost_sum += cost();
         acc_sum += accuracy();
         batches++;
-        // if (i > batch_size * 10) {
-        //   exit(1);
-        // }
     }
     epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
     epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
