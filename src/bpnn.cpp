@@ -63,7 +63,7 @@ void Layer::init_weights(Layer next)
     for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
         std::random_device rd;
         std::mt19937 gen(rd()); 
-        (*weights)((int)i / nodes, i%nodes) = d(gen);
+        (*weights)(static_cast<int>(i / nodes), i%nodes) = d(gen);
         (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
         (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
     }
@@ -139,7 +139,7 @@ void Network::add_prelu_layer(int nodes, float a)
     };
 }
 
-void Network::add_layer(int nodes, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
+void Network::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     length++;
     layers.emplace_back(batch_size, nodes);
@@ -356,8 +356,8 @@ float Network::validate(char* path)
         costsum += cost();
         accsum += accuracy();
     }
-    val_acc = 1.0/((float) val_instances/batch_size) * accsum;
-    val_cost = 1.0/((float) val_instances/batch_size) * costsum;
+    val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
+    val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
     rewind(val_data);
     return 0;
 }
@@ -376,8 +376,8 @@ void Network::train()
         acc_sum += accuracy();
         batches++;
     }
-    epoch_acc = 1.0/((float) instances/batch_size) * acc_sum;
-    epoch_cost = 1.0/((float) instances/batch_size) * cost_sum;
+    epoch_acc = 1.0/(static_cast<float>(instances/batch_size)) * acc_sum;
+    epoch_cost = 1.0/(static_cast<float>(instances/batch_size)) * cost_sum;
     validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;

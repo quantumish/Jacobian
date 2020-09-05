@@ -70,7 +70,7 @@ public:
     std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
 
     Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio, bool early_exit=true, float cutoff=0);
-    void add_layer(int nodes, char* activation);
+    void add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
     void add_prelu_layer(int nodes, float a);
     void init_decay(char* type, ...);
     void init_optimizer(char* name, ...);

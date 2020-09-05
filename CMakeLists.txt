@@ -28,13 +28,12 @@ endif()
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -w")
 
-
-if (PYTHON)
-  project(jacobian)
-  find_package(pybind11 CONFIG REQUIRED)
-  include_directories(${pybind11_INCLUDE_DIRS})
-  pybind11_add_module(_jacobian example.cpp ./src/bpnn.cpp ./src/utils.cpp)
-endif (PYTHON)
+# if (PYTHON)
+#   project(jacobian)
+#   find_package(pybind11 CONFIG REQUIRED)
+#   include_directories(${pybind11_INCLUDE_DIRS})
+#   pybind11_add_module(_jacobian example.cpp ./src/bpnn.cpp ./src/utils.cpp)
+# endif (PYTHON)
 
 if (CXX)
   project(jacobian_cli)

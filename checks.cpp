@@ -5,6 +5,7 @@
 //  Created by David Freifeld
 //
 
+#include "./src/utils.hpp"
 #include "./src/bpnn.hpp"
  
 #define ZERO_THRESHOLD 5*pow(10, -5)
@@ -13,9 +14,9 @@
 Network default_net()
 {
     Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-    net.add_layer(4, "linear");
-    net.add_layer(5, "lecun_tanh");
-    net.add_layer(2, "linear");
+    net.add_layer(4, "linear", linear, linear_deriv);
+    net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
+    net.add_layer(2, "linear", linear, linear_deriv);
     net.init_optimizer("momentum", 0);
     net.initialize();
     net.silenced = true;
@@ -173,14 +174,14 @@ void optimizers_check(int& basic_passed, int& total_checks)
         std::string optimizers [5] = {"momentum", "demon", "adam", "adamax", "sgd"};
         for (std::string optimizer : optimizers) {
             Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-            net.add_layer(4, "linear");
-            net.add_layer(5, "lecun_tanh");
-            net.add_layer(2, "linear");
+            net.add_layer(4, "linear", linear, linear_deriv);
+            net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
+            net.add_layer(2, "linear", linear, linear_deriv);
             if (optimizer == "momentum") net.init_optimizer("momentum", 0.9);
-            if (optimizer == "momentum") net.init_optimizer("demon", 0.9, 50);
-            if (optimizer == "momentum") net.init_optimizer("adam", 0.999, 0.9, pow(10,-6));
-            if (optimizer == "momentum") net.init_optimizer("adamax", 0.999, 0.9, pow(10,-6));
-            if (optimizer == "momentum") net.init_optimizer("sgd");
+            if (optimizer == "demon") net.init_optimizer("demon", 0.9, 50);
+            if (optimizer == "adam") net.init_optimizer("adam", 0.999, 0.9, pow(10,-6));
+            if (optimizer == "adamax") net.init_optimizer("adamax", 0.999, 0.9, pow(10,-6));
+            if (optimizer == "sgd") net.init_optimizer("sgd");
             net.initialize();
             net.silenced=true;
             for (int i = 0; i < 50; i++) {
@@ -205,9 +206,9 @@ void prelu_check(int& basic_passed, int& total_checks)
         Network net = default_net();
         for (int i = 0; i < 50; i++) {
             Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
-            net.add_layer(4, "linear");
+            net.add_layer(4, "linear", linear, linear_deriv);
             net.add_prelu_layer(5, 0.01);
-            net.add_layer(2, "linear");
+            net.add_layer(2, "linear", linear, linear_deriv);
             net.initialize();
             net.silenced=true;
         }
@@ -235,6 +236,8 @@ void basic_checks()
         exit(1);
     }
 }
+
+void grad_checks() {}
 
 // Eigen::MatrixXf Network::numerical_grad(int i, float epsilon)
 // {
