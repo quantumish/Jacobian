@@ -76,26 +76,17 @@ void RNN::initialize()
 
 void RNN::feedforward()
 {
-    printf("Enter\n");
     for (int i = 0; i < length-1; i++) {
-        printf("Enter len loop\n");
+        *layers[i].contents = ((*layers[i].s) * (*layers[i].rec_weights));
         for (int j = 0; j < layers[i].contents->rows(); j++) {
-            printf("Enter loop\n");
             if (strcmp(layers[i].activation_str, "linear") == 0) break;
             for (int k = 0; k < layers[i].contents->cols(); k++) {
-                printf("Enter inside\n");
                 (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
-                printf("dZ updated.\n");
                 (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
-                printf("activated layer\n");
             }
         }
-        std::cout << ((*layers[i].s) * (*layers[i].rec_weights)) << "\n\n";
-        std::cout << ((*layers[i].contents) * (*layers[i].weights));
-        *layers[i+1].contents = ((*layers[i].s) * (*layers[i].rec_weights))  + ((*layers[i].contents) * (*layers[i].weights));
-        printf("Next layer updated\n");
+        *layers[i+1].contents =  ((*layers[i].contents) * (*layers[i].weights));
         *layers[i+1].contents += *layers[i+1].bias;
-        printf("Next layer's bias updated\n");
     }
     for (int j = 0; j < layers[length-1].contents->rows(); j++) {
         if (strcmp(layers[length-1].activation_str, "linear") == 0) break;
