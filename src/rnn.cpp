@@ -37,7 +37,15 @@ void init_weights(RecurrentLayer next)
     
 class RNN : public Network {
 public:
+    std::vector<RecurrentLayer> layers;
     void feedforward();
     void backpropagate();
-    RNN();
+    RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0);
+
 };
+
+RNN::RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0)
+    :Network(path, batch_sz, learn_rate, bias_rate, regularization, l, ratio, early_exit, cutoff)
+{}
+
+

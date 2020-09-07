@@ -69,10 +69,9 @@ void Layer::init_weights(Layer next)
     }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, int regularization, float l, float ratio, bool early_exit, float cutoff)
+Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
     :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
 {
-    assert(reg_type == 1 || reg_type == 2); // L1 and L2 are only relevant regularizations
     int total_instances = prep_file(path, SHUFFLED_PATH);
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     data = fopen(TRAIN_PATH, "r");
@@ -232,8 +231,8 @@ float Network::cost()
         checknan(tempsum, "total summation inside cost calculation");
     }
     for (int i = 0; i < layers.size()-1; i++) {
-        if (reg_type == 2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
-        else if (reg_type == 1) reg += (layers[i].weights->array().abs().matrix()).sum();
+        if (reg_type == L2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
+        else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
     return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
 }
@@ -294,8 +293,8 @@ void Network::backpropagate()
     }
     for (int i = 0; i < length-1; i++) {
         update(deltas, i);
-        if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
-        else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
+        if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
+        else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
         *layers[length-1-i].bias -= bias_lr * gradients[i];
         if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
             float sum = 0;
@@ -341,6 +340,7 @@ float Network::validate(char* path)
         float batch[datalen];
         int label = -1;
         for (int i = 0; i < batch_size; i++) {
+
             fgets(line, MAXLINE, val_data);
             char *p;
             p = strtok(line,",");
