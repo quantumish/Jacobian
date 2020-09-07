@@ -46,7 +46,9 @@ void RecurrentLayer::init_weights(RecurrentLayer next)
 class RNN : public Network {
 public:
     std::vector<RecurrentLayer> layers;
-    void add_layer();
+    int length = 0;
+    void add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
+    void initialize();
     void feedforward();
     void backpropagate();
     RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0);
@@ -57,18 +59,43 @@ RNN::RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regulariza
     :Network(path, batch_sz, learn_rate, bias_rate, regularization, l, ratio, early_exit, cutoff)
 {}
 
+void RNN::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
+{
+    length++;
+    layers.emplace_back(batch_size, nodes);
+    strcpy(layers[length-1].activation_str, name);
+    layers[length-1].activation = activation;
+    layers[length-1].activation_deriv = activation_deriv;
+}
+
+void RNN::initialize()
+{
+    labels = new Eigen::MatrixXf (batch_size,layers[length-1].contents->cols());
+    for (int i = 0; i < length-1; i++) layers[i].init_weights(layers[i+1]);
+}
+
 void RNN::feedforward()
 {
+    printf("Enter\n");
     for (int i = 0; i < length-1; i++) {
+        printf("Enter len loop\n");
         for (int j = 0; j < layers[i].contents->rows(); j++) {
+            printf("Enter loop\n");
             if (strcmp(layers[i].activation_str, "linear") == 0) break;
             for (int k = 0; k < layers[i].contents->cols(); k++) {
+                printf("Enter inside\n");
                 (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
+                printf("dZ updated.\n");
                 (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
+                printf("activated layer\n");
             }
         }
-        *layers[i+1].contents = ((*layers[i].s) * (*layers[i].rec_weights)) + ((*layers[i].contents) * (*layers[i].weights));
+        std::cout << ((*layers[i].s) * (*layers[i].rec_weights)) << "\n\n";
+        std::cout << ((*layers[i].contents) * (*layers[i].weights));
+        *layers[i+1].contents = ((*layers[i].s) * (*layers[i].rec_weights))  + ((*layers[i].contents) * (*layers[i].weights));
+        printf("Next layer updated\n");
         *layers[i+1].contents += *layers[i+1].bias;
+        printf("Next layer's bias updated\n");
     }
     for (int j = 0; j < layers[length-1].contents->rows(); j++) {
         if (strcmp(layers[length-1].activation_str, "linear") == 0) break;
@@ -81,10 +108,10 @@ void RNN::feedforward()
 
 int main()
 {
-    RNN rnn ("./data_banknote_authentication.txt", 10, 0.0155, 0.03, L2, 0, 0.9);
-    rnn.Network::add_layer(4, "linear", linear, linear_deriv);
-    rnn.Network::add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
-    rnn.Network::add_layer(2, "linear", linear, linear_deriv);
-    rnn.Network::initialize();
+    RNN rnn ("../data_banknote_authentication.txt", 10, 0.0155, 0.03, L2, 0, 0.9);
+    rnn.add_layer(4, "linear", linear, linear_deriv);
+    rnn.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
+    rnn.add_layer(2, "linear", linear, linear_deriv);
+    rnn.initialize();
     rnn.feedforward();
 }
