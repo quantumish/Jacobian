@@ -81,6 +81,7 @@ public:
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
   
     void feedforward();
+    void softmax();
     void list_net();
 
     bool early_stop;

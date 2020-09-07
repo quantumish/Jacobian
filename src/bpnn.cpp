@@ -159,6 +159,31 @@ void Network::set_activation(int index, std::function<float(float)> custom, std:
     layers[index].activation_deriv = custom_deriv;
 }
 
+void Network::softmax()
+{
+    for (int i = 0; i < layers[length-1].contents->rows(); i++) {
+        Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
+        Eigen::MatrixXf::Index maxRow, maxCol;
+        float max = m.maxCoeff(&maxRow, &maxCol);
+        m = (m.array() - max).matrix();
+#if (AVX)
+        float sum = avx_exp(m).sum();
+        m = avx_cdiv(avx_exp(m), sum);
+#else
+        float sum = 0;
+        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+            checknan(m(0,j), "input of Softmax operation");
+            sum += exp(m(0,j));
+        }
+        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+            m(0,j) = exp(m(0,j))/sum;
+            checknan(m(0,j), "output of Softmax operation");
+        }
+#endif
+    }
+    layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
+}
+
 void Network::feedforward()
 {
     for (int i = 0; i < length-1; i++) {
@@ -179,27 +204,7 @@ void Network::feedforward()
             (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
         }
     }
-    for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-        Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
-        Eigen::MatrixXf::Index maxRow, maxCol;
-        float max = m.maxCoeff(&maxRow, &maxCol);
-        m = (m.array() - max).matrix();
-#if (AVX)
-        float sum = avx_exp(m).sum();
-        m = avx_cdiv(avx_exp(m), sum);
-#else
-        float sum = 0;
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-            checknan(m(0,j), "input of Softmax operation");
-            sum += exp(m(0,j));
-        }
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-            m(0,j) = exp(m(0,j))/sum;
-            checknan(m(0,j), "output of Softmax operation");
-        }
-#endif
-        layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
-    }
+    softmax();
 }
 
 void Network::list_net()
