@@ -180,8 +180,8 @@ void Network::softmax()
             checknan(m(0,j), "output of Softmax operation");
         }
 #endif
+        layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
     }
-    layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
 }
 
 void Network::feedforward()

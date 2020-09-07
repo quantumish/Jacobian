@@ -1,4 +1,5 @@
 #include "bpnn.hpp"
+#include "utils.hpp"
 
 class RecurrentLayer : public Layer {
 public:
@@ -13,17 +14,19 @@ RecurrentLayer::RecurrentLayer(int rows, int columns, float a)
 {
     s = new Eigen::MatrixXf(contents->rows(), contents->cols());
     rec_weights = new Eigen::MatrixXf(contents->cols(), contents->cols());
+    int n = contents->cols() * 2;
+    std::normal_distribution<float> d(0,sqrt(1.0/n));
     for (int i = 0; i < (rec_weights->cols()*rec_weights->cols()); i++) {
         std::random_device rd;
         std::mt19937 gen(rd());
         (*rec_weights)(static_cast<int>(i / columns), i%columns) = d(gen);
     }
     for (int i = 0; i < rows*columns; i++) {
-        (*s)(static_cast<int>(i / nodes),i%nodes) = 0;
+        (*s)(static_cast<int>(i / columns),i%columns) = 0;
     }
 }
 
-void init_weights(RecurrentLayer next)
+void RecurrentLayer::init_weights(RecurrentLayer next)
 {
     v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
     m = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
@@ -34,22 +37,23 @@ void init_weights(RecurrentLayer next)
     for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
         std::random_device rd;
         std::mt19937 gen(rd()); 
-        (*weights)(static_cast<int>(i / nodes), i%nodes) = d(gen);
-        (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
-        (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
+        (*weights)(static_cast<int>(i / weights->cols()), i%weights->cols()) = d(gen);
+        (*v)(static_cast<int>(i / weights->cols()), i%weights->cols()) = 0;
+        (*m)(static_cast<int>(i / weights->cols()), i%weights->cols()) = 0;
     }
 }
     
 class RNN : public Network {
 public:
     std::vector<RecurrentLayer> layers;
+    void add_layer();
     void feedforward();
     void backpropagate();
     RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0);
 
 };
 
-RNN::RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0)
+RNN::RNN(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
     :Network(path, batch_sz, learn_rate, bias_rate, regularization, l, ratio, early_exit, cutoff)
 {}
 
@@ -73,4 +77,14 @@ void RNN::feedforward()
             (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
         }
     }
+}
+
+int main()
+{
+    RNN rnn ("./data_banknote_authentication.txt", 10, 0.0155, 0.03, L2, 0, 0.9);
+    rnn.Network::add_layer(4, "linear", linear, linear_deriv);
+    rnn.Network::add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
+    rnn.Network::add_layer(2, "linear", linear, linear_deriv);
+    rnn.Network::initialize();
+    rnn.feedforward();
 }
