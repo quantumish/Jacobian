@@ -13,7 +13,7 @@
 // Simple example network to be used in each check.
 Network default_net()
 {
-    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, L2, 0, 0.9);
     net.add_layer(4, "linear", linear, linear_deriv);
     net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
     net.add_layer(2, "linear", linear, linear_deriv);
@@ -26,7 +26,7 @@ Network default_net()
 // Proper cloning of networks for providing a reference point.
 Network explicit_copy(Network src)
 {
-    Network dst ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+    Network dst ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, L2, 0, 0.9);
     dst = src;
     for (int i = 0; i < src.layers.size(); i++) {
         dst.layers[i] = src.layers[i];
@@ -109,8 +109,8 @@ void floating_point_check(int& sanity_passed, int& total_checks)
 void update_check(int& sanity_passed, int& total_checks)
 {
     // std::cout << "Layer updates sanity check...";
-    // Network copy6 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
-    // Network copy7 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, 0, 0.9);
+    // Network copy6 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, L2, 0, 0.9);
+    // Network copy7 ("./data_banknote_authentication.txt", 16, 0.05, 0.03, L2, 0, 0.9);
     // //copy2.list_net();
     // //copy1.list_net();
     // int passed;
@@ -173,7 +173,7 @@ void optimizers_check(int& basic_passed, int& total_checks)
     try {
         std::string optimizers [5] = {"momentum", "demon", "adam", "adamax", "sgd"};
         for (std::string optimizer : optimizers) {
-            Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+            Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, L2, 0, 0.9);
             net.add_layer(4, "linear", linear, linear_deriv);
             net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
             net.add_layer(2, "linear", linear, linear_deriv);
@@ -205,7 +205,7 @@ void prelu_check(int& basic_passed, int& total_checks)
     try {
         Network net = default_net();
         for (int i = 0; i < 50; i++) {
-            Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, 2, 0, 0.9);
+            Network net ("./data_banknote_authentication.txt", 16, 0.0155, 0.03, L2, 0, 0.9);
             net.add_layer(4, "linear", linear, linear_deriv);
             net.add_prelu_layer(5, 0.01);
             net.add_layer(2, "linear", linear, linear_deriv);
