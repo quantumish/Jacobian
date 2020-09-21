@@ -34,12 +34,10 @@ inline float scan(char **p)
     int neg = 1;
     while (!isdigit(**p) && **p != '-' && **p != '.') ++*p;
     if (**p == '-') neg = -1, ++*p;
-    for (n=0; isdigit(**p); ++*p)
-        (n *= 10) += (**p-'0');
+    for (n=0; isdigit(**p); ++*p) (n *= 10) += (**p-'0');
     if (*(*p)++ != '.') return n*neg;
     float d = 1;
-    for (; isdigit(**p); ++*p)
-        n += (d /= 10) * (**p-'0');
+    for (; isdigit(**p); ++*p) n += (d /= 10) * (**p-'0');
     return n*neg;
 }
 
@@ -66,14 +64,13 @@ int main () {
             return 1;
         }
         if (!bytes_read) break;
-        for(char *p = buf; /* unreadable! */;) {
-            printf("test: %s\n", buf);
+        for(char *p = buf;;) {
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
-                printf("bound - p = %ld\n", bound-p);
             }
+            p = bound + 1;
             ++lines;
         }
         bufs++;
