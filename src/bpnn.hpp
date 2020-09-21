@@ -14,6 +14,10 @@
 #include <fstream>
 #include <random>
 #include <algorithm>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 
 #define BUFFER_SIZE 16*1024
 enum Regularization {L1, L2};

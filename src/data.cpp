@@ -1,14 +1,28 @@
+typedef float val_t;
+inline float scan(char **p)
+{
+    float n;
+    int neg = 1;
+    while (!isdigit(**p) && **p != '-' && **p != '.') ++*p;
+    if (**p == '-') neg = -1, ++*p;
+    for (n=0; isdigit(**p); ++*p) (n *= 10) += (**p-'0');
+    if (*(*p)++ != '.') return n*neg;
+    float d = 1;
+    for (; isdigit(**p); ++*p) n += (d /= 10) * (**p-'0');
+    return n*neg;
+}
+
 int Network::next_batch()
 {
-    uintmax_t lines = 0
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
+    uintmax_t lines = 0;
+    while(size_t bytes_read = read(data, buf, BUFFER_SIZE))
     {
         if (!bytes_read) break;
         for(char *p = buf; lines < 10;) {
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<layers[0].contents->cols(); ++i) (*layers[0].contents)(lines,i) = scan(&p);
-            labels (lines,0) = scan(&p);
+            (*labels)(lines,0) = scan(&p);
             p = bound + 1;
             ++lines;
         }

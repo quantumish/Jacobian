@@ -339,24 +339,7 @@ float Network::validate(char* path)
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
-        char line[MAXLINE];
-        int inputs = layers[0].contents->cols();
-        int datalen = batch_size * inputs;
-        float batch[datalen];
-        int label = -1;
-        for (int i = 0; i < batch_size; i++) {
-
-            fgets(line, MAXLINE, val_data);
-            char *p;
-            p = strtok(line,",");
-            for (int j = 0; j < inputs; j++) {
-                batch[j + (i * inputs)] = strtod(p, NULL);
-                p = strtok(NULL,",");
-            }
-            (*labels)(i, 0) = strtod(p, NULL);
-        }
-        float* batchptr = batch;
-        update_layer(batchptr, datalen, 0);
+        next_batch();
         feedforward();
         costsum += cost();
         accsum += accuracy();
@@ -369,7 +352,6 @@ float Network::validate(char* path)
 
 void Network::train()
 {
-    rewind(data);
     float cost_sum = 0;
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
