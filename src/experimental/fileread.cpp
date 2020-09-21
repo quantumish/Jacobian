@@ -25,6 +25,24 @@
 //     for (int i = 0; 
 // }
 
+
+// Courtesy of github.com/exr0n
+typedef float val_t;
+inline float scan(char **p)
+{
+    float n;
+    int neg = 1;
+    while (!isdigit(**p) && **p != '-' && **p != '.') ++*p;
+    if (**p == '-') neg = -1, ++*p;
+    for (n=0; isdigit(**p); ++*p)
+        (n *= 10) += (**p-'0');
+    if (*(*p)++ != '.') return n*neg;
+    float d = 1;
+    for (; isdigit(**p); ++*p)
+        n += (d /= 10) * (**p-'0');
+    return n*neg;
+}
+
 int main () {
     auto start = std::chrono::high_resolution_clock::now();
     static const auto BUFFER_SIZE = 16*1024;
@@ -48,14 +66,13 @@ int main () {
             return 1;
         }
         if (!bytes_read) break;
-        for(char *p = buf;; ++p) {
-            char* bound = (char*) memchr(p+1, '\n', (buf + bytes_read) - p+1);
+        for(char *p = buf; /* unreadable! */;) {
+            printf("test: %s\n", buf);
+            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
-            tmp = strtod(p, NULL); // Read first float
-            for (; p < bound; ++p) { 
-                if (*p ==  ',') {
-                    tmp = strtod(p, NULL); // Read float following delimiter
-                }
+            for (int i=0; i<5; ++i) {
+                tmp = scan(&p);
+                printf("bound - p = %ld\n", bound-p);
             }
             ++lines;
         }
@@ -86,5 +103,5 @@ int main () {
     if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
     else std::cout << "WARN: INVALID LAST READ VAL " << tmp << " vs. " << ftmp << "\n";
     double ftime = std::chrono::duration_cast<std::chrono::nanoseconds>(f_end - f_start).count() / pow(10,9);
-    std::cout << ftime << " " << time << " so " << ftime/time << "% speedup\n";
+    std::cout << ftime << " " << time << " so " << ftime/time * 100 << "% speedup\n";
 }
