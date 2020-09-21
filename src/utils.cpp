@@ -88,6 +88,20 @@ std::function<float(float)> rectifier(float (*activation)(float))
     return rectified;
 }
 
+typedef float val_t;
+inline float scan(char **p)
+{
+    float n;
+    int neg = 1;
+    while (!isdigit(**p) && **p != '-' && **p != '.') ++*p;
+    if (**p == '-') neg = -1, ++*p;
+    for (n=0; isdigit(**p); ++*p) (n *= 10) += (**p-'0');
+    if (*(*p)++ != '.') return n*neg;
+    float d = 1;
+    for (; isdigit(**p); ++*p) n += (d /= 10) * (**p-'0');
+    return n*neg;
+}
+
 #if (AVX)
 // Intel intrinsics for the win!
 Eigen::MatrixXf avx_product(Eigen::MatrixXf a, Eigen::MatrixXf b)

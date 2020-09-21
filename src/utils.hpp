@@ -46,7 +46,7 @@ Eigen::MatrixXf avx_cpow(Eigen::MatrixXf m, float exponent);
 Eigen::MatrixXf avx_tanh(Eigen::MatrixXf m);
 Eigen::MatrixXf avx_cosh(Eigen::MatrixXf m);
 
-
+inline float scan(char **p);
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 
 #endif /* MODULE_H */

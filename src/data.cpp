@@ -1,22 +1,35 @@
 int Network::next_batch()
 {
-    char line[MAXLINE] = {' '};
-    int inputs = layers[0].contents->cols();
-    int datalen = batch_size * inputs;
-    float batch[datalen];
-    for (int i = 0; i < batch_size; i++) {
-        fgets(line, MAXLINE, data);
-        char *p;
-        p = strtok(line,",");
-        for (int j = 0; j < inputs; j++) {
-            batch[j + (i * inputs)] = strtod(p, NULL);
-            p = strtok(NULL,",");
+    uintmax_t lines = 0
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
+    {
+        if (!bytes_read) break;
+        for(char *p = buf; lines < 10;) {
+            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
+            if (bound - p < 0) break; // Stop.
+            for (int i=0; i<layers[0].contents->cols(); ++i) (*layers[0].contents)(lines,i) = scan(&p);
+            labels (lines,0) = scan(&p);
+            p = bound + 1;
+            ++lines;
         }
-        (*labels)(i, 0) = strtod(p, NULL);
     }
-    float* batchptr = batch;
-    update_layer(batchptr, datalen, 0);
-    return 0;
+    // char line[MAXLINE];
+    // int inputs = layers[0].contents->cols();
+    // int datalen = batch_size * inputs;
+    // float batch[datalen];
+    // for (int i = 0; i < batch_size; i++) {
+    //     fgets(line, MAXLINE, data);
+    //     char *p;
+    //     p = strtok(line,",");
+    //     for (int j = 0; j < inputs; j++) {
+    //         batch[j + (i * inputs)] = strtod(p, NULL);
+    //         p = strtok(NULL,",");
+    //     }
+    //     (*labels)(i, 0) = strtod(p, NULL);
+    // }
+    // float* batchptr = batch;
+    // update_layer(batchptr, datalen, 0);
+    // return 0;
 }
 
 int prep_file(char* path, char* out_path)

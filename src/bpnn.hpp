@@ -15,6 +15,7 @@
 #include <random>
 #include <algorithm>
 
+#define BUFFER_SIZE 16*1024
 enum Regularization {L1, L2};
 
 class Layer {
@@ -39,10 +40,10 @@ public:
 
 class Network {
 public:
-    FILE* data;
-    FILE* val_data;
-    FILE* test_data;
+    int data;
+    int val_data;
     int instances;
+    char buf[BUFFER_SIZE + 1];
     int val_instances;
     int test_instances;
     Eigen::MatrixXf numerical_grad(int i, float epsilon);
@@ -93,7 +94,6 @@ public:
     int next_batch();
     float validate(char* path);
     void train();
-
 
     float get_acc() {return epoch_acc;}
     float get_val_acc() {return val_acc;}
