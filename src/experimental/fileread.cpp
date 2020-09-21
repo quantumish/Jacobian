@@ -47,29 +47,24 @@ int main () {
         }
         if (!bytes_read) break;
         for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p) {
-            //long bound = (char*) memchr(p+1, '\n', (buf + bytes_read) - p+1) - p;
+            long bound = (char*) memchr(p+1, '\n', (buf + bytes_read) - p+1) - p;
+            if (bound < 0) break; // Stop.
+            //            printf("%p (%p + %ld) vs %p\n", p+bound, p, bound, buf+BUFFER_SIZE);
             tmp = strtod(p, NULL); // Read first float
-            int delims = 0;
-            printf("%p out of %p\n", p-buf, BUFFER_SIZE);
-            for (int i = 0; delims < 4; i++) { // 3 is placeholder for now, but we know number of floats on each line
-                //printf("%p out of %p", p-buf, BUFFER_SIZE);
+            //int delims = 0;
+            //            printf("%f\n", tmp);
+            for (int i = 0; i < bound; i++) { 
                 if (*(p+i) ==  ',') {
                     tmp = strtod(p+i+1, NULL); // Read float following delimiter
-                    delims++;
-                    printf("Comma: %f %d\n", tmp, delims);
+                    //printf("%f\n", tmp);
+                    // delims++;
+                    // printf("Comma: %f %d\n", tmp, delims);
                 }
             }
             ++lines;
         }
         
     }
-    // delims = 0;
-    // for (int i = 0; i < delims; i++) {
-    //     if (*(buf+bytes_read+i) ==  ',') {
-    //         tmp = strtod(buf+bytes_read+i+1, NULL);
-    //     }
-    // }
-    // printf("%zu %d\n", bytes_read, BUFFER_SIZE);
     printf("Final %f\n", tmp);
     auto end = std::chrono::high_resolution_clock::now();
     double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
@@ -86,11 +81,12 @@ int main () {
             ftmp = strtod(p, NULL);
             p = strtok(NULL,",");
         }
+        ftmp = strtod(p, NULL);
         flines++;
     }
     auto f_end = std::chrono::high_resolution_clock::now();
-    std::cout << flines << " " << lines << "\n";
-    std::cout << ftmp << " " << tmp << "\n";
+    if (flines == lines) std::cout << "Linecount is valid!" << "\n";
+    if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
     double ftime = std::chrono::duration_cast<std::chrono::nanoseconds>(f_end - f_start).count();
     std::cout << ftime << " " << time << " " << ftime/time << "\n";
 }

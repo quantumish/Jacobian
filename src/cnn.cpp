@@ -8,7 +8,7 @@
 #include "bpnn.hpp"
 #include "utils.hpp"
 
-#include <Eigen/unsupported/CXX11/Tensor>
+//#include <Eigen/unsupported/CXX11/Tensor>
 
 #define LARGE_NUM 1000000 // Remove me.
 
@@ -211,7 +211,7 @@ public:
   void initialize();
 };
 
-ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, int reg, float l, float ratio)
+ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, int reg, Regularization l, float ratio)
   : Network(path, 1, learn_rate, bias_rate, reg, l, ratio), preprocess_length{0}
 {
   ReadMNIST(10000,784,data);
@@ -391,15 +391,15 @@ void ConvNet::train()
 
 int main()
 {
-  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, 2, 0, 0.9);
+  ConvNet net ("../data_banknote_authentication.txt", 0.05, 0.01, L2, 0, 0.9);
   Eigen::MatrixXf labels (1,1);
   net.add_conv_layer(28,28,1,9,9,0);
   //  net.add_pool_layer(20,20,1,6,6,0);
   net.add_conv_layer(15,15,1,6,6,0);
   //net.add_pool_layer(10,10,1,2,2,0);
-  net.add_layer(400, "sigmoid");
-  net.add_layer(5, "lecun_tanh");
-  net.add_layer(10, "resig");
+  net.add_layer(400, "sigmoid", sigmoid, sigmoid_deriv);
+  net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
+  net.add_layer(10, "resig", rectifier(sigmoid), rectifier(sigmoid_deriv));
   //  net.list_net();
   //  net.init_decay("step", 1, 2);
   net.initialize();
