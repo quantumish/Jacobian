@@ -16,7 +16,15 @@
 #include <iostream>
 #include <stdint.h>
 
-int main (){
+// No safety checks whatsoever. Use at your own risk.
+// Assumes solely numeric input. No NaN, no inf.
+// float strtof_but_bad(char* p)
+// {
+//     float flt;
+//     for (int i = 0; 
+// }
+
+int main () {
     auto start = std::chrono::high_resolution_clock::now();
     static const auto BUFFER_SIZE = 16*1024;
     int fd = open("../../data_banknote_authentication.txt", O_RDONLY);
@@ -38,20 +46,30 @@ int main (){
             return 1;
         }
         if (!bytes_read) break;
-        int prev = 0;
         for(char *p = buf; (p = (char*) memchr(p, '\n', (buf + bytes_read) - p)); ++p) {
-            long bound = (char*) memchr(p+1, '\n', (buf + bytes_read) - p+1) - p;
-            tmp = strtod(p, NULL);
-            for (int i = 0; i < bound; i++) {
+            //long bound = (char*) memchr(p+1, '\n', (buf + bytes_read) - p+1) - p;
+            tmp = strtod(p, NULL); // Read first float
+            int delims = 0;
+            printf("%p out of %p\n", p-buf, BUFFER_SIZE);
+            for (int i = 0; delims < 4; i++) { // 3 is placeholder for now, but we know number of floats on each line
+                //printf("%p out of %p", p-buf, BUFFER_SIZE);
                 if (*(p+i) ==  ',') {
-                    tmp = strtod(p+i+1, NULL);
-                    //printf("Comma %f\n", tmp);
+                    tmp = strtod(p+i+1, NULL); // Read float following delimiter
+                    delims++;
+                    printf("Comma: %f %d\n", tmp, delims);
                 }
-                // printf("%c", *(p+i));
             }
             ++lines;
         }
+        
     }
+    // delims = 0;
+    // for (int i = 0; i < delims; i++) {
+    //     if (*(buf+bytes_read+i) ==  ',') {
+    //         tmp = strtod(buf+bytes_read+i+1, NULL);
+    //     }
+    // }
+    // printf("%zu %d\n", bytes_read, BUFFER_SIZE);
     printf("Final %f\n", tmp);
     auto end = std::chrono::high_resolution_clock::now();
     double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
