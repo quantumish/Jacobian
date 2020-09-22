@@ -94,20 +94,23 @@ void prep()
                 fwrite((void*)&tmp, sizeof(float), 1, wptr);
             }
             p = bound + 1;
-            putc('\n', wptr);
         }
     }
 }
 
 float newer()
 {
-    static const auto BUFFER_SIZE = 1024*1024;
+    static const auto BUFFER_SIZE = 512*1024;
     int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
+    struct stat st;
+    stat("/Users/davidfreifeld/projects/Jacobian/data_banknote_authentication.bin", &st);
+    uintmax_t maxlines = st.st_size / (5*4);
+    printf("MAX %ju cause %llu", maxlines, st.st_size); 
     if(fd == -1) {
         printf("fd == -1\n");
         return 1;
     }
-    char buf[BUFFER_SIZE + 1];
+    char buf[BUFFER_SIZE];
     uintmax_t lines = 0;
     float tmp;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
@@ -117,16 +120,16 @@ float newer()
             return 1;
         }
         if (!bytes_read) break;
-        for(char *p = buf;;) {
-            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
-            if (bound - p < 0) break; // Stop.
+        for(char *p = buf; p < buf+BUFFER_SIZE;) {
+            if (lines > maxlines) break;
             for (int i=0; i<5; ++i) {
                 tmp = *((float*)p);
+                //printf("%f\n", tmp); 
                 p += sizeof(float);
             }
-            p = bound + 1;
             ++lines;
         }
+        printf("%d\n", lines);
     }
     return tmp;
 }
