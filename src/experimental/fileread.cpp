@@ -73,7 +73,7 @@ float current()
 void prep()
 {
     FILE* wptr = fopen("../../data_banknote_authentication.bin", "wb");
-    static const auto BUFFER_SIZE = 16*1024;
+    static const auto BUFFER_SIZE = 512*1024;
     int fd = open("../../data_banknote_authentication.txt", O_RDONLY | O_NONBLOCK);
     if(fd == -1) {
         printf("fd == -1\n");
@@ -100,7 +100,7 @@ void prep()
 
 float newer()
 {
-    static const auto BUFFER_SIZE = 2000*1024;
+    static const auto BUFFER_SIZE = 600*1024;
     int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
     uintmax_t maxlines = 1003222;
     if(fd == -1) {
@@ -118,15 +118,10 @@ float newer()
         }
         if (!bytes_read) break;
         for(char *p = buf; p < buf+BUFFER_SIZE;) {
-            //if (lines > maxlines) break;
             for (int i=0; i<5; ++i) {
                 tmp = *((float*)p);
-                //if (lines % 1342 == 0 || lines >= maxlines) printf("%f ", tmp);
                 p += sizeof(float);
             }
-            //if (lines % 1342 == 0 || lines >= maxlines) printf("\n");
-            //            printf("\n");
-            //if (lines > BUFFER_SIZE / 20 + 1) assert(0);
             ++lines;
         }
     }
@@ -134,7 +129,7 @@ float newer()
 }
 
 int main () {
-    int epochs = 10;
+    int epochs = 1;
     float tmp;
     auto start = std::chrono::high_resolution_clock::now();
     prep();
@@ -147,9 +142,9 @@ int main () {
     double runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end).count() / pow(10,9);
     float ftmp;
     auto f_start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < epochs; i++) {
-        ftmp = current();
-    }
+    // for (int i = 0; i < epochs; i++) {
+    //     ftmp = current();
+    // }
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
     // else std::cout << "WARN: INVALID LINECOUNT " << lines << " vs. " << flines << "\n";
