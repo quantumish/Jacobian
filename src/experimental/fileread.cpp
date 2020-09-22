@@ -25,8 +25,6 @@
 //     for (int i = 0; 
 // }
 
-char newline = '\n';
-
 // Courtesy of github.com/exr0n
 typedef float val_t;
 inline float scan(char **p)
@@ -74,7 +72,7 @@ float current()
 
 void prep()
 {
-    int wptr = open("../../data_banknote_authentication.bin", O_WRONLY | O_NONBLOCK);
+    FILE* wptr = fopen("../../data_banknote_authentication.bin", "wb");
     static const auto BUFFER_SIZE = 16*1024;
     int fd = open("../../data_banknote_authentication.txt", O_RDONLY | O_NONBLOCK);
     if(fd == -1) {
@@ -93,9 +91,10 @@ void prep()
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
-                write(wptr, (void*)&tmp, sizeof(float));
+                fwrite((void*)&tmp, sizeof(float), 1, wptr);
             }
             p = bound + 1;
+            putc('\n', wptr);
         }
     }
 }
@@ -118,11 +117,14 @@ float newer()
             return 1;
         }
         if (!bytes_read) break;
-        for(char *p = buf; p < buf+BUFFER_SIZE;) {
+        for(char *p = buf;;) {
+            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
+            if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = *((float*)p);
                 p += sizeof(float);
             }
+            p = bound + 1;
             ++lines;
         }
     }
