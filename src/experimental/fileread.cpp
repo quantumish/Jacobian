@@ -25,6 +25,7 @@
 //     for (int i = 0; 
 // }
 
+char newline = '\n';
 
 // Courtesy of github.com/exr0n
 typedef float val_t;
@@ -73,9 +74,9 @@ float current()
 
 void prep()
 {
-    FILE* wptr = fopen("../../data_banknote_authentication.bin", "wb");
+    int wptr = open("../../data_banknote_authentication.bin", O_WRONLY | O_NONBLOCK);
     static const auto BUFFER_SIZE = 16*1024;
-    int fd = open("../../data_banknote_authentication.txt", O_RDONLY & O_NONBLOCK);
+    int fd = open("../../data_banknote_authentication.txt", O_RDONLY | O_NONBLOCK);
     if(fd == -1) {
         printf("fd == -1\n");
     }
@@ -92,23 +93,21 @@ void prep()
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
-                fwrite((void*)&tmp, sizeof(float), 1, wptr);
+                write(wptr, (void*)&tmp, sizeof(float));
             }
             p = bound + 1;
-            putc('\n', wptr);
         }
     }
 }
 
 float newer()
 {
-    static const auto BUFFER_SIZE = 16*1024;
-    int fd = open("../../data_banknote_authentication.txt", O_RDONLY & O_NONBLOCK);
+    static const auto BUFFER_SIZE = 1024*1024;
+    int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
     if(fd == -1) {
         printf("fd == -1\n");
         return 1;
     }
-    
     char buf[BUFFER_SIZE + 1];
     uintmax_t lines = 0;
     float tmp;
@@ -119,16 +118,11 @@ float newer()
             return 1;
         }
         if (!bytes_read) break;
-        for(char *p = buf;;) {
-            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
-            if (bound - p < 0) break; // Stop.
+        for(char *p = buf; p < buf+BUFFER_SIZE;) {
             for (int i=0; i<5; ++i) {
                 tmp = *((float*)p);
                 p += sizeof(float);
-                std::cout << tmp << " " << (float) 0x23DB5940 << "\n";
-                assert(2<1);
             }
-            p = bound + 1;
             ++lines;
         }
     }
