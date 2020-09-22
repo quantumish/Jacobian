@@ -100,12 +100,9 @@ void prep()
 
 float newer()
 {
-    static const auto BUFFER_SIZE = 512*1024;
+    static const auto BUFFER_SIZE = 100*1024;
     int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
-    struct stat st;
-    stat("/Users/davidfreifeld/projects/Jacobian/data_banknote_authentication.bin", &st);
-    uintmax_t maxlines = st.st_size / (5*4);
-    printf("MAX %ju cause %llu", maxlines, st.st_size); 
+    uintmax_t maxlines = 1003222;
     if(fd == -1) {
         printf("fd == -1\n");
         return 1;
@@ -121,16 +118,20 @@ float newer()
         }
         if (!bytes_read) break;
         for(char *p = buf; p < buf+BUFFER_SIZE;) {
-            if (lines > maxlines) break;
+            //if (lines > maxlines) break;
             for (int i=0; i<5; ++i) {
                 tmp = *((float*)p);
-                //printf("%f\n", tmp); 
+                if (lines % 1342 == 0 || lines >= maxlines) printf("%f ", tmp);
                 p += sizeof(float);
             }
+            if (lines % 1342 == 0 || lines >= maxlines) printf("\n");
+            //            printf("\n");
+            //if (lines > BUFFER_SIZE / 20 + 1) assert(0);
             ++lines;
         }
-        printf("%d\n", lines);
+        //        printf("lines %d (%f)\n", lines, tmp);
     }
+    printf("%ju\n", lines);
     return tmp;
 }
 
