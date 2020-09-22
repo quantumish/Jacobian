@@ -78,29 +78,26 @@ void prep()
     int fd = open("../../data_banknote_authentication.txt", O_RDONLY & O_NONBLOCK);
     if(fd == -1) {
         printf("fd == -1\n");
-        return 1;
     }
-    
+    float tmp;
     char buf[BUFFER_SIZE + 1];
-    uintmax_t lines = 0;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
         if(bytes_read == (size_t)-1) {
             printf("bytes_read == (size_t)-1\n");
-            return 1;
         }
         if (!bytes_read) break;
         for(char *p = buf;;) {
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
-                fwrite((void*)&scan(&p), sizeof(float), 1, wptr);
+                tmp = scan(&p);
+                fwrite((void*)&tmp, sizeof(float), 1, wptr);
             }
             p = bound + 1;
-            ++lines;
+            putc('\n', wptr);
         }
     }
-    return tmp;
 }
 
 float newer()
@@ -125,7 +122,12 @@ float newer()
         for(char *p = buf;;) {
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
-            for (int i=0; i<5; ++i) tmp = scan(&p);
+            for (int i=0; i<5; ++i) {
+                tmp = *((float*)p);
+                p += sizeof(float);
+                std::cout << tmp << " " << (float) 0x23DB5940 << "\n";
+                assert(2<1);
+            }
             p = bound + 1;
             ++lines;
         }
@@ -135,17 +137,20 @@ float newer()
 
 int main () {
     auto start = std::chrono::high_resolution_clock::now();
+    prep();
+    auto prep_end = std::chrono::high_resolution_clock::now();
     float tmp = newer();
     auto end = std::chrono::high_resolution_clock::now();
-    double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count() / pow(10,9);
+    double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end + prep_end-start).count() / pow(10,9);
+    double runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end).count() / pow(10,9);
     
     auto f_start = std::chrono::high_resolution_clock::now();
     float ftmp = current();
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
     // else std::cout << "WARN: INVALID LINECOUNT " << lines << " vs. " << flines << "\n";
-    // if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
-    // else std::cout << "WARN: INVALID LAST READ VAL " << tmp << " vs. " << ftmp << "\n";
+    if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
+    else std::cout << "WARN: INVALID LAST READ VAL " << tmp << " vs. " << ftmp << "\n";
     double ftime = std::chrono::duration_cast<std::chrono::nanoseconds>(f_end - f_start).count() / pow(10,9);
-    std::cout << ftime << " " << time << " so " << ftime/time * 100 << "% speedup\n";
+    std::cout << ftime << " " << time << " " << runtime << " (" << ftime/time * 100 << "% speedup overall, " << ftime/runtime * 100 << "% speedup runtime)\n";
 }
