@@ -16,6 +16,7 @@
 #include <iostream>
 #include <cmath>
 #include <stdint.h>
+#include <sys/mman.h>
 
 // No safety checks whatsoever. Use at your own risk.
 // Assumes solely numeric input. No NaN, no inf.
@@ -98,48 +99,42 @@ void prep()
     }
 }
 
-float newer()
+float mmap_read()
 {
     static const auto BUFFER_SIZE = 600*1024;
     int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
-    uintmax_t maxlines = 1003222;
     if(fd == -1) {
         printf("Cannot open file.");
         exit(1);
     }
+    int rc , ii;
+    struct stat st;
+    size_t size;
+    rc = fstat(fd, &st);
+    size=st.st_size;
+    float* ptr = (float*) mmap(0, size, PROT_READ, MAP_SHARED, fd, 0);
+    madvise(ptr, size, POSIX_MADV_SEQUENTIAL);
     char buf[BUFFER_SIZE];
     uintmax_t lines = 0;
     float tmp;
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
-    {
-        if(bytes_read == (size_t)-1) {
-            printf("bytes_read == (size_t)-1\n");
-            exit(1);
-        }
-        if (!bytes_read) break;
-        // for(char *p = buf; p < buf+BUFFER_SIZE;) {
-        //     for (int i=0; i<5; ++i) {
-        //         tmp = *((float*)p);
-        //         p += sizeof(float);
-        //     }
-        //     ++lines;
-        // }
+    for (ii=0; ii < size/sizeof *ptr; ii++) {
+        // Nothin.
     }
+    rc = munmap(ptr, size);
+    close(fd);
     return tmp;
 }
 
-float newest()
+float std_read()
 {
     static const auto BUFFER_SIZE = 600*1024;
     int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
     fcntl(fd, F_RDADVISE);
-    uintmax_t maxlines = 1003222;
     if(fd == -1) {
         printf("Cannot open file.");
         exit(1);
     }
     char buf[BUFFER_SIZE];
-    uintmax_t lines = 0;
     float tmp;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
@@ -148,13 +143,11 @@ float newest()
             exit(1);
         }
         if (!bytes_read) break;
-        // for(char *p = buf; p < buf+BUFFER_SIZE;) {
-        //     for (int i=0; i<5; ++i) {
-        //         tmp = *((float*)p);
-        //         p += sizeof(float);
-        //     }
-        //     ++lines;
-        // }
+        for(char *p = buf; p < buf+BUFFER_SIZE;) {
+            for (int i=0; i<5; ++i) {
+                p += sizeof(float);
+            }
+        }
     }
     return tmp;
 }
@@ -165,16 +158,16 @@ int main () {
     auto start = std::chrono::high_resolution_clock::now();
     //prep();
     auto prep_end = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < epochs; i++) {
-        tmp = newest();
-    }
+    // for (int i = 0; i < epochs; i++) {
+    //     tmp = mmap_read();
+    // }
     auto end = std::chrono::high_resolution_clock::now();
     double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end + prep_end-start).count() / pow(10,9);
     double runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end).count() / pow(10,9);
     float ftmp;
     auto f_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < epochs; i++) {
-        ftmp = newer();
+        ftmp = std_read();
     }
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
@@ -182,5 +175,5 @@ int main () {
     if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
     else std::cout << "WARN: INVALID LAST READ VAL " << tmp << " vs. " << ftmp << "\n";
     double ftime = std::chrono::duration_cast<std::chrono::nanoseconds>(f_end - f_start).count() / pow(10,9);
-    std::cout << ftime << " " << time << " " << runtime << " (" << ftime/time * 100 << "% speedup overall, " << ftime/runtime * 100 << "% speedup runtime)\n";
+    std::cout << ftime << " " << time << " so " << 9/ftime << " GB/s vs.  " << 9/time << " GB/s " << runtime << " (" << ftime/time * 100 << "% speedup overall, " << ftime/runtime * 100 << "% speedup runtime)\n";
 }
