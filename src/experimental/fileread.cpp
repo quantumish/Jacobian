@@ -17,6 +17,7 @@
 #include <cmath>
 #include <stdint.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 
 // No safety checks whatsoever. Use at your own risk.
 // Assumes solely numeric input. No NaN, no inf.
@@ -125,6 +126,28 @@ float mmap_read()
     return tmp;
 }
 
+float vec_read()
+{
+    int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
+    float buf[128];
+    float buf2[128];
+    float buf3[128];
+    float buf4[128];
+    float buf5[128];
+    float buf6[128];
+    float buf7[128];
+    float buf8[128];
+    iovec iovecs[8] {{&buf, 512}, {&buf2, 512}, {&buf3, 512}, {&buf4, 512}, {&buf5, 512}, {&buf6, 512}, {&buf7, 512}, {&buf8, 512}};
+    while(size_t bytes_read = readv(fd, iovecs, 8))
+    {
+        if(bytes_read == (size_t)-1) {
+            printf("bytes_read == (size_t)-1\n");
+            exit(1);
+        }
+        if (!bytes_read) break;
+    }
+}
+
 float std_read()
 {
     static const auto BUFFER_SIZE = 600*1024;
@@ -143,11 +166,11 @@ float std_read()
             exit(1);
         }
         if (!bytes_read) break;
-        for(char *p = buf; p < buf+BUFFER_SIZE;) {
-            for (int i=0; i<5; ++i) {
-                p += sizeof(float);
-            }
-        }
+        // for(char *p = buf; p < buf+BUFFER_SIZE;) {
+        //     for (int i=0; i<5; ++i) {
+        //         p += sizeof(float);
+        //     }
+        // }
     }
     return tmp;
 }
@@ -158,9 +181,9 @@ int main () {
     auto start = std::chrono::high_resolution_clock::now();
     //prep();
     auto prep_end = std::chrono::high_resolution_clock::now();
-    // for (int i = 0; i < epochs; i++) {
-    //     tmp = mmap_read();
-    // }
+    for (int i = 0; i < epochs; i++) {
+        tmp = vec_read();
+    }
     auto end = std::chrono::high_resolution_clock::now();
     double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end + prep_end-start).count() / pow(10,9);
     double runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end).count() / pow(10,9);
