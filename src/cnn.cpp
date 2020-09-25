@@ -19,6 +19,7 @@
 #define checknan(x, loc)
 #endif
 
+// NOTE: Below two functions not mine, from https://compvisionlab.wordpress.com/2014/01/01/c-code-for-reading-mnist-data-set/
 int ReverseInt (int i)
 {
     unsigned char ch1, ch2, ch3, ch4;
