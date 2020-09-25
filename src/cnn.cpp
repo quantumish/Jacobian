@@ -9,6 +9,7 @@
 #include "utils.hpp"
 
 //#include <Eigen/unsupported/CXX11/Tensor>
+#include "cnn.hpp"
 
 #define LARGE_NUM 1000000 // Remove me.
 
@@ -91,21 +92,6 @@ unsigned char* read_mnist_labels(std::string full_path, int number_of_labels) {
     }
 }
 
-class ConvLayer
-{
-public:
-  int stride_len;
-  int padding;
-  Eigen::MatrixXf* input;
-  Eigen::MatrixXf* kernel;
-  Eigen::MatrixXf* output;
-  float bias;
-  
-  ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad);
-  void convolute();
-  void set_input(Eigen::MatrixXf* matrix);
-};
-
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
   :padding(pad), stride_len(stride)
 {
@@ -141,19 +127,6 @@ void ConvLayer::set_input(Eigen::MatrixXf* matrix)
   input->block(padding, padding, matrix->rows(), matrix->cols()) = *matrix;
 }
 
-class PoolingLayer
-{
-public:
-  int stride_len;
-  int padding;
-  Eigen::MatrixXf* input;
-  Eigen::MatrixXf* kernel;
-  Eigen::MatrixXf* output;
-  
-  void pool();
-  PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad);
-};
-
 // Will eventually be different from ConvLayer
 PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
   :padding(pad), stride_len(stride)
@@ -188,28 +161,6 @@ void PoolingLayer::pool()
     }
   }
 }
-
-class ConvNet : public Network
-{
-public:
-  int preprocess_length;
-  std::vector<std::vector<double>> data;
-  unsigned char* data_labels;
-                
-  std::vector<ConvLayer> conv_layers;
-  std::vector<PoolingLayer> pool_layers;
-  
-  ConvNet(char* path, float learn_rate, float bias_rate, int reg, float l, float ratio);
-  void list_net();
-  void process(); // Runs the convolutional and pooling layers.
-  void next_batch();
-  void backpropagate();
-  void train();
-  void add_conv_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
-  void add_pool_layer(int x, int y, int stride, int kern_x, int kern_y, int pad);
-  void set_label(Eigen::MatrixXf newlabels);
-  void initialize();
-};
 
 ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, int reg, Regularization l, float ratio)
   : Network(path, 1, learn_rate, bias_rate, reg, l, ratio), preprocess_length{0}
