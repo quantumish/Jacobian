@@ -74,8 +74,8 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
 {
     int total_instances = prep_file(path, SHUFFLED_PATH);
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
-    data = open(TRAIN_PATH, O_RDONLY & O_NONBLOCK);
-    val_data = open(VAL_PATH, O_RDONLY & O_NONBLOCK);
+    data = open(TRAIN_PATH, O_RDONLY | O_NONBLOCK);
+    val_data = open(VAL_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
     assert(batch_size > 0 || batch_size < instances);
     decay = [this]() -> void {};
@@ -83,6 +83,7 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
 }
+
 
 void Network::init_decay(char* type, ...)
 {
@@ -368,7 +369,7 @@ void Network::train()
     validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
-    data = open(TRAIN_PATH, O_RDONLY & O_NONBLOCK);
+    data = open(TRAIN_PATH, O_RDONLY | O_NONBLOCK);
     decay();
     epochs++;
 }

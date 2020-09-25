@@ -19,7 +19,7 @@
 double bench(int batch_sz, int epochs)
 {
     auto start = std::chrono::high_resolution_clock::now();
-    Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, L2, 0, 0.9);
+    Network net ("./data_banknote_authentication.bak.bin", batch_sz, 0.0155, 0.03, L2, 0, 0.9);
     net.add_layer(4, "linear", linear, linear_deriv);
     net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
     net.add_layer(2, "linear", linear, linear_deriv);
@@ -34,6 +34,7 @@ double bench(int batch_sz, int epochs)
 int main(int argc, char** argv)
 {
     if (argc < 2) {
+        prep();
         std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
         exit(1);
     }
