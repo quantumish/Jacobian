@@ -1,3 +1,6 @@
+#ifndef CNN_H
+#define CNN_H
+
 class ConvLayer
 {
 public:
@@ -47,3 +50,4 @@ public:
   void set_label(Eigen::MatrixXf newlabels);
   void initialize();
 };
+#endif /* MODULE_H */

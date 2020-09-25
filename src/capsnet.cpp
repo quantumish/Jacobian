@@ -1,6 +1,7 @@
 
 #include "utils.hpp"
 #include "cnn.hpp"
+#include "bpnn.hpp"
 
 class Capsule
 {
@@ -18,6 +19,5 @@ public:
     void add_conv_layer();
     void add_capsule();
     void feedforward();
-    void backpropagate();
     void routing();
 };
