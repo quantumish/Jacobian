@@ -15,6 +15,8 @@
 #define SHUFFLED_PATH "./shuffled.txt"
 #define VAL_PATH "./test.txt"
 #define TRAIN_PATH "./train.txt"
+#define VAL_BIN_PATH "./test.bin"
+#define TRAIN_BIN_PATH "./train.bin"
 
 #if (AVX)
 #define cwise_product(a,b) avx_product(a, b)
@@ -74,8 +76,10 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
 {
     int total_instances = prep_file(path, SHUFFLED_PATH);
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
-    data = open(TRAIN_PATH, O_RDONLY | O_NONBLOCK);
-    val_data = open(VAL_PATH, O_RDONLY | O_NONBLOCK);
+    prep(TRAIN_PATH, TRAIN_BIN_PATH);
+    prep(VAL_PATH, VAL_BIN_PATH);
+    data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
+    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
     assert(batch_size > 0 || batch_size < instances);
     decay = [this]() -> void {};
@@ -340,14 +344,14 @@ float Network::validate(char* path)
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
-        next_batch();
+        next_batch(val_data);
         feedforward();
         costsum += cost();
         accsum += accuracy();
     }
     val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
-    val_data = open(VAL_PATH, O_RDONLY & O_NONBLOCK);
+    val_data = open(VAL_PATH, O_RDONLY | O_NONBLOCK);
     return 0;
 }
 
@@ -357,7 +361,7 @@ void Network::train()
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
         if (early_stop == true && get_val_cost() < threshold) return;
-        if (i != instances-batch_size) next_batch();
+        if (i != instances-batch_size) next_batch(data);
         feedforward();
         backpropagate();
         cost_sum += cost();
@@ -369,7 +373,7 @@ void Network::train()
     validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
-    data = open(TRAIN_PATH, O_RDONLY | O_NONBLOCK);
+    data = open("./train.bin", O_RDONLY | O_NONBLOCK);
     decay();
     epochs++;
 }

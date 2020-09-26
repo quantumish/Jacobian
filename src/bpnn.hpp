@@ -19,7 +19,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 
-#define BUFFER_SIZE 16*1024
+#define BUFFER_SIZE 600*1024
 enum Regularization {L1, L2};
 
 class Layer {
@@ -95,7 +95,7 @@ public:
     float cost();
     float accuracy();
     void backpropagate();
-    int next_batch();
+    int next_batch(int fd);
     float validate(char* path);
     void train();
 
@@ -123,7 +123,7 @@ struct ValueError : public std::exception
         return error_message;
     }
 };
-
+void prep(char* rname, char* wname);
 #define MAXLINE 1024
 
 #if (!RECKLESS)

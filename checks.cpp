@@ -45,10 +45,10 @@ void regularization_check(int& sanity_passed, int& total_checks)
     net.list_net();
     Network copy1 = explicit_copy(net);
     Network copy2 = explicit_copy(net);
-    copy1.next_batch();
+    copy1.next_batch(copy1.data);
     copy1.feedforward();
   
-    copy2.next_batch();
+    copy2.next_batch(copy2.data);
     copy2.feedforward();
     net.list_net();
     if (copy1.cost() > copy2.cost()) {
@@ -64,7 +64,7 @@ void zero_check(int& sanity_passed, int& total_checks)
 {
     Network net = default_net();
     std::cout << "Zero-cost check...";
-    net.next_batch();
+    net.next_batch(net.data);
     float finalcost;
     for (int i = 0; i < 10000; i++) {
       net.feedforward();
@@ -87,7 +87,7 @@ void floating_point_check(int& sanity_passed, int& total_checks)
 {
     Network net = default_net();
     std::cout << "Update floating-point check...";
-    net.next_batch();
+    net.next_batch(net.data);
     net.feedforward();
     net.backpropagate();
     for (int i = 0; i < net.length-1; i++) {
