@@ -9,21 +9,6 @@
 ## About
 Jacobian is a work-in-progress machine learning library written in C++ designed to run as fast as possible while still being simple to use. Jacobian is accessible via Python and enables you to write models that train faster with the same amount of code. As of now, Jacobian supports feedforward neural networks and has partial support for convolutional neural networks. ***Note that as Jacobian is a work-in-progress, the latest commit is and will be largely unstable until this README specifies otherwise.***
 
-## The Chopping Block
-What's next for Jacobian?
-
-1. **Polish.** Preparing for an 1.0 release and ensuring Jacobian actually works well and can be reliably used are on the agenda. This would comprise of proper gradient and sanity checks, testing Jacobian on a variety of classification problems, lots of bugfixes, and starting to prioritize stability of the master branch (i.e. consistently using branches for new features, using Github Workflows for automated checks, improving the build system with CMake...).
-
-2. **Usable CNNs.** CNNs have been supported for a bit now, but in their current state have not been very practical or stable. Fixes and additions to the CNN backprop, proper pooling layer support, and tensors will enable CNNs to behave more like their stable ANN brethren. Expect small CNN-oriented features as well.
-
-3. **Parallelism.** Running multiple networks in parallel was once supported but has since stopped working. This feature plus the ability to paralellize a singular network will finally allow Jacobian to live up to its original purpose of being a parallel ML library.
-
-**The farther future** may hold initial implementations of RNN-like architectures, GPU support/optimizations, transfer learning, and autodifferentiation a la PyTorch.
-
-**Some smaller features** coming up may include a proper Python install via `pip`, more complex gradient descent optimizers, proper sanity/gradient checks, and more in-depth benchmarks.
-
-**Shelved right now** is AVX support (and more explicit SIMD calls), as it seems that the O3 optimization layer does a better job of this on its own. Lower level optimizations as a whole are on pause as investigations into which types of optimizations are valuable as well as reliable methods of benchmarking small changes in speed are required. 
-
 ## Benchmarks
 
 One of the tradeoffs of Jacobian is that as of now it doesn't train nearly as close to perfection as other available libraries nor does it maximize accuracy as much (with the benefit being the added speed). Here's a graph of Jacobian's model metrics over epochs on a simple task (banknote dataset with batch size 16) as compared to other libraries.
