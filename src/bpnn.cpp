@@ -80,6 +80,8 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
     prep(VAL_PATH, VAL_BIN_PATH);
+    char buffer[BUFFER_SIZE + 1];
+    buf = buffer;
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
@@ -87,7 +89,8 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
-    Ensures(batch_size < instances);
+    // File descriptors are nonnegative integers and open() returns -1 on failure. 
+    Ensures(batch_size < instances && data > 0 && val_data > 0);
 }
 
 
@@ -352,6 +355,7 @@ float Network::validate(char* path)
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
+        printf("callin next batch from validate\n");
         next_batch(val_data);
         feedforward();
         costsum += cost();
@@ -359,7 +363,7 @@ float Network::validate(char* path)
     }
     val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
-    val_data = open(VAL_PATH, O_RDONLY | O_NONBLOCK);
+    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     return 0;
 }
 
@@ -369,7 +373,10 @@ void Network::train()
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
         if (early_stop == true && get_val_cost() < threshold) return;
-        if (i != instances-batch_size) next_batch(data);
+        if (i != instances-batch_size) {
+            printf("callin nex batch from train\n");
+            next_batch(data);
+        }
         feedforward();
         backpropagate();
         cost_sum += cost();
@@ -381,7 +388,7 @@ void Network::train()
     validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
-    data = open("./train.bin", O_RDONLY | O_NONBLOCK);
+    data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     decay();
     epochs++;
 }

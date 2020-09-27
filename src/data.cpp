@@ -23,7 +23,7 @@ void prep(char* rname, char* wname)
     {
         if(bytes_read == (size_t)-1) {
             printf("bytes_read == (size_t)-1\n");
-        }
+        } 
         if (!bytes_read) break;
         for(char *p = buf;;) {
             char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
@@ -39,11 +39,17 @@ void prep(char* rname, char* wname)
 
 int Network::next_batch(int fd)
 {
+    Expects(fd > 0); // File descriptor must be valid.
+    printf("PRE: %llx %f\n", *((int*)buf), *((float*)buf));
     uintmax_t lines = 0;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
-        if (!bytes_read) break;
-        for(char *p = buf; p < buf+BUFFER_SIZE && lines < 10;) {
+        if (!bytes_read) {
+            printf("hit end of file\n");
+            break;
+        }
+        for(char *p = buf; p < buf+BUFFER_SIZE;) {
+            if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 printf("%llx %f\n", *((int*)p), *((float*)p));
                 (*layers[0].contents)(lines,i) = *((float*)p);
@@ -56,6 +62,7 @@ int Network::next_batch(int fd)
         }
         
     }
+    printf("Skipperoo\n");
 }
 
 int prep_file(char* path, char* out_path)
