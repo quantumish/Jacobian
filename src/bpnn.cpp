@@ -69,6 +69,7 @@ void Layer::init_weights(Layer next)
         (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
         (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
     }
+    
 }
 
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
@@ -350,6 +351,7 @@ void Network::update_layer(float* vals, int datalen, int index)
 
 float Network::validate(char* path)
 {
+    if (val_instances == 0) return 0.0;
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {

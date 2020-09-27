@@ -26,11 +26,11 @@ void prep(char* rname, char* wname)
         } 
         if (!bytes_read) break;
         for(char* p = buf;;) {
-            char* bound = (char*)memchr(p, '\n', (buf + bytes_read) - p);
+            char* bound = static_cast<char*>(memchr(p, '\n', (buf + bytes_read) - p));
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
-                fwrite((void*)&tmp, sizeof(float), 1, wptr);
+                fwrite(static_cast<void*>(&tmp), sizeof(float), 1, wptr);
             }
             p = bound + 1;
         }
@@ -91,7 +91,7 @@ int prep_file(char* path, char* out_path)
 int split_file(char* path, int lines, float ratio)
 {
     FILE* src = fopen(path, "r");
-    if (!src) throw std::runtime_error{"split_file() could not open file for split."};
+    if (!src) throw std::runtime_error{"split_file() could not open file to split."};
     FILE* test = fopen(VAL_PATH, "w");
     FILE* train = fopen(TRAIN_PATH, "w");
     int switch_line = round(ratio * lines);
