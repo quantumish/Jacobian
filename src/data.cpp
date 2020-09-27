@@ -16,9 +16,7 @@ void prep(char* rname, char* wname)
 {
     FILE* wptr = fopen(wname, "wb");
     int fd = open(rname, O_RDONLY | O_NONBLOCK);
-    if(fd == -1) {
-        printf("fd == -1\n");
-    }
+    if(fd == -1) throw std::runtime_error{"prep() could not open file for binary translation."};
     float tmp;
     char buf[BUFFER_SIZE + 1];
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
@@ -47,7 +45,7 @@ int Network::next_batch(int fd)
         if (!bytes_read) break;
         for(char *p = buf; p < buf+BUFFER_SIZE && lines < 10;) {
             for (int i=0; i<layers[0].contents->cols(); ++i) {
-                printf("%f\n", *((float*)p));
+                printf("%llx %f\n", *((int*)p), *((float*)p));
                 (*layers[0].contents)(lines,i) = *((float*)p);
                 p += sizeof(float);
             }
@@ -63,6 +61,7 @@ int Network::next_batch(int fd)
 int prep_file(char* path, char* out_path)
 {
     FILE* rptr = fopen(path, "r");
+    if (!rptr) throw std::runtime_error{"prep_file() could not open file for shuffle/read."};
     char line[MAXLINE];
     std::vector<std::string> lines;
     int count = 0;
@@ -87,6 +86,7 @@ int prep_file(char* path, char* out_path)
 int split_file(char* path, int lines, float ratio)
 {
     FILE* src = fopen(path, "r");
+    if (!src) throw std::runtime_error{"split_file() could not open file for split."};
     FILE* test = fopen(VAL_PATH, "w");
     FILE* train = fopen(TRAIN_PATH, "w");
     int switch_line = round(ratio * lines);

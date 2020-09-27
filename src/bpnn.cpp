@@ -76,7 +76,6 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
 {
     Expects(batch_size > 0 && learning_rate > 0 &&
             bias_rate > 0 && l >= 0 && ratio >= 0 && ratio <= 1);
-    printf("Hi\n");
     int total_instances = prep_file(path, SHUFFLED_PATH);
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
