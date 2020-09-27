@@ -74,6 +74,9 @@ void Layer::init_weights(Layer next)
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
     :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
 {
+    Expects(batch_size > 0 && learning_rate > 0 &&
+            bias_rate > 0 && l >= 0 && ratio >= 0 && ratio <= 1);
+    printf("Hi\n");
     int total_instances = prep_file(path, SHUFFLED_PATH);
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
@@ -81,11 +84,11 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
-    assert(batch_size > 0 || batch_size < instances);
     decay = [this]() -> void {};
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
         *layers[length-2-i].weights -= (learning_rate * deltas[i]);
     };
+    Ensures(batch_size < instances);
 }
 
 
@@ -128,6 +131,7 @@ void Network::init_decay(char* type, ...)
 
 void Network::add_prelu_layer(int nodes, float a)
 {
+    Expects(nodes > 0);
     length++;
     layers.emplace_back(batch_size, nodes, a);
     strcpy(layers[length-1].activation_str, "prelu");
@@ -145,6 +149,7 @@ void Network::add_prelu_layer(int nodes, float a)
 
 void Network::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
+    Expects(nodes > 0);
     length++;
     layers.emplace_back(batch_size, nodes);
     strcpy(layers[length-1].activation_str, name);
@@ -154,12 +159,14 @@ void Network::add_layer(int nodes, char* name, std::function<float(float)> activ
 
 void Network::initialize()
 {
+    Expects(length > 1);
     labels = new Eigen::MatrixXf (batch_size,layers[length-1].contents->cols());
     for (int i = 0; i < length-1; i++) layers[i].init_weights(layers[i+1]);
 }
 
 void Network::set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv)
 {
+    Expects(index >= 0 && index < length);
     layers[index].activation = custom;
     layers[index].activation_deriv = custom_deriv;
 }
@@ -214,6 +221,7 @@ void Network::feedforward()
 
 void Network::list_net()
 {
+    Expects(length > 1);
     std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
     for (int i = 1; i < length-1; i++) {
         std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str;
@@ -334,6 +342,7 @@ void Network::backpropagate()
 
 void Network::update_layer(float* vals, int datalen, int index)
 {
+    Expects(datalen > 0);
     for (int i = 0; i < datalen; i++) (*layers[index].contents)(static_cast<int>(i / layers[index].contents->cols()), i%layers[index].contents->cols()) = vals[i];
 }
 

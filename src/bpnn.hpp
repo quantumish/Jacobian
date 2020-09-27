@@ -6,18 +6,17 @@
 //#include "../../mapreduce/mapreduce.h"
 
 #include <vector>
-#include <array>
 #include <iostream>
 #include <string>
 #include <cstdio>
 #include <cmath>
-#include <fstream>
 #include <random>
 #include <algorithm>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <gsl/gsl_assert>
 
 #define BUFFER_SIZE 600*1024
 enum Regularization {L1, L2};
@@ -76,7 +75,10 @@ public:
     std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
     std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
 
-    Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit=true, float cutoff=0);
+    Network(char* path, int batch_sz, float learn_rate,
+            float bias_rate, Regularization regularization,
+            float l, float ratio, bool early_exit=true, float cutoff=0);
+    
     void add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
     void add_prelu_layer(int nodes, float a);
     void init_decay(char* type, ...);
@@ -130,6 +132,8 @@ void prep(char* rname, char* wname);
 #define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
 #else
 #define checknan(x, loc)
+#define Expects(cond) GSL_ASSUME(cond);
+#define Ensures(cond) GSL_ASSUME(cond);
 #endif
 
 #endif /* MODULE_H */
