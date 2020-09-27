@@ -46,7 +46,7 @@ public:
     int data;
     int val_data;
     int instances;
-    char* buf;
+    float buf[BUFFER_SIZE];
     int val_instances;
     int test_instances;
     Eigen::MatrixXf numerical_grad(int i, float epsilon);

@@ -18,15 +18,15 @@ void prep(char* rname, char* wname)
     int fd = open(rname, O_RDONLY | O_NONBLOCK);
     if(fd == -1) throw std::runtime_error{"prep() could not open file for binary translation."};
     float tmp;
-    char buf[BUFFER_SIZE + 1];
+    char buf[BUFFER_SIZE+1];
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
         if(bytes_read == (size_t)-1) {
             printf("bytes_read == (size_t)-1\n");
         } 
         if (!bytes_read) break;
-        for(char *p = buf;;) {
-            char* bound = (char*) memchr(p, '\n', (buf + bytes_read) - p);
+        for(char* p = buf;;) {
+            char* bound = (char*)memchr(p, '\n', (buf + bytes_read) - p);
             if (bound - p < 0) break; // Stop.
             for (int i=0; i<5; ++i) {
                 tmp = scan(&p);
@@ -40,7 +40,6 @@ void prep(char* rname, char* wname)
 int Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
-    printf("PRE: %llx %f\n", *((int*)buf), *((float*)buf));
     uintmax_t lines = 0;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
@@ -48,21 +47,20 @@ int Network::next_batch(int fd)
             printf("hit end of file\n");
             break;
         }
-        for(char *p = buf; p < buf+BUFFER_SIZE;) {
+        for(float* p = buf; p < buf+BUFFER_SIZE;) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
-                printf("%llx %f\n", *((int*)p), *((float*)p));
-                (*layers[0].contents)(lines,i) = *((float*)p);
+                printf("%llx %f\n", *((int*)p), *p);
+                (*layers[0].contents)(lines,i) = *p;
                 p += sizeof(float);
             }
-            printf("%f\n", *((float*)p));
-            (*labels)(lines,0) = *((float*)p);
+            printf("%f\n", *p);
+            (*labels)(lines,0) = *p;
             p += sizeof(float);
             ++lines;
         }
         
     }
-    printf("Skipperoo\n");
 }
 
 int prep_file(char* path, char* out_path)

@@ -80,8 +80,6 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
     prep(VAL_PATH, VAL_BIN_PATH);
-    char buffer[BUFFER_SIZE + 1];
-    buf = buffer;
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
