@@ -19,8 +19,7 @@ void prep(char* rname, char* wname)
     if(fd == -1) throw std::runtime_error{"prep() could not open file for binary translation."};
     float tmp;
     char buf[BUFFER_SIZE+1];
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
-    {
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
         if(bytes_read == (size_t)-1) {
             printf("bytes_read == (size_t)-1\n");
         } 
@@ -41,8 +40,9 @@ int Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
-    {
+    read(fd, buf, 4);
+    printf("%x\n", *buf);
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
         if (!bytes_read) {
             printf("hit end of file\n");
             break;
@@ -59,7 +59,6 @@ int Network::next_batch(int fd)
             p += sizeof(float);
             ++lines;
         }
-        
     }
 }
 

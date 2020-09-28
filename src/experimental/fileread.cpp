@@ -103,7 +103,7 @@ void prep()
 float mmap_read()
 {
     static const auto BUFFER_SIZE = 600*1024;
-    int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
+    int fd = open("../../data_banknote_authentication.big.bin", O_RDONLY | O_NONBLOCK);
     if(fd == -1) {
         printf("Cannot open file.");
         exit(1);
@@ -131,7 +131,7 @@ float vec_read()
 #define CHUNK_SZ (200*1024)
 #define BUFFER_SZ (600*1024)
 #define NUM_CHUNKS (BUFFER_SZ/CHUNK_SZ)
-    int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
+    int fd = open("../../data_banknote_authentication.big.bin", O_RDONLY | O_NONBLOCK);
     char rawbuf[BUFFER_SZ];
     char* buf = (char*) rawbuf;
     iovec iovecs[NUM_CHUNKS];
@@ -151,14 +151,11 @@ float vec_read()
     return 0;
 }
 
-float std_read(int BUFFER_SIZE)
+float std_read()
 {
-    int fd = open("../../data_banknote_authentication.bin", O_RDONLY | O_NONBLOCK);
+    int BUFFER_SIZE = 512*1024;
+    int fd = open("../../data_banknote_authentication.big.bin", O_RDONLY | O_NONBLOCK);
     fcntl(fd, F_RDADVISE);
-    if(fd == -1) {
-        printf("Cannot open file.");
-        exit(1);
-    }
     char buf[BUFFER_SIZE];
     float tmp;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
@@ -172,14 +169,32 @@ float std_read(int BUFFER_SIZE)
     return tmp;
 }
 
+float byte_read()
+{
+    int BUFFER_SIZE = 512*1024;
+    int fd = open("../../data_banknote_authentication.big.bin", O_RDONLY | O_NONBLOCK);
+    fcntl(fd, F_RDADVISE);
+    std::byte buf[BUFFER_SIZE];
+    float tmp;
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
+    {
+        if(bytes_read == (size_t)-1) {
+            printf("bytes_read == (size_t)-1\n");
+            exit(1);
+        }
+        if (!bytes_read) break;
+    }
+    return tmp;
+}
+
 int main () {
-    int epochs = 5;
+    int epochs = 1;
     float tmp;
     auto start = std::chrono::high_resolution_clock::now();
     //prep();
     auto prep_end = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < epochs; i++) {
-        tmp = std_read(512*1024);
+        tmp = std_read();
     }
     auto end = std::chrono::high_resolution_clock::now();
     double time = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end + prep_end-start).count() / pow(10,9);
@@ -187,7 +202,7 @@ int main () {
     float ftmp;
     auto f_start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < epochs; i++) {
-        ftmp = std_read(256*1024);
+        ftmp = byte_read();
     }
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
