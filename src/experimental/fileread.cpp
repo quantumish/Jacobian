@@ -97,7 +97,7 @@ void prep()
 void compress()
 {
     FILE* wptr = fopen("../../data_banknote_authentication.lz4", "wb");
-    int BUFFER_SIZE = 512*1024;
+    int BUFFER_SIZE = 500*1024;
     int fd = open("../../data_banknote_authentication.big.bin", O_RDONLY | O_NONBLOCK);
     fcntl(fd, F_RDADVISE);
     char buf[BUFFER_SIZE];
@@ -193,11 +193,11 @@ float std_read(char* path)
 
 float decomp_read(char* path)
 {
-    int BUFFER_SIZE = 512*1024;
+    int BUFFER_SIZE = 500*1024;
     int fd = open(path, O_RDONLY | O_NONBLOCK);
     fcntl(fd, F_RDADVISE);
     char buf[BUFFER_SIZE];
-    char rbuf[BUFFER_SIZE*10];
+    char* rbuf = (char*)malloc(BUFFER_SIZE*100);
     float tmp;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
     {
@@ -206,14 +206,16 @@ float decomp_read(char* path)
             exit(1);
         }
         if (!bytes_read) break;
-        size_t len = LZ4_decompress_safe(buf, rbuf, BUFFER_SIZE, BUFFER_SIZE*10);
-        // for (char* p = rbuf; p<buf+len;) {
-        //     for (int i = 0; i < 5; ++i) {
-        //         tmp = *(float*)p;
-        //         printf("%f\n", tmp);
-        //         p += sizeof(float);
-        //     }
-        // }
+        int len = LZ4_decompress_safe(buf, rbuf, BUFFER_SIZE, BUFFER_SIZE*100);
+        printf("%d\n", len);
+        for (char* p = rbuf; p<buf+len;) {
+            for (int i = 0; i < 5; ++i) {
+                tmp = *(float*)p;
+                printf("%f\n", tmp);
+                p += sizeof(float);
+            }
+            return 0.;
+        }
     }
     return tmp;
 }
@@ -233,9 +235,9 @@ int main () {
     double runtime = std::chrono::duration_cast<std::chrono::nanoseconds>(end - prep_end).count() / pow(10,9);
     float ftmp;
     auto f_start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < epochs; i++) {
-        ftmp = std_read("../../data_banknote_authentication.big.bin");
-    }
+    // for (int i = 0; i < epochs; i++) {
+    //     ftmp = std_read("../../data_banknote_authentication.big.bin");
+    // }
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
     // else std::cout << "WARN: INVALID LINECOUNT " << lines << " vs. " << flines << "\n";
