@@ -34,6 +34,7 @@ void prep(char* rname, char* wname)
             p = bound + 1;
         }
     }
+    fclose(wptr);
 }
 
 int Network::next_batch(int fd)
@@ -41,19 +42,15 @@ int Network::next_batch(int fd)
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
-        printf("hi\n");
         if (!bytes_read) {
-            printf("hit end of file\n");
             break;
         }
         for(std::byte* p = buf; p < buf+BUFFER_SIZE;) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
-                printf("%llx %f\n", *((int*)p), *(reinterpret_cast<float*>(p)));
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
             }
-            printf("%f\n", *(reinterpret_cast<float*>(p)));
             (*labels)(lines,0) = *(reinterpret_cast<float*>(p));
             p += sizeof(float);
             ++lines;

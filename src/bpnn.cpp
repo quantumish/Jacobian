@@ -355,7 +355,6 @@ float Network::validate(char* path)
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
-        printf("callin next batch from validate\n");
         next_batch(val_data);
         feedforward();
         costsum += cost();
@@ -373,10 +372,7 @@ void Network::train()
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
         if (early_stop == true && get_val_cost() < threshold) return;
-        if (i != instances-batch_size) {
-            printf("callin nex batch from train\n");
-            next_batch(data);
-        }
+        if (i != instances-batch_size) next_batch(data);
         feedforward();
         backpropagate();
         cost_sum += cost();
