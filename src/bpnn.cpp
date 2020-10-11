@@ -363,6 +363,7 @@ float Network::validate(char* path)
     val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
+    Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
     return 0;
 }
 
@@ -387,4 +388,5 @@ void Network::train()
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     decay();
     epochs++;
+    Ensures(lseek(data, 0, SEEK_CUR) == 0);
 }

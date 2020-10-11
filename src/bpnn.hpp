@@ -47,6 +47,7 @@ public:
     int val_data;
     int instances;
     std::byte buf[BUFFER_SIZE];
+    std::byte* p;
     int val_instances;
     int test_instances;
     Eigen::MatrixXf numerical_grad(int i, float epsilon);

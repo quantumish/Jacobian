@@ -42,10 +42,21 @@ int Network::next_batch(int fd)
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
-        if (!bytes_read) {
-            break;
+        p = buf;
+        if (!bytes_read) break;
+        while(p < buf+BUFFER_SIZE) {
+            if (lines >= 10) return 0;
+            for (int i=0; i<layers[0].contents->cols(); ++i) {b
+                (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
+                p += sizeof(float);
+            }
+            (*labels)(lines,0) = *(reinterpret_cast<float*>(p));
+            p += sizeof(float);
+            ++lines;
         }
-        for(std::byte* p = buf; p < buf+BUFFER_SIZE;) {
+    }
+    if (p < buf+BUFFER_SIZE) {
+        while(p < buf+BUFFER_SIZE) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
