@@ -37,37 +37,14 @@ void prep(char* rname, char* wname)
     fclose(wptr);
 }
 
-void compress(char* rname, char* wname)
-{
-    FILE* wptr = fopen(wname, "wb");
-    int fd = open(rname, O_RDONLY | O_NONBLOCK);
-    fcntl(fd, F_RDADVISE);
-    char buf[BUFFER_SIZE];
-    char wbuf[BUFFER_SIZE];
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE))
-    {
-        if(bytes_read == (size_t)-1) {
-            printf("bytes_read == (size_t)-1\n");
-            exit(1);
-        }
-        if (!bytes_read) break;
-        size_t len = LZ4_compress_default(buf, wbuf, BUFFER_SIZE, BUFFER_SIZE);
-        fwrite((void*)wbuf, len, 1, wptr); 
-    }
-    close(fd);
-    fclose(wptr);
-}
-
 int Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
-    char rbuf[BUFFER_SIZE];
-    while(size_t bytes_read = read(fd, rbuf, BUFFER_SIZE)) {        
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {        
         if (!bytes_read) break;
-        read_len = LZ4_decompress_safe(rbuf, buf, BUFFER_SIZE, LARGE_BUF);
         p = buf;
-        while(p < buf+read_len) {
+        while(p < buf+BUFFER_SIZE) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
@@ -78,8 +55,8 @@ int Network::next_batch(int fd)
             ++lines;
         }
     }
-    if (p < buf+read_len) {
-        while(p < buf+read_len) {
+    if (p < buf+BUFFER_SIZE) {
+        while(p < buf+BUFFER_SIZE) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));

@@ -71,7 +71,6 @@ void Layer::init_weights(Layer next)
         (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
         (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
     }
-    
 }
 
 Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
@@ -83,10 +82,8 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
     prep(VAL_PATH, VAL_BIN_PATH);
-    compress(TRAIN_BIN_PATH, TRAIN_LZ4_PATH);
-    compress(VAL_BIN_PATH, VAL_LZ4_PATH);
-    data = open(TRAIN_LZ4_PATH, O_RDONLY | O_NONBLOCK);
-    val_data = open(VAL_LZ4_PATH, O_RDONLY | O_NONBLOCK);
+    data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
+    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
     decay = [this]() -> void {};
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {

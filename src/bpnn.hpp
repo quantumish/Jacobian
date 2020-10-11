@@ -48,9 +48,8 @@ public:
     int data;
     int val_data;
     int instances;
-    char buf[LARGE_BUF];
+    char buf[BUFFER_SIZE];
     char* p;
-    int read_len;
     int val_instances;
     int test_instances;
     Eigen::MatrixXf numerical_grad(int i, float epsilon);
