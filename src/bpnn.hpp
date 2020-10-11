@@ -17,8 +17,10 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <gsl/gsl_assert>
+#include <lz4.h>
 
 #define BUFFER_SIZE 600*1024
+#define LARGE_BUF 600*1024*15
 enum Regularization {L1, L2};
 
 class Layer {
@@ -46,8 +48,9 @@ public:
     int data;
     int val_data;
     int instances;
-    std::byte buf[BUFFER_SIZE];
-    std::byte* p;
+    char buf[LARGE_BUF];
+    char* p;
+    int read_len;
     int val_instances;
     int test_instances;
     Eigen::MatrixXf numerical_grad(int i, float epsilon);
@@ -127,6 +130,8 @@ struct ValueError : public std::exception
     }
 };
 void prep(char* rname, char* wname);
+void compress(char* rname, char* wname);
+
 #define MAXLINE 1024
 
 #if (!RECKLESS)

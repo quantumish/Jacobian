@@ -26,7 +26,7 @@ if (AVX)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -D AVX")
 endif()
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -w")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -w -llz4")
 
 # if (PYTHON)
 #   project(jacobian)

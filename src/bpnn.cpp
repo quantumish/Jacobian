@@ -17,6 +17,8 @@
 #define TRAIN_PATH "./train.txt"
 #define VAL_BIN_PATH "./test.bin"
 #define TRAIN_BIN_PATH "./train.bin"
+#define VAL_LZ4_PATH "./test.lz4"
+#define TRAIN_LZ4_PATH "./train.lz4"
 
 #if (AVX)
 #define cwise_product(a,b) avx_product(a, b)
@@ -81,8 +83,10 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     val_instances = split_file(SHUFFLED_PATH, total_instances, ratio);
     prep(TRAIN_PATH, TRAIN_BIN_PATH);
     prep(VAL_PATH, VAL_BIN_PATH);
-    data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
-    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
+    compress(TRAIN_BIN_PATH, TRAIN_LZ4_PATH);
+    compress(VAL_BIN_PATH, VAL_LZ4_PATH);
+    data = open(TRAIN_LZ4_PATH, O_RDONLY | O_NONBLOCK);
+    val_data = open(VAL_LZ4_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
     decay = [this]() -> void {};
     update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
