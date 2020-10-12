@@ -44,66 +44,54 @@ public:
 };
 
 class Network {
-public:
-    int data;
-    int val_data;
     int instances;
     char buf[BUFFER_SIZE];
     char* p;
-    int val_instances;
-    int test_instances;
-    Eigen::MatrixXf numerical_grad(int i, float epsilon);
-    void update_layer(float* vals, int datalen, int index);
-  
-    std::vector<Layer> layers;
-    int length = 0;
-
     float epoch_acc;
     float epoch_cost;
     float val_acc;
     float val_cost;
-  
+    std::function<void(void)> decay;
+    std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
+    std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
+public:
+    int data;
+    int val_data;
+    int val_instances;
+    int test_instances;
+    std::vector<Layer> layers;
+    int length = 0;
     float learning_rate;
     float bias_lr;
     float lambda;
+    bool early_stop;
+    float threshold;
     Regularization reg_type;
     int batch_size;
-
     bool silenced = false;
     int epochs = 0;
     int batches = 0;
     Eigen::MatrixXf* labels;
-
-    std::function<void(void)> decay;
-    std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
-    std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
-
+    
     Network(char* path, int batch_sz, float learn_rate,
             float bias_rate, Regularization regularization,
             float l, float ratio, bool early_exit=true, float cutoff=0);
-    
+    ~Network();
     void add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
     void add_prelu_layer(int nodes, float a);
     void init_decay(char* type, ...);
     void init_optimizer(char* name, ...);
     void initialize();
-    void grad_check();
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
-  
     void feedforward();
     void softmax();
     void list_net();
-
-    bool early_stop;
-    float threshold;
-
     float cost();
     float accuracy();
     void backpropagate();
     int next_batch(int fd);
     float validate(char* path);
     void train();
-
     float get_acc() {return epoch_acc;}
     float get_val_acc() {return val_acc;}
     float get_cost() {return epoch_cost;}

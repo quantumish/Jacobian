@@ -93,6 +93,11 @@ Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Re
     Ensures(batch_size < instances && data > 0 && val_data > 0);
 }
 
+Network::~Network()
+{
+    close(data);
+    close(val_data);
+}
 
 void Network::init_decay(char* type, ...)
 {
@@ -104,22 +109,19 @@ void Network::init_decay(char* type, ...)
         decay = [this, a_0, k]() -> void {
             learning_rate = a_0 * learning_rate/k;
         };
-    }
-    else if (strcmp(type, "exp") == 0) {
+    } else if (strcmp(type, "exp") == 0) {
         float a_0 = va_arg(args, double);
         float k = va_arg(args, double);
         decay = [this, a_0, k]() -> void {
             learning_rate = a_0 * exp(-k * epochs);
         };
-    }
-    else if (strcmp(type, "frac") == 0) {
+    } else if (strcmp(type, "frac") == 0) {
         float a_0 = va_arg(args, double);
         float k = va_arg(args, double);
         decay = [this, a_0, k]() -> void {
             learning_rate = a_0 / (1+(k * epochs));
         };
-    }
-    else if (strcmp(type, "linear") == 0) {
+    } else if (strcmp(type, "linear") == 0) {
         int max_ep = va_arg(args, double);
         decay = [this, max_ep]() -> void {
             learning_rate = 1 - epochs/max_ep;
@@ -340,12 +342,6 @@ void Network::backpropagate()
             };
         }
     }
-}
-
-void Network::update_layer(float* vals, int datalen, int index)
-{
-    Expects(datalen > 0);
-    for (int i = 0; i < datalen; i++) (*layers[index].contents)(static_cast<int>(i / layers[index].contents->cols()), i%layers[index].contents->cols()) = vals[i];
 }
 
 #include "data.cpp"
