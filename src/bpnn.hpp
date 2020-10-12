@@ -135,6 +135,8 @@ void compress(char* rname, char* wname);
 
 #if (!RECKLESS)
 #define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+#define Expects(cond) assert(cond);
+#define Ensures(cond) assert(cond);
 #else
 #define checknan(x, loc)
 #define Expects(cond) GSL_ASSUME(cond);

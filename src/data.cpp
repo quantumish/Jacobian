@@ -15,26 +15,20 @@ inline float scan(char **p)
 void prep(char* rname, char* wname)
 {
     FILE* wptr = fopen(wname, "wb");
-    int fd = open(rname, O_RDONLY | O_NONBLOCK);
-    if(fd == -1) throw std::runtime_error{"prep() could not open file for binary translation."};
+    FILE* rptr = fopen(rname, "rb");
+    if(!wptr) throw std::runtime_error{"prep() could not write to the output file."};
+    if(!rptr) throw std::runtime_error{"prep() could not read file for binary translation."};
     float tmp;
     char buf[BUFFER_SIZE+1];
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
-        if(bytes_read == (size_t)-1) {
-            printf("bytes_read == (size_t)-1\n");
-        } 
-        if (!bytes_read) break;
-        for(char* p = buf;;) {
-            char* bound = static_cast<char*>(memchr(p, '\n', (buf + bytes_read) - p));
-            if (bound - p < 0) break; // Stop.
-            for (int i=0; i<5; ++i) {
-                tmp = scan(&p);
-                fwrite(static_cast<void*>(&tmp), sizeof(float), 1, wptr);
-            }
-            p = bound + 1;
+    while(fgets(buf, BUFFER_SIZE+1, rptr)) {
+        char* p = buf;
+        for (int i=0; i<5; ++i) {
+            tmp = scan(&p);
+            fwrite(static_cast<void*>(&tmp), sizeof(float), 1, wptr);
         }
     }
     fclose(wptr);
+    fclose(rptr);
 }
 
 int Network::next_batch(int fd)
