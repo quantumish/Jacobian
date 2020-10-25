@@ -3,8 +3,6 @@
 
 #include <Eigen/Dense>
 
-//#include "../../mapreduce/mapreduce.h"
-
 #include <vector>
 #include <iostream>
 #include <string>
@@ -17,7 +15,6 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <gsl/gsl_assert>
-#include <lz4.h>
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
@@ -91,6 +88,7 @@ public:
     void backpropagate();
     int next_batch(int fd);
     float validate(char* path);
+    void run();
     void train();
     float get_acc() {return epoch_acc;}
     float get_val_acc() {return val_acc;}

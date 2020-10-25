@@ -364,15 +364,25 @@ float Network::validate(char* path)
     return 0;
 }
 
+void Network::run()
+{
+    next_batch(data);
+    feedforward();
+    backpropagate();
+}
+
+#include <thread>
+#define THREADS 2
+
 void Network::train()
 {
     float cost_sum = 0;
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
         if (early_stop == true && get_val_cost() < threshold) return;
-        if (i != instances-batch_size) next_batch(data);
-        feedforward();
-        backpropagate();
+        std::vector<std::thread> threads;
+        for (int i = 0; i < THREADS; i++) threads.emplace_back(&Network::run, this);
+        for (int i = 0; i < THREADS; i++) threads[i].join();
         cost_sum += cost();
         acc_sum += accuracy();
         batches++;
