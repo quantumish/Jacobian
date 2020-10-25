@@ -16,6 +16,9 @@
 #include <unistd.h>
 #include <gsl/gsl_assert>
 
+#include <thread>
+#define THREADS 2
+
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
 enum Regularization {L1, L2};

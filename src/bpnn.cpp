@@ -175,10 +175,10 @@ void Network::set_activation(int index, std::function<float(float)> custom, std:
     layers[index].activation_deriv = custom_deriv;
 }
 
-void Network::softmax()
+Eigen::MatrixXf Network::softmax(Eigen::MatrixXf matrix)
 {
-    for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-        Eigen::MatrixXf m = layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols());
+    for (int i = 0; i < matrix.rows(); i++) {
+        Eigen::MatrixXf m = matrix.block(i,0,1,matrix.cols());
         Eigen::MatrixXf::Index maxRow, maxCol;
         float max = m.maxCoeff(&maxRow, &maxCol);
         m = (m.array() - max).matrix();
@@ -187,40 +187,47 @@ void Network::softmax()
         m = avx_cdiv(avx_exp(m), sum);
 #else
         float sum = 0;
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+        for (int j = 0; j < matrix.cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
             sum += exp(m(0,j));
         }
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
+        for (int j = 0; j < matrix.cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
             checknan(m(0,j), "output of Softmax operation");
         }
 #endif
-        layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
+        matrix.block(i,0,1,matrix.cols()) = m;
     }
+    return matrix;
 }
 
-void Network::feedforward()
+#include <utility>
+std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedforward(Eigen::MatrixXf init)
 {
-    for (int i = 0; i < length-1; i++) {
+    Eigen::MatrixXf out (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+    std::vector<Eigen::MatrixXf> dZ;
+    dZ.emplace_back(layers[0].dZ->rows(), layers[0].dZ->cols());
+    for (int j = 0; j < layers[0].contents->rows(); j++) {
+        if (strcmp(layers[0].activation_str, "linear") == 0) break;
+        for (int k = 0; k < layers[0].contents->cols(); k++) {
+            dZ[0] = layers[0].activation_deriv(init(j,k));
+            init(j,k) = layers[0].activation(init(j,k));
+        }
+    }
+    out = init;
+    for (int i = 1; i < length-1; i++) {
+        dZ.emplace_back(layers[i].dZ->rows(), layers[i].dZ->cols());
+        out = out * (*layers[i-1].weights);
         for (int j = 0; j < layers[i].contents->rows(); j++) {
             if (strcmp(layers[i].activation_str, "linear") == 0) break;
             for (int k = 0; k < layers[i].contents->cols(); k++) {
-                (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
-                (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
+                dZ[i] = layers[i].activation_deriv(out(j,k));
+                out(j,k) = layers[i].activation(out(j,k));
             }
-        }
-        *layers[i+1].contents = (*layers[i].contents) * (*layers[i].weights);
-        *layers[i+1].contents += *layers[i+1].bias;
+        }        
     }
-    for (int j = 0; j < layers[length-1].contents->rows(); j++) {
-        if (strcmp(layers[length-1].activation_str, "linear") == 0) break;
-        for (int k = 0; k < layers[length-1].contents->cols(); k++) {
-            (*layers[length-1].dZ)(j,k) = layers[length-1].activation_deriv((*layers[length-1].contents)(j,k));
-            (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
-        }
-    }
-    softmax();
+    softmax(out);
+    return {out, dZ};
 }
 
 void Network::list_net()
@@ -366,13 +373,9 @@ float Network::validate(char* path)
 
 void Network::run()
 {
-    next_batch(data);
     feedforward();
     backpropagate();
 }
-
-#include <thread>
-#define THREADS 2
 
 void Network::train()
 {
