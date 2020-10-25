@@ -12,7 +12,7 @@
 
 #include "./src/bpnn.hpp"
 #include "./src/utils.hpp"
-#include "./checks.cpp"
+//#include "./checks.cpp"
 #include "unistd.h"
 #include <ctime>
 
@@ -37,15 +37,15 @@ int main(int argc, char** argv)
         std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
         exit(1);
     }
-    else if (strcmp(argv[1], "basic-checks") == 0) {
-        basic_checks();
-    }
-    else if (strcmp(argv[1], "sanity-checks") == 0) {
-        sanity_checks();
-    }
-    else if (strcmp(argv[1], "grad-checks") == 0) {
-        grad_checks();
-    }
+    // else if (strcmp(argv[1], "basic-checks") == 0) {
+    //     basic_checks();
+    // }
+    // else if (strcmp(argv[1], "sanity-checks") == 0) {
+    //     sanity_checks();
+    // }
+    // else if (strcmp(argv[1], "grad-checks") == 0) {
+    //     grad_checks();
+    // }
     else if (argc < 3) {
         std::cout << "Invalid command! Either pass a special option or pass two integers - batch_size and epochs (in that order)."  << "\n";
         exit(1);

@@ -295,17 +295,17 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
     return r;
 }
 
-void Network::backpropagate()
+void Network::virtual_backprop(Eigen::Eigen::MatrixXf labels, MatrixXf end, std::vector<Eigen::MatrixXf> dZ)
 {
     std::vector<Eigen::MatrixXf> gradients;
     std::vector<Eigen::MatrixXf> deltas;
-    Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+    Eigen::MatrixXf error (end.rows(), end.cols());
     for (int i = 0; i < error.rows(); i++) {
         for (int j = 0; j < error.cols(); j++) {
             float truth;
-            if (j==(*labels)(i,0)) truth = 1;
+            if (j==labels(i,0)) truth = 1;
             else truth = 0;
-            error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+            error(i,j) = end(i,j) - truth;
             checknan(error(i,j), "gradient of final layer");
         }
     }
@@ -315,7 +315,7 @@ void Network::backpropagate()
     for (int i = length-2; i >= 1; i--) { 
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
-        //grad_calc(gradients, counter, i)
+a        //grad_calc(gradients, counter, i)
         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
@@ -373,8 +373,8 @@ float Network::validate(char* path)
 
 void Network::run(Eigen::MatrixXf batch)
 {
-    virtual_feedforward();
-    backpropagate();
+    std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch);
+    virtual_backprop(vals[0], vals[1]);
 }
 
 void Network::train()

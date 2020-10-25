@@ -88,7 +88,7 @@ public:
     void list_net();
     float cost();
     float accuracy();
-    void backpropagate();
+    void virtual_backprop(Eigen::MatrixXf end, std::vector<Eigen::MatrixXf> dZ);
     int next_batch(int fd);
     float validate(char* path);
     void run(Eigen::MatrixXf batch);
