@@ -210,7 +210,7 @@ std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedfo
     for (int j = 0; j < layers[0].contents->rows(); j++) {
         if (strcmp(layers[0].activation_str, "linear") == 0) break;
         for (int k = 0; k < layers[0].contents->cols(); k++) {
-            dZ[0] = layers[0].activation_deriv(init(j,k));
+            dZ[0](j,k) = layers[0].activation_deriv(init(j,k));
             init(j,k) = layers[0].activation(init(j,k));
         }
     }
@@ -221,7 +221,7 @@ std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedfo
         for (int j = 0; j < layers[i].contents->rows(); j++) {
             if (strcmp(layers[i].activation_str, "linear") == 0) break;
             for (int k = 0; k < layers[i].contents->cols(); k++) {
-                dZ[i] = layers[i].activation_deriv(out(j,k));
+                dZ[i](j,k) = layers[i].activation_deriv(out(j,k));
                 out(j,k) = layers[i].activation(out(j,k));
             }
         }        
@@ -371,9 +371,9 @@ float Network::validate(char* path)
     return 0;
 }
 
-void Network::run()
+void Network::run(Eigen::MatrixXf batch)
 {
-    feedforward();
+    virtual_feedforward();
     backpropagate();
 }
 
