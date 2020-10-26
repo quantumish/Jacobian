@@ -216,7 +216,7 @@ std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> Network::v
     }
     out = init;
     virt_layers.push_back(out);
-    for (int i = 1; i < length-1; i++) {
+    for (int i = 1; i < length; i++) {
         dZ.emplace_back(layers[i].dZ->rows(), layers[i].dZ->cols());
         out = out * (*layers[i-1].weights);
         for (int j = 0; j < layers[i].contents->rows(); j++) {
@@ -228,7 +228,7 @@ std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> Network::v
         }
         virt_layers.push_back(out);
     }
-    softmax(out);
+    out = softmax(out);      
     virt_layers[virt_layers.size()-1] = out;
     return {virt_layers, dZ};
 }
@@ -312,7 +312,7 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
             checknan(error(i,j), "gradient of final layer");
         }
     }
-    std::cout << "Calc'd error" << "\n";
+    std::cout << error << "\n\n";
     gradients.push_back(error);
     //std::cout << virt_layers[length-2].transpose() << "\n\n" << gradients[0] << "\n\n";
     deltas.push_back(virt_layers[length-2].transpose() * gradients[0]);
@@ -321,7 +321,9 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
     for (int i = length-2; i >= 1; i--) {
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
-        //grad_calc(gradients, counter, i)
+        //grad_calc(gradients, counter, i)]
+        for (Eigen::MatrixXf j : virt_layers) std::cout << j << "\n\n";
+        std::cout << "----" << "\n";
         std::cout << i << "\n\n" << gradients[counter-1] << "\n\n" << layers[i].weights->transpose() << "\n\n" << dZ[i] << "\n";
         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), dZ[i]));
         std::cout << "Fixed grad" << "\n";
