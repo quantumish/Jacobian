@@ -15,14 +15,13 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <gsl/gsl_assert>
+#include <thread>
 #include <pthread.h>
 #include <mach/mach_init.h>
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
 #define _GNU_SOURCE
 #include <sched.h>
-
-#include <thread>
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
@@ -95,7 +94,7 @@ public:
     void virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ);
     std::pair<Eigen::MatrixXf, Eigen::MatrixXf> next_batch(int fd);
     float validate(char* path);
-    void run(Eigen::MatrixXf batch, Eigen::MatrixXf labels);
+    void run(std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> batches);
     void train();
     float get_acc() {return epoch_acc;}
     float get_val_acc() {return val_acc;}

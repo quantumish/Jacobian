@@ -351,10 +351,12 @@ float Network::validate(char* path)
     return 0;
 }
 
-void Network::run(Eigen::MatrixXf batch, Eigen::MatrixXf labels)
+void Network::run(std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> batches)
 {
-    std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch);
-    virtual_backprop(labels, vals.first, vals.second);
+    for (std::pair<Eigen::MatrixXf, Eigen::MatrixXf> batch : batches) {
+        std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch.first);
+        virtual_backprop(batch.second, vals.first, vals.second);
+    }
 }
 
 typedef struct cpu_set {
@@ -394,30 +396,33 @@ void Network::train()
     float cost_sum = 0;
     float acc_sum = 0;
     unsigned int cores = std::thread::hardware_concurrency();
+    std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> info;
     for (int i = 0; i <= instances-batch_size; i+=batch_size*cores) {
-        if (early_stop == true && get_val_cost() < threshold) return;
-        std::vector<std::thread> threads;
-        std::vector<Eigen::MatrixXf> b;
-        std::vector<Eigen::MatrixXf> l;
-        for (int i = 0; i < cores; i++) {
-            std::pair<Eigen::MatrixXf, Eigen::MatrixXf> info = next_batch(data);
-            b.push_back(info.first);
-            l.push_back(info.second);
-            threads.emplace_back(&Network::run, this, b[i], l[i]);
-            // cpu_set_t cpuset;
-            // CPU_ZERO(&cpuset);
-            // CPU_SET(i, &cpuset);
-            // int rc = pthread_setaffinity_np(threads[i].native_handle(),
-            //                                 sizeof(cpu_set_t), &cpuset);
-            // if (rc != 0) {
-            //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-            // }
-        }
-        for (int i = 0; i < cores; i++) threads[i].join();
-        //cost_sum += cost();
-        //acc_sum += accuracy();
-        batches++;
+        info.push_back(next_batch(data));
     }
+    std::vector<std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>>> bunches;
+    // https://stackoverflow.com/questions/40656792/c-best-way-to-split-vector-into-n-vector
+    int bunch_size = info.size() / cores;
+    for(size_t i = 0; i < info.size(); i += bunch_size) {
+        auto last = std::min(info.size(), i + bunch_size);
+        bunches.emplace_back(info.begin() + i, info.begin() + last);
+    }    
+    if (early_stop == true && get_val_cost() < threshold) return;
+    std::vector<std::thread> threads;
+    for (int i = 0; i < cores; i++) {
+        threads.emplace_back(&Network::run, this, bunches[i]);
+        // cpu_set_t cpuset;
+        // CPU_ZERO(&cpuset);
+        // CPU_SET(i, &cpuset);
+        // int rc = pthread_setaffinity_np(threads[i].native_handle(),
+        //                                 sizeof(cpu_set_t), &cpuset);
+        // if (rc != 0) {
+        //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+        // }
+    }
+    for (int i = 0; i < cores; i++) threads[i].join();
+    //cost_sum += cost();
+    //acc_sum += accuracy();   
     epoch_acc = 1.0/(static_cast<float>(instances/batch_size)) * acc_sum;
     epoch_cost = 1.0/(static_cast<float>(instances/batch_size)) * cost_sum;
     validate(VAL_PATH);
