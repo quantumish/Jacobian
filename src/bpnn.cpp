@@ -245,46 +245,46 @@ void Network::list_net()
     std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
-// float Network::cost()
-// {
-//     float sum = 0;
-//     float reg = 0; // Regularization term
-//     for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-//         float tempsum = 0;
-//         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-//             float truth;
-//             if (j==(*labels)(i,0)) truth = 1;
-//             else truth = 0;
-//             if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
-//             tempsum += truth * log((*layers[length-1].contents)(i,j));
-//             checknan(tempsum, "summation for row inside cost calculation");
-//         }
-//         sum-=tempsum;
-//         checknan(tempsum, "total summation inside cost calculation");
-//     }
-//     for (int i = 0; i < layers.size()-1; i++) {
-//         if (reg_type == L2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
-//         else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
-//     }
-//     return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
-// }
+float Network::cost(Eigen::MatrixXf labels, Eigen::MatrixXf out)
+{
+    float sum = 0;
+    float reg = 0; // Regularization term
+    for (int i = 0; i < out.rows(); i++) {
+        float tempsum = 0;
+        for (int j = 0; j < out.cols(); j++) {
+            float truth;
+            if (j==labels(i,0)) truth = 1;
+            else truth = 0;
+            if (out(i,j) == 0) out(i,j) += 0.00001;
+            tempsum += truth * log(out(i,j));
+            checknan(tempsum, "summation for row inside cost calculation");
+        }
+        sum-=tempsum;
+        checknan(tempsum, "total summation inside cost calculation");
+    }
+    for (int i = 0; i < layers.size()-1; i++) {
+        if (reg_type == L2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
+        else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
+    }
+    return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
+}
 
-// float Network::accuracy()
-// {
-//     float correct = 0;
-//     for (int i = 0; i < layers[length-1].contents->rows(); i++) {
-//         float ans = -INFINITY;
-//         float index = -1;
-//         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-//             if ((*layers[length-1].contents)(i, j) > ans) {
-//                 ans = (*layers[length-1].contents)(i, j);
-//                 index = j;
-//             }
-//         }
-//         if ((*labels)(i, 0) == index) correct += 1;
-//     }
-//     return (1.0/batch_size) * correct;
-// }
+float Network::accuracy(Eigen::MatrixXf labels, Eigen::MatrixXf out)
+{
+    float correct = 0;
+    for (int i = 0; i < out.rows(); i++) {
+        float ans = -INFINITY;
+        float index = -1;
+        for (int j = 0; j < out.cols(); j++) {
+            if (out(i, j) > ans) {
+                ans = out(i, j);
+                index = j;
+            }
+        }
+        if (labels(i, 0) == index) correct += 1;
+    }
+    return (1.0/batch_size) * correct;
+}
 
 Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
 {
@@ -312,24 +312,16 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
             checknan(error(i,j), "gradient of final layer");
         }
     }
-    std::cout << error << "\n\n";
     gradients.push_back(error);
-    //std::cout << virt_layers[length-2].transpose() << "\n\n" << gradients[0] << "\n\n";
     deltas.push_back(virt_layers[length-2].transpose() * gradients[0]);
-    std::cout << "??" << "\n";
     int counter = 1;
     for (int i = length-2; i >= 1; i--) {
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         //grad_calc(gradients, counter, i)]
-        for (Eigen::MatrixXf j : virt_layers) std::cout << j << "\n\n";
-        std::cout << "----" << "\n";
-        std::cout << i << "\n\n" << gradients[counter-1] << "\n\n" << layers[i].weights->transpose() << "\n\n" << dZ[i] << "\n";
         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), dZ[i]));
-        std::cout << "Fixed grad" << "\n";
         deltas.push_back(virt_layers[i-1].transpose() * gradients[counter]);
         counter++;
-        std::cout << "Did a layer" << "\n";
     }
     for (int i = 0; i < length-1; i++) {
         update(deltas, i);
@@ -341,23 +333,23 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
 
 #include "data.cpp"
 
-// float Network::validate(char* path)
-// {
-//     if (val_instances == 0) return 0.0;
-//     float costsum = 0;
-//     float accsum = 0;
-//     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
-//         next_batch(val_data);
-//         feedforward();
-//         costsum += cost();
-//         accsum += accuracy();
-//     }
-//     val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
-//     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
-//     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
-//     Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
-//     return 0;
-// }
+float Network::validate(char* path)
+{
+    if (val_instances == 0) return 0.0;
+    float costsum = 0;
+    float accsum = 0;
+    for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
+        std::pair<Eigen::MatrixXf,Eigen::MatrixXf> batch = next_batch(val_data);
+        std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch.first);        
+        costsum += cost(batch.second, vals.first[vals.first.size()-1]);
+        accsum += accuracy(batch.second, vals.first[vals.first.size()-1]);
+    }
+    val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
+    val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
+    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
+    Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
+    return 0;
+}
 
 void Network::run(Eigen::MatrixXf batch, Eigen::MatrixXf labels)
 {
@@ -380,7 +372,6 @@ void Network::train()
             l.push_back(info.second);
             threads.emplace_back(&Network::run, this, b[i], l[i]);
         }
-        std::cout << "Yay!" << "\n";
         for (int i = 0; i < THREADS; i++) threads[i].join();
         //cost_sum += cost();
         //acc_sum += accuracy();
@@ -388,7 +379,7 @@ void Network::train()
     }
     epoch_acc = 1.0/(static_cast<float>(instances/batch_size)) * acc_sum;
     epoch_cost = 1.0/(static_cast<float>(instances/batch_size)) * cost_sum;
-    //validate(VAL_PATH);
+    validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);

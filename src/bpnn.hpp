@@ -85,8 +85,8 @@ public:
     std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> virtual_feedforward(Eigen::MatrixXf init);
     Eigen::MatrixXf softmax(Eigen::MatrixXf matrix);
     void list_net();
-    float cost();
-    float accuracy();
+    float cost(Eigen::MatrixXf labels, Eigen::MatrixXf out);
+    float accuracy(Eigen::MatrixXf labels, Eigen::MatrixXf out);
     void virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ);
     std::pair<Eigen::MatrixXf, Eigen::MatrixXf> next_batch(int fd);
     float validate(char* path);
