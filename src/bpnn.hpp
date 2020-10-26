@@ -71,7 +71,6 @@ public:
     bool silenced = false;
     int epochs = 0;
     int batches = 0;
-    Eigen::MatrixXf* labels;
     
     Network(char* path, int batch_sz, float learn_rate,
             float bias_rate, Regularization regularization,
@@ -89,9 +88,9 @@ public:
     float cost();
     float accuracy();
     void virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ);
-    int next_batch(int fd);
+    std::pair<Eigen::MatrixXf, Eigen::MatrixXf> next_batch(int fd);
     float validate(char* path);
-    void run(Eigen::MatrixXf batch);
+    void run(Eigen::MatrixXf batch, Eigen::MatrixXf labels);
     void train();
     float get_acc() {return epoch_acc;}
     float get_val_acc() {return val_acc;}

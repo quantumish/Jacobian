@@ -35,13 +35,13 @@ std::pair<Eigen::MatrixXf, Eigen::MatrixXf> Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
-    Eigen::Eigen::MatrixXf batch (layers[0].contents->rows(), layers[0].contents->cols());
+    Eigen::MatrixXf batch (layers[0].contents->rows(), layers[0].contents->cols());
     Eigen::MatrixXf label (layers[0].contents->rows(), 1); // TODO fix bad naming
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {        
         if (!bytes_read) break;
         p = buf;
         while(p < buf+BUFFER_SIZE) {
-            if (lines >= 10) return 0;
+            if (lines >= 10) return {batch, label};
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 batch(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
@@ -52,8 +52,8 @@ std::pair<Eigen::MatrixXf, Eigen::MatrixXf> Network::next_batch(int fd)
         }
     }
     if (p < buf+BUFFER_SIZE) {
-        while(p < buf+BUFFER_SIZE) {
-            if (lines >= 10) return 0;
+        while(p < buf+BUFFER_SIZE) { 
+            if (lines >= 10) return {batch, label};
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 batch(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
@@ -63,7 +63,6 @@ std::pair<Eigen::MatrixXf, Eigen::MatrixXf> Network::next_batch(int fd)
             ++lines;
         }
     }
-    return {batch, label};
 }
 
 int prep_file(char* path, char* out_path)
