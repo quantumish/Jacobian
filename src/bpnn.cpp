@@ -312,16 +312,22 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
             checknan(error(i,j), "gradient of final layer");
         }
     }
+    std::cout << "Calc'd error" << "\n";
     gradients.push_back(error);
+    //std::cout << virt_layers[length-2].transpose() << "\n\n" << gradients[0] << "\n\n";
     deltas.push_back(virt_layers[length-2].transpose() * gradients[0]);
+    std::cout << "??" << "\n";
     int counter = 1;
     for (int i = length-2; i >= 1; i--) {
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         //grad_calc(gradients, counter, i)
-        gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
+        std::cout << i << "\n\n" << gradients[counter-1] << "\n\n" << layers[i].weights->transpose() << "\n\n" << dZ[i] << "\n";
+        gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), dZ[i]));
+        std::cout << "Fixed grad" << "\n";
         deltas.push_back(virt_layers[i-1].transpose() * gradients[counter]);
         counter++;
+        std::cout << "Did a layer" << "\n";
     }
     for (int i = 0; i < length-1; i++) {
         update(deltas, i);
@@ -366,12 +372,10 @@ void Network::train()
         std::vector<std::thread> threads;
         std::vector<Eigen::MatrixXf> b;
         std::vector<Eigen::MatrixXf> l;
-        std::cout << "Yay?" << "\n";
         for (int i = 0; i < THREADS; i++) {
             std::pair<Eigen::MatrixXf, Eigen::MatrixXf> info = next_batch(data);
-            b[i] = info.first;
-            l[i] = info.second;
-            std::cout << "Hmm" << "\n";
+            b.push_back(info.first);
+            l.push_back(info.second);
             threads.emplace_back(&Network::run, this, b[i], l[i]);
         }
         std::cout << "Yay!" << "\n";

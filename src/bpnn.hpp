@@ -17,7 +17,7 @@
 #include <gsl/gsl_assert>
 
 #include <thread>
-#define THREADS 2
+#define THREADS 1
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
