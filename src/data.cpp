@@ -31,20 +31,22 @@ void prep(char* rname, char* wname)
     fclose(rptr);
 }
 
-int Network::next_batch(int fd)
+std::pair<Eigen::MatrixXf, Eigen::MatrixXf> Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
+    Eigen::Eigen::MatrixXf batch (layers[0].contents->rows(), layers[0].contents->cols());
+    Eigen::MatrixXf label (layers[0].contents->rows(), 1); // TODO fix bad naming
     while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {        
         if (!bytes_read) break;
         p = buf;
         while(p < buf+BUFFER_SIZE) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
-                (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
+                batch(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
             }
-            (*labels)(lines,0) = *(reinterpret_cast<float*>(p));
+            label(lines,0) = *(reinterpret_cast<float*>(p));
             p += sizeof(float);
             ++lines;
         }
@@ -53,14 +55,15 @@ int Network::next_batch(int fd)
         while(p < buf+BUFFER_SIZE) {
             if (lines >= 10) return 0;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
-                (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
+                batch(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
             }
-            (*labels)(lines,0) = *(reinterpret_cast<float*>(p));
+            label(lines,0) = *(reinterpret_cast<float*>(p));
             p += sizeof(float);
             ++lines;
         }
     }
+    return {batch, label};
 }
 
 int prep_file(char* path, char* out_path)

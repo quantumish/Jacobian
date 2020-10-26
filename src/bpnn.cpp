@@ -202,10 +202,11 @@ Eigen::MatrixXf Network::softmax(Eigen::MatrixXf matrix)
 }
 
 #include <utility>
-std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedforward(Eigen::MatrixXf init)
+std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> Network::virtual_feedforward(Eigen::MatrixXf init)
 {
     Eigen::MatrixXf out (layers[length-1].contents->rows(), layers[length-1].contents->cols());
     std::vector<Eigen::MatrixXf> dZ;
+    std::vector<Eigen::MatrixXf> virt_layers;
     dZ.emplace_back(layers[0].dZ->rows(), layers[0].dZ->cols());
     for (int j = 0; j < layers[0].contents->rows(); j++) {
         if (strcmp(layers[0].activation_str, "linear") == 0) break;
@@ -215,6 +216,7 @@ std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedfo
         }
     }
     out = init;
+    virt_layers.push_back(out);
     for (int i = 1; i < length-1; i++) {
         dZ.emplace_back(layers[i].dZ->rows(), layers[i].dZ->cols());
         out = out * (*layers[i-1].weights);
@@ -224,10 +226,12 @@ std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> Network::virtual_feedfo
                 dZ[i](j,k) = layers[i].activation_deriv(out(j,k));
                 out(j,k) = layers[i].activation(out(j,k));
             }
-        }        
+        }
+        virt_layers.push_back(out);
     }
     softmax(out);
-    return {out, dZ};
+    virt_layers[virt_layers.size()-1] = out;
+    return {virt_layers, dZ};
 }
 
 void Network::list_net()
@@ -295,96 +299,78 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m)
     return r;
 }
 
-void Network::virtual_backprop(Eigen::Eigen::MatrixXf labels, MatrixXf end, std::vector<Eigen::MatrixXf> dZ)
+void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ)
 {
     std::vector<Eigen::MatrixXf> gradients;
     std::vector<Eigen::MatrixXf> deltas;
-    Eigen::MatrixXf error (end.rows(), end.cols());
+    Eigen::MatrixXf error (virt_layers[length-1].rows(), virt_layers[length-1].cols());
     for (int i = 0; i < error.rows(); i++) {
         for (int j = 0; j < error.cols(); j++) {
             float truth;
             if (j==labels(i,0)) truth = 1;
             else truth = 0;
-            error(i,j) = end(i,j) - truth;
+            error(i,j) = virt_layers[length-1](i,j) - truth;
             checknan(error(i,j), "gradient of final layer");
         }
     }
     gradients.push_back(error);
-    deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+    deltas.push_back(virt_layers[length-2].transpose() * gradients[0]);
     int counter = 1;
-    for (int i = length-2; i >= 1; i--) { 
+    for (int i = length-2; i >= 1; i--) {
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
-a        //grad_calc(gradients, counter, i)
+        //grad_calc(gradients, counter, i)
         gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
-        deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
+        deltas.push_back(virt_layers[i-1].transpose() * gradients[counter]);
         counter++;
     }
     for (int i = 0; i < length-1; i++) {
         update(deltas, i);
         if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-        *layers[length-1-i].bias -= bias_lr * gradients[i];
-        if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
-            float sum = 0;
-            for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
-                for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
-                    if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
-                        //  TODO: Review questionable code | -t quality -m Choice of using index i+1 here is sketchy.
-                        sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
-                    }
-                }
-            }
-            layers[length-2-i].alpha += learning_rate * sum;
-            float a = layers[length-2-i].alpha;
-            layers[length-2-i].activation = [a](float x) -> float
-            {
-                if (x > 0) return x;
-                else return a * x;
-            };
-            layers[length-2-i].activation_deriv = [a](float x) -> float
-            {
-                if (x > 0) return 1;
-                else return a;
-            };
-        }
+        *layers[length-1-i].bias -= bias_lr * gradients[i];       
     }
 }
 
 #include "data.cpp"
 
-float Network::validate(char* path)
-{
-    if (val_instances == 0) return 0.0;
-    float costsum = 0;
-    float accsum = 0;
-    for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
-        next_batch(val_data);
-        feedforward();
-        costsum += cost();
-        accsum += accuracy();
-    }
-    val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
-    val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
-    val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
-    Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
-    return 0;
-}
+// float Network::validate(char* path)
+// {
+//     if (val_instances == 0) return 0.0;
+//     float costsum = 0;
+//     float accsum = 0;
+//     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
+//         next_batch(val_data);
+//         feedforward();
+//         costsum += cost();
+//         accsum += accuracy();
+//     }
+//     val_acc = 1.0/(static_cast<float>(val_instances/batch_size)) * accsum;
+//     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
+//     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
+//     Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
+//     return 0;
+// }
 
-void Network::run(Eigen::MatrixXf batch)
+void Network::run(Eigen::MatrixXf batch, Eigen::MatrixXf labels)
 {
-    std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch);
-    virtual_backprop(vals[0], vals[1]);
+    std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> vals = virtual_feedforward(batch);
+    virtual_backprop(labels, vals.first, vals.second);
 }
 
 void Network::train()
 {
     float cost_sum = 0;
     float acc_sum = 0;
-    for (int i = 0; i <= instances-batch_size; i+=batch_size) {
+    for (int i = 0; i <= instances-batch_size; i+=batch_size*THREADS) {
         if (early_stop == true && get_val_cost() < threshold) return;
         std::vector<std::thread> threads;
-        for (int i = 0; i < THREADS; i++) threads.emplace_back(&Network::run, this);
+        std::vector<Eigen::MatrixXf> b;
+        std::vector<Eigen::MatrixXf> l;
+        for (int i = 0; i < THREADS; i++) {
+            
+            threads.emplace_back(&Network::run, this, b[i], l[i]);
+        }
         for (int i = 0; i < THREADS; i++) threads[i].join();
         cost_sum += cost();
         acc_sum += accuracy();
@@ -392,7 +378,7 @@ void Network::train()
     }
     epoch_acc = 1.0/(static_cast<float>(instances/batch_size)) * acc_sum;
     epoch_cost = 1.0/(static_cast<float>(instances/batch_size)) * cost_sum;
-    validate(VAL_PATH);
+    //validate(VAL_PATH);
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);

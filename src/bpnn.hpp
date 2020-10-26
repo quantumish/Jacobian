@@ -83,12 +83,12 @@ public:
     void init_optimizer(char* name, ...);
     void initialize();
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
-    std::pair<Eigen::MatrixXf, std::vector<Eigen::MatrixXf>> virtual_feedforward(Eigen::MatrixXf init);
+    std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> virtual_feedforward(Eigen::MatrixXf init);
     Eigen::MatrixXf softmax(Eigen::MatrixXf matrix);
     void list_net();
     float cost();
     float accuracy();
-    void virtual_backprop(Eigen::MatrixXf end, std::vector<Eigen::MatrixXf> dZ);
+    void virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ);
     int next_batch(int fd);
     float validate(char* path);
     void run(Eigen::MatrixXf batch);
