@@ -15,9 +15,14 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <gsl/gsl_assert>
+#include <pthread.h>
+#include <mach/mach_init.h>
+#include <mach/thread_policy.h>
+#include <mach/thread_act.h>
+#define _GNU_SOURCE
+#include <sched.h>
 
 #include <thread>
-#define THREADS 1
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15

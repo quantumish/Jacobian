@@ -357,22 +357,63 @@ void Network::run(Eigen::MatrixXf batch, Eigen::MatrixXf labels)
     virtual_backprop(labels, vals.first, vals.second);
 }
 
+typedef struct cpu_set {
+  uint32_t    count;
+} cpu_set_t;
+
+// This person is my savior
+// http://www.hybridkernel.com/2015/01/18/binding_threads_to_cores_osx.html
+
+static inline void
+CPU_ZERO(cpu_set_t *cs) { cs->count = 0; }
+
+static inline void
+CPU_SET(int num, cpu_set_t *cs) { cs->count |= (1 << num); }
+
+static inline int CPU_ISSET(int num, cpu_set_t *cs) { return (cs->count & (1 << num)); }
+
+int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
+                           cpu_set_t *cpu_set)
+{
+  thread_port_t mach_thread;
+  int core = 0;
+
+  for (core = 0; core < 8 * cpu_size; core++) {
+    if (CPU_ISSET(core, cpu_set)) break;
+  }
+  //printf("binding to core %d\n", core);
+  thread_affinity_policy_data_t policy = { core };
+  mach_thread = pthread_mach_thread_np(thread);
+  thread_policy_set(mach_thread, THREAD_AFFINITY_POLICY,
+                    (thread_policy_t)&policy, 1);
+  return 0;
+}
+
 void Network::train()
 {
     float cost_sum = 0;
     float acc_sum = 0;
-    for (int i = 0; i <= instances-batch_size; i+=batch_size*THREADS) {
+    unsigned int cores = std::thread::hardware_concurrency();
+    for (int i = 0; i <= instances-batch_size; i+=batch_size*cores) {
         if (early_stop == true && get_val_cost() < threshold) return;
         std::vector<std::thread> threads;
         std::vector<Eigen::MatrixXf> b;
         std::vector<Eigen::MatrixXf> l;
-        for (int i = 0; i < THREADS; i++) {
+        for (int i = 0; i < cores; i++) {
             std::pair<Eigen::MatrixXf, Eigen::MatrixXf> info = next_batch(data);
             b.push_back(info.first);
             l.push_back(info.second);
             threads.emplace_back(&Network::run, this, b[i], l[i]);
+            // cpu_set_t cpuset;
+            // CPU_ZERO(&cpuset);
+            // CPU_SET(i, &cpuset);
+            // int rc = pthread_setaffinity_np(threads[i].native_handle(),
+            //                                 sizeof(cpu_set_t), &cpuset);
+            // if (rc != 0) {
+            //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+            // }
         }
-        for (int i = 0; i < THREADS; i++) threads[i].join();
+        for (int i = 0; i < cores; i++) threads[i].join();
         //cost_sum += cost();
         //acc_sum += accuracy();
         batches++;
