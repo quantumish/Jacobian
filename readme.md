@@ -6,11 +6,7 @@
 
 ![Banner](./pictures/banner.png)
 
-<img align="center" height=35 width=300 src="https://forthebadge.com/images/badges/powered-by-electricity.svg">
-
-<img align="center" height=35 width=300 src="https://forthebadge.com/images/badges/works-on-my-machine.svg">
-
-<img align="center" height=35 width=290 src="https://forthebadge.com/images/badges/60-percent-of-the-time-works-every-time.svg">
+<img align="left" height=35 width=150 src="https://forthebadge.com/images/badges/made-with-c-plus-plus.svg"><img align="left" height=35 width=300 src="https://forthebadge.com/images/badges/powered-by-electricity.svg"><img align="left" height=35 width=300 src="https://forthebadge.com/images/badges/works-on-my-machine.svg">
 
 ## About
 Jacobian is a work-in-progress machine learning library written in C++ designed to run as fast as possible while still being simple to use. Jacobian is accessible via Python and enables you to write models that train faster with the same amount of code. As of now, Jacobian supports feedforward neural networks and has partial support for convolutional neural networks. ***Note that as Jacobian is a work-in-progress, the latest commit is and will be largely unstable until this README specifies otherwise.***
