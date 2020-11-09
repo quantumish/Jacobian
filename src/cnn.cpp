@@ -163,7 +163,7 @@ void PoolingLayer::pool()
   }
 }
 
-ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, int reg, Regularization l, float ratio)
+ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, Regularization reg, float l, float ratio)
   : Network(path, 1, learn_rate, bias_rate, reg, l, ratio), preprocess_length{0}
 {
   ReadMNIST(10000,784,data);

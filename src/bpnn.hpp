@@ -44,9 +44,10 @@ public:
 };
 
 class Network {
-    int instances;
     char buf[BUFFER_SIZE];
     char* p;
+protected:
+    int instances;
     float epoch_acc;
     float epoch_cost;
     float val_acc;
@@ -118,6 +119,7 @@ struct ValueError : public std::exception
 };
 void prep(char* rname, char* wname);
 void compress(char* rname, char* wname);
+Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m);
 
 #define MAXLINE 1024
 
