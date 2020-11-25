@@ -19,7 +19,7 @@
 #define checknan(x, loc)
 #endif
 
-// NOTE: Below two functions not mine, from https://compvisionlab.wordpress.com/2014/01/01/c-code-for-reading-mnist-data-set/
+// NOTE: Below three functions not mine, from https://compvisionlab.wordpress.com/2014/01/01/c-code-for-reading-mnist-data-set/
 int ReverseInt (int i)
 {
     unsigned char ch1, ch2, ch3, ch4;
@@ -96,20 +96,20 @@ unsigned char* read_mnist_labels(std::string full_path, int number_of_labels) {
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
   :padding(pad), stride_len(stride)
 {
-  pad*=2;
-  input = new Eigen::MatrixXf (x+pad,y+pad);
-  for (int i = 0; i < (x+pad)*(y+pad); i++) {
-    (*input)((int)i / (y+pad),i%(y+pad)) = 0;
-  }
-  kernel = new Eigen::MatrixXf (kern_x, kern_y);
-  for (int i = 0; i < kern_x*kern_y; i++) {
-    (*kernel)((int)i / kern_y,i%kern_y) = (float) rand() / RAND_MAX;
-  }
-  output = new Eigen::MatrixXf ((x-kern_x+1+pad/stride_len), (y-kern_y+1+pad/stride_len));
-  for (int i = 0; i < (x-kern_y+1+pad/stride_len)*(y-kern_x+1+pad/stride_len); i++) {
-    (*output)((int)i / (y-kern_y+1+pad/stride_len),i%(y-kern_y+1+pad/stride_len)) = 0;
-  }
-  bias = 0;
+    pad*=2;
+    input = new Eigen::MatrixXf (x+pad,y+pad);
+    for (int i = 0; i < (x+pad)*(y+pad); i++) {
+        (*input)((int)i / (y+pad),i%(y+pad)) = 0;
+    }
+    kernel = new Eigen::MatrixXf (kern_x, kern_y);
+    for (int i = 0; i < kern_x*kern_y; i++) {
+        (*kernel)((int)i / kern_y,i%kern_y) = (float) rand() / RAND_MAX;
+    }
+    output = new Eigen::MatrixXf ((x-kern_x+1+pad/stride_len), (y-kern_y+1+pad/stride_len));
+    for (int i = 0; i < (x-kern_y+1+pad/stride_len)*(y-kern_x+1+pad/stride_len); i++) {
+        (*output)((int)i / (y-kern_y+1+pad/stride_len),i%(y-kern_y+1+pad/stride_len)) = 0;
+    }
+    bias = 0;
 };
 
 void ConvLayer::convolute()
@@ -238,81 +238,83 @@ void ConvNet::list_net()
 
 void ConvNet::backpropagate()
 {
-std::vector<Eigen::MatrixXf> gradients;
-  std::vector<Eigen::MatrixXf> deltas;
-  Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-  for (int i = 0; i < error.rows(); i++) {
-    for (int j = 0; j < error.cols(); j++) {
-      float truth;
-      if (j==(*labels)(i,0)) truth = 1;
-      else truth = 0;
-      error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-      checknan(error(i,j), "gradient of final layer");
-    }
-  }
-  gradients.push_back(error);
-  deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-  int counter = 1;
-  for (int i = length-2; i >= 1; i--) {
-    gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-    deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
-    counter++;
-  }
-  for (int i = 0; i < length-1; i++) {
-    update(deltas, i);
-    if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
-    else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-    *layers[length-1-i].bias -= bias_lr * gradients[i];
-    if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
-      float sum = 0;
-      for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
-        for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
-          if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
-            // Choice of using index i+1 here is questionable. TODO: REVIEW
-            sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
-          }
+    std::vector<Eigen::MatrixXf> gradients;
+    std::vector<Eigen::MatrixXf> deltas;
+    Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
+    for (int i = 0; i < error.rows(); i++) {
+        for (int j = 0; j < error.cols(); j++) {
+            float truth;
+            if (j==(*labels)(i,0)) truth = 1;
+            else truth = 0;
+            error(i,j) = (*layers[length-1].contents)(i,j) - truth;
+            checknan(error(i,j), "gradient of final layer");
         }
-      }
-      layers[length-2-i].alpha += learning_rate * sum;
-      float a = layers[length-2-i].alpha;
-      layers[length-2-i].activation = [a](float x) -> float
-      {
-        if (x > 0) return x;
-        else return a * x;
-      };
-      layers[length-2-i].activation_deriv = [a](float x) -> float
-      {
-        if (x > 0) return 1;
-        else return a;
-      };
     }
-  }
-  Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
-  gradients[gradients.size()-1] = reshaped;
-  std::vector<Eigen::MatrixXf> conv_deltas;
-  conv_deltas.emplace_back(conv_layers[conv_layers.size()-1].input->rows() - gradients[length-1].rows()+1, conv_layers[conv_layers.size()-1].input->cols() - gradients[length-1].cols()+1);
-  for (int i = 0; i < conv_deltas[0].cols(); i+=conv_layers[conv_layers.size()-1].stride_len) {
-    for (int j = 0; j < conv_deltas[0].rows(); j+=conv_layers[conv_layers.size()-1].stride_len) {
-      // TODO: Investigate legitimacy of tranpose | -t :quality:
-      conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols())).transpose()).sum();
+    gradients.push_back(error);
+    deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
+    int counter = 1;
+    for (int i = length-2; i >= 1; i--) {
+        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
+        deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
+        counter++;
     }
-  }
-  std::cout << *conv_layers[conv_layers.size()-1].kernel << "\n\n" << conv_deltas[conv_deltas.size()-1];
-  *conv_layers[conv_layers.size()-1].kernel -= conv_deltas[0];
-  conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
-  counter = 1;
-  std::cout << "?\n";
-  for (int i = conv_layers.size()-2; i > 0; i--) {
-    conv_deltas.emplace_back(conv_layers[i].input->rows() - conv_deltas[counter-1].rows()+1 ,conv_layers[i].input->cols() - conv_deltas[counter-1].cols()+1);
-    for (int j = 0; j < conv_deltas[counter].cols(); j+=conv_layers[i].stride_len) {
-      for (int k = 0; k < conv_deltas[counter].rows(); k+=conv_layers[i].stride_len) {
-        conv_deltas[i](k,j) -= (conv_deltas[counter-1] * (conv_layers[i].input->block(j, i, conv_deltas[counter-1].rows(), conv_deltas[counter-1].cols()))).sum();
-      }
+    for (int i = 0; i < length-1; i++) {
+        update(deltas, i);
+        if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
+        else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
+        *layers[length-1-i].bias -= bias_lr * gradients[i];
+        if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
+            float sum = 0;
+            for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
+                for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
+                    if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
+                        // Choice of using index i+1 here is questionable. TODO: REVIEW
+                        sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
+                    }
+                }
+            }
+            layers[length-2-i].alpha += learning_rate * sum;
+            float a = layers[length-2-i].alpha;
+            layers[length-2-i].activation = [a](float x) -> float
+            {
+                if (x > 0) return x;
+                else return a * x;
+            };
+            layers[length-2-i].activation_deriv = [a](float x) -> float
+            {
+                if (x > 0) return 1;
+                else return a;
+            };
+        }
     }
-    *conv_layers[i].kernel -= conv_deltas[counter];
+    std::cout << conv_layers[conv_layers.size()-1].output->rows() << "\n";
+    Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(), conv_layers[conv_layers.size()-1].output->rows(),conv_layers[conv_layers.size()-1].output->cols());
+    gradients[gradients.size()-1] = reshaped;
+    std::vector<Eigen::MatrixXf> conv_deltas;
+    std::cout << conv_layers[conv_layers.size()-1].input->rows() << " " << 15 - gradients[length-1].rows()+1 << "\n\n" << 15 - gradients[length-1].cols()+1 << "\n";
+    conv_deltas.emplace_back(15 - gradients[length-1].rows()+1, 15 - gradients[length-1].cols()+1);
+    for (int i = 0; i < conv_deltas[0].cols(); i+=conv_layers[conv_layers.size()-1].stride_len) {
+        for (int j = 0; j < conv_deltas[0].rows(); j+=conv_layers[conv_layers.size()-1].stride_len) {
+            // TODO: Investigate legitimacy of transpose | -t :quality:
+            conv_deltas[0](j,i) = (gradients[length-1] * (conv_layers[conv_layers.size()-1].input->block(j, i, gradients[length-1].rows(), gradients[length-1].cols())).transpose()).sum();
+        }
+    }
+    std::cout << *conv_layers[conv_layers.size()-1].kernel << "\n\n" << conv_deltas[0];
+    *conv_layers[conv_layers.size()-1].kernel -= conv_deltas[0];
     conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
-    counter++;
-  }
+    counter = 1;
+    std::cout << "?\n";
+    for (int i = conv_layers.size()-2; i > 0; i--) {
+        conv_deltas.emplace_back(conv_layers[i].input->rows() - conv_deltas[counter-1].rows()+1 ,conv_layers[i].input->cols() - conv_deltas[counter-1].cols()+1);
+        for (int j = 0; j < conv_deltas[counter].cols(); j+=conv_layers[i].stride_len) {
+            for (int k = 0; k < conv_deltas[counter].rows(); k+=conv_layers[i].stride_len) {
+                conv_deltas[i](k,j) -= (conv_deltas[counter-1] * (conv_layers[i].input->block(j, i, conv_deltas[counter-1].rows(), conv_deltas[counter-1].cols()))).sum();
+            }
+        }
+        *conv_layers[i].kernel -= conv_deltas[counter];
+        conv_layers[conv_layers.size()-1].bias -= gradients[gradients.size()-1].sum();
+        counter++;
+    }
 }
 
 void ConvNet::train()
@@ -325,13 +327,10 @@ void ConvNet::train()
     }
     process();
     feedforward();
-    // if (batches == 0) list_net();
     backpropagate();
     cost_sum += cost();
     acc_sum += accuracy();
     batches++;
-    //    if (batches == 1) (1);
-    //    if (batches > 15) exit(1);
   }
   epoch_acc = 1.0/(100) * acc_sum;
   epoch_cost = 1.0/(100) * cost_sum;
@@ -348,6 +347,7 @@ int main()
   net.add_conv_layer(28,28,1,9,9,0);
   //  net.add_pool_layer(20,20,1,6,6,0);
   net.add_conv_layer(15,15,1,6,6,0);
+  std::cout << net.conv_layers[net.conv_layers.size()-1].output->rows() << "\n";
   //net.add_pool_layer(10,10,1,2,2,0);
   net.add_layer(400, "sigmoid", sigmoid, sigmoid_deriv);
   net.add_layer(5, "lecun_tanh", lecun_tanh, lecun_tanh_deriv);
