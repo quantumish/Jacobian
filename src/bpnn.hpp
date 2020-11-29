@@ -37,9 +37,7 @@ public:
     Eigen::MatrixXf* dZ;
     std::function<float(float)> activation;
     std::function<float(float)> activation_deriv;
-    char activation_str[1024];
-    // TODO: Fix PReLU layer inheritance | -p C -m PReLU layers shouldn't be Layers but inherit from them!
-    float alpha;
+    char activation_str[32];
   
     Layer(int rows, int columns, float a=0);
     Layer(float* vals, int rows, int columns);

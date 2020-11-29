@@ -20,12 +20,6 @@
 #define VAL_LZ4_PATH "./test.lz4"
 #define TRAIN_LZ4_PATH "./train.lz4"
 
-#if (AVX)
-#define cwise_product(a,b) avx_product(a, b)
-#else
-#define cwise_product(a,b) (a).cwiseProduct(b)
-#endif
-
 Layer::Layer(int batch_sz, int nodes, float a)
     :alpha(a)
 {
@@ -263,7 +257,7 @@ float Network::cost(Eigen::MatrixXf labels, Eigen::MatrixXf out)
         checknan(tempsum, "total summation inside cost calculation");
     }
     for (int i = 0; i < layers.size()-1; i++) {
-        if (reg_type == L2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
+        if (reg_type == L2) reg += layers[i].weights->cwiseProduct(*layers[i].weights).sum();
         else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
     return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
@@ -319,7 +313,7 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         //grad_calc(gradients, counter, i)]
-        gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), dZ[i]));
+        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(dZ[i]));
         deltas.push_back(virt_layers[i-1].transpose() * gradients[counter]);
         counter++;
     }
