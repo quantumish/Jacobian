@@ -141,10 +141,4 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m);
 #define VAL_LZ4_PATH "./test.lz4"
 #define TRAIN_LZ4_PATH "./train.lz4"
 
-#if (AVX)
-#define cwise_product(a,b) avx_product(a, b)
-#else
-#define cwise_product(a,b) (a).cwiseProduct(b)
-#endif
-
 #endif /* MODULE_H */

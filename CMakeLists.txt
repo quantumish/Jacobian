@@ -20,11 +20,7 @@ elseif (TRADEOFFS)
 elseif (RECKLESS)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -O3 -mavx -msse2 -msse3 -march=native -mfpmath=sse -DMKL_ILP64 -fno-pic -ffast-math -D NDEBUG -ffast-math -D RECKLESS")
 endif()
-  
-if (AVX)
-  set(CMAKE_CXX_COMPILER "icpc")
-  set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -D AVX")
-endif()
+
 
 set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -w -llz4")
 
