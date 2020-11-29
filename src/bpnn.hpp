@@ -89,7 +89,7 @@ public:
     void list_net();
     float cost();
     float accuracy();
-    void backpropagate();
+    Eigen::MatrixXf backpropagate();
     int next_batch(int fd);
     float validate(char* path);
     void train();

@@ -245,32 +245,11 @@ void ConvNet::list_net()
 
 void ConvNet::backpropagate()
 {
+    list_net();
+    char a;
+    std::cin >> a;
     std::vector<Eigen::MatrixXf> gradients;
-    std::vector<Eigen::MatrixXf> deltas;
-    Eigen::MatrixXf error (layers[length-1].contents->rows(), layers[length-1].contents->cols());
-    for (int i = 0; i < error.rows(); i++) {
-        for (int j = 0; j < error.cols(); j++) {
-            float truth;
-            if (j==(*labels)(i,0)) truth = 1;
-            else truth = 0;
-            error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-            checknan(error(i,j), "gradient of final layer");
-        }
-    }
-    gradients.push_back(error);
-    deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
-    int counter = 1;
-    for (int i = length-2; i >= 1; i--) {
-        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
-        deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
-        counter++;
-    }
-    for (int i = 0; i < length-1; i++) {
-        update(deltas, i);
-        if (reg_type == 2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
-        else if (reg_type == 1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-        *layers[length-1-i].bias -= bias_lr * gradients[i];
-    }
+    gradients.push_back(Network::backpropagate());    
     Eigen::Map<Eigen::MatrixXf> reshaped(gradients[gradients.size()-1].data(),
                            conv_layers.back().output->rows(),
                            conv_layers.back().output->cols());
@@ -300,6 +279,8 @@ void ConvNet::backpropagate()
         }
         gradients.push_back(final_grad.cwiseProduct(*conv_layers[layer].dZ));
     }
+    list_net();
+    assert(2<1);
 }
 
 void ConvNet::train()
