@@ -92,7 +92,6 @@ The five main configurations correspond to differing levels of optimization.
 One you've selected a main optimization level, extra configurations can be passed in.
 
 - `-DDEBUG=ON` enables debugging features in the compiler (and shows warnings).
-- `-DAVX=ON` enables explicit AVX function calls within the code. **Warning: this will not work without the Intel C++ Compiler!**
 
 A sample build process would look like this: 
 

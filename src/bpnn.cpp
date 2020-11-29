@@ -150,10 +150,6 @@ void Network::softmax()
         Eigen::MatrixXf::Index maxRow, maxCol;
         float max = m.maxCoeff(&maxRow, &maxCol);
         m = (m.array() - max).matrix();
-#if (AVX)
-        float sum = avx_exp(m).sum();
-        m = avx_cdiv(avx_exp(m), sum);
-#else
         float sum = 0;
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
@@ -163,7 +159,6 @@ void Network::softmax()
             m(0,j) = exp(m(0,j))/sum;
             checknan(m(0,j), "output of Softmax operation");
         }
-#endif
         layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
     }
 }
@@ -220,7 +215,7 @@ float Network::cost()
         checknan(tempsum, "total summation inside cost calculation");
     }
     for (int i = 0; i < layers.size()-1; i++) {
-        if (reg_type == L2) reg += cwise_product(*layers[i].weights,*layers[i].weights).sum();
+        if (reg_type == L2) reg += layers[i].weights->cwiseProduct(*layers[i].weights).sum();
         else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
     return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
@@ -276,7 +271,7 @@ Eigen::MatrixXf Network::backpropagate()
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         //grad_calc(gradients, counter, i)
-        gradients.push_back(cwise_product(gradients[counter-1] * layers[i].weights->transpose(), *layers[i].dZ));
+        gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
         deltas.push_back(layers[i-1].contents->transpose() * gradients[counter]);
         counter++;
     }
