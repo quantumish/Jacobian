@@ -275,22 +275,24 @@ void ConvNet::backpropagate()
         std::cout << conv_layers[layer].input->cols() << " " << gradients.back().cols() << "\n";
         for (int i = 0; i < conv_layers[layer].input->rows() - gradients.back().rows() + 1; i++) {
             for (int j = 0; j < conv_layers[layer].input->cols() - gradients.back().cols() + 1; j++) {
+                std::cout << i << " " << j << "\n";
                 conv_deltas[conv_deltas.size()-1](i, j) = (gradients.back() * conv_layers[layer].input->block(i, j, gradients.back().rows(), gradients.back().cols())).sum();
             }
         }
         *conv_layers[layer].kernel -= conv_deltas.back();
+
         Eigen::MatrixXf flipped_kernel =
-            Eigen::MatrixXf::Zero(conv_layers[layer].kernel->rows() + 2, conv_layers[layer].kernel->cols() + 2);
-        flipped_kernel.block(1, 1, conv_layers[layer].kernel->rows(), conv_layers[layer].kernel->cols()) =
-            conv_layers[layer].kernel->transpose().colwise().reverse().transpose().colwise().reverse();
-        std::cout << flipped_kernel.rows() - gradients.back().rows() + 1 << "\n";
-        Eigen::MatrixXf grad (flipped_kernel.rows() - gradients.back().rows() + 1, flipped_kernel.cols() - gradients.back().cols() + 1);
-        for (int i = 0; i < flipped_kernel.rows() - gradients.back().rows() + 1; i++) {
-            for (int j = 0; j < flipped_kernel.cols() - gradients.back().cols() + 1; j++) {
-                grad(i, j) = (gradients.back() * flipped_kernel.block(i, j, gradients.back().rows(), gradients.back().cols())).sum();
+            Eigen::MatrixXf::Zero(conv_layers[layer].kernel->rows(), conv_layers[layer].kernel->cols());
+        flipped_kernel = conv_layers[layer].kernel->transpose().colwise().reverse().transpose().colwise().reverse();
+        Eigen::MatrixXf padded_grad = Eigen::MatrixXf::Zero(gradients.back().rows() + 2, gradients.back().cols() + 2);
+        padded_grad.block(1, 1, gradients.back().rows(), gradients.back().cols()) = gradients.back();
+        Eigen::MatrixXf final_grad (padded_grad.rows() - flipped_kernel.rows() + 1, padded_grad.cols() - flipped_kernel.cols() + 1);
+        for (int i = 0; i < padded_grad.rows() - flipped_kernel.rows() + 1; i++) {
+            for (int j = 0; j < padded_grad.cols() - gradients.back().cols() + 1; j++) {
+                final_grad(i, j) = (flipped_kernel * padded_grad.block(i, j, flipped_kernel.rows(), flipped_kernel.cols())).sum();
             }
         }
-        gradients.push_back(grad);
+        gradients.push_back(final_grad);
     }
     assert(2<1);
 }
