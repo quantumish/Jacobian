@@ -12,20 +12,6 @@
 #include <ctime>
 #include <random>
 
-#define SHUFFLED_PATH "./shuffled.txt"
-#define VAL_PATH "./test.txt"
-#define TRAIN_PATH "./train.txt"
-#define VAL_BIN_PATH "./test.bin"
-#define TRAIN_BIN_PATH "./train.bin"
-#define VAL_LZ4_PATH "./test.lz4"
-#define TRAIN_LZ4_PATH "./train.lz4"
-
-#if (AVX)
-#define cwise_product(a,b) avx_product(a, b)
-#else
-#define cwise_product(a,b) (a).cwiseProduct(b)
-#endif
-
 Layer::Layer(int batch_sz, int nodes, float a)
     :alpha(a)
 {
