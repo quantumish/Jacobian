@@ -303,7 +303,30 @@ Eigen::MatrixXf Network::backpropagate()
         update(deltas, i);
         if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-        *layers[length-1-i].bias -= bias_lr * gradients[i];        
+        *layers[length-1-i].bias -= bias_lr * gradients[i];
+        if (strcmp(layers[length-2-i].activation_str, "prelu") == 0) {
+            float sum = 0;
+            for (int j = 0; j < layers[length-2-i].contents->rows(); j++) {
+                for (int k = 0; k < layers[length-2-i].contents->cols(); k++) {
+                    if ((*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha <= 0) {
+                        //  TODO: Review questionable code | -t quality -m Choice of using index i+1 here is sketchy.
+                        sum += gradients[i+1](j,k) * (*layers[length-2-i].contents)(j,k)/layers[length-2-i].alpha;
+                    }
+                }
+            }
+            layers[length-2-i].alpha += learning_rate * sum;
+            float a = layers[length-2-i].alpha;
+            layers[length-2-i].activation = [a](float x) -> float
+            {
+                if (x > 0) return x;
+                else return a * x;
+            };
+            layers[length-2-i].activation_deriv = [a](float x) -> float
+            {
+                if (x > 0) return 1;
+                else return a;
+            };
+        }
     }
     return gradients.back();
 }
