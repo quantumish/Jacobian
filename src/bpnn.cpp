@@ -119,24 +119,6 @@ void Network::init_decay(char* type, ...)
 
 #include "optimizers.cpp"
 
-void Network::add_prelu_layer(int nodes, float a)
-{
-    Expects(nodes > 0);
-    length++;
-    layers.emplace_back(batch_size, nodes, a);
-    strcpy(layers[length-1].activation_str, "prelu");
-    layers[length-1].activation = [a](float x) -> float
-    {
-        if (x > 0) return x;
-        else return a * x;
-    };
-    layers[length-1].activation_deriv = [a](float x) -> float
-    {
-        if (x > 0) return 1;
-        else return a;
-    };
-}
-
 void Network::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     Expects(nodes > 0);
@@ -215,7 +197,6 @@ void Network::list_net()
     std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
     for (int i = 1; i < length-1; i++) {
         std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str;
-        if (strcmp(layers[i].activation_str, "prelu") == 0) std::cout << "\x1B[0;37m\nAlpha (a) value: " << layers[i].alpha;
         std::cout << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
     }
     std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
