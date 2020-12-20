@@ -5,11 +5,7 @@ set(CMAKE_CXX_COMPILER "g++")
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-if (DEBUG)
-  set(COMPILE_FLAGS, "-Wall")
-else()
-  set(COMPILE_FLAGS, "-w")
-endif()
+set(COMPILE_FLAGS "-Wmost -Weffc++ -g")
   
 if (FAST)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -O3")
@@ -34,3 +30,10 @@ if (CXX)
   project(jacobian_cli)
   add_executable(jacobian_cli example.cpp ./src/bpnn.cpp ./src/utils.cpp)
 endif (CXX)
+
+add_custom_target(check)
+add_custom_command(
+  TARGET check
+  COMMAND cpplint --recursive --filter=-whitespace/braces,-legal/copyright --exclude=".*" --exclude=CMakeFiles .
+  COMMAND cppcheck -i.ccls-cache -iCmakeFiles .
+)
