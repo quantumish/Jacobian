@@ -94,7 +94,7 @@ unsigned char* read_mnist_labels(std::string full_path, int number_of_labels) {
 }
 
 ConvLayer::ConvLayer(int x, int y, int stride, int kern_x, int kern_y, int pad, std::function<float(float)> activ, std::function<float(float)> activ_deriv)
-    :padding(pad), stride_len(stride), activation(activ), activation_deriv(activ_deriv)
+    :stride_len(stride), padding(pad), activation(activ), activation_deriv(activ_deriv)
 {
     pad*=2;
     input = new Eigen::MatrixXf (x+pad,y+pad);
@@ -137,7 +137,7 @@ void ConvLayer::set_input(Eigen::MatrixXf* matrix)
 
 // Will eventually be different from ConvLayer
 PoolingLayer::PoolingLayer(int x, int y, int stride, int kern_x, int kern_y, int pad)
-  :padding(pad), stride_len(stride)
+    :stride_len(stride), padding(pad)
 {
     input = new Eigen::MatrixXf (x+pad,y+pad);
     for (int i = 0; i < (x+pad)*(y+pad); i++) {
@@ -170,7 +170,7 @@ void PoolingLayer::pool()
     }
 }
 
-ConvNet::ConvNet(char* path, float learn_rate, float bias_rate, Regularization reg, float l, float ratio)
+ConvNet::ConvNet(const char* path, float learn_rate, float bias_rate, Regularization reg, float l, float ratio)
     :Network(path, 1, learn_rate, bias_rate, reg, l, ratio), preprocess_length{0}
 {
     ReadMNIST(10000,784,data);

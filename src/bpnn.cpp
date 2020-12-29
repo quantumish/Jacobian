@@ -12,8 +12,7 @@
 #include <ctime>
 #include <random>
 
-Layer::Layer(int batch_sz, int nodes, float a)
-    :alpha(a)
+Layer::Layer(int batch_sz, int nodes)
 {
     contents = new Eigen::MatrixXf (batch_sz, nodes);
     dZ = new Eigen::MatrixXf (batch_sz, nodes);
@@ -26,20 +25,6 @@ Layer::Layer(int batch_sz, int nodes, float a)
     for (int i = 0; i < nodes; i++) {
         for (int j = 0; j < batch_sz; j++) (*bias)(j, i) = 0;
     }
-}
-
-void Layer::operator=(const Layer& that)
-{
-    activation = that.activation;
-    activation_deriv = that.activation_deriv;
-    alpha = that.alpha;
-    strcpy(activation_str, that.activation_str);
-    *contents = *that.contents;
-    *v = *that.v;
-    *m = *that.m;
-    *weights = *that.weights;
-    *bias = *that.bias;
-    *dZ = *that.dZ;
 }
 
 void Layer::init_weights(Layer next)
@@ -59,8 +44,8 @@ void Layer::init_weights(Layer next)
     }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
-    :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
+Network::Network(const char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
+    :batch_size(batch_sz), learning_rate(learn_rate), bias_lr(bias_rate), reg_type(regularization), lambda(l), early_stop(early_exit), threshold(cutoff)
 {
     Expects(batch_size > 0 && learning_rate > 0 &&
             bias_rate > 0 && l >= 0 && ratio >= 0 && ratio <= 1);
@@ -85,41 +70,7 @@ Network::~Network()
     close(val_data);
 }
 
-void Network::init_decay(char* type, ...)
-{
-    va_list args;
-    va_start(args, type);
-    if (strcmp(type, "step") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 * learning_rate/k;
-        };
-    } else if (strcmp(type, "exp") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 * exp(-k * epochs);
-        };
-    } else if (strcmp(type, "frac") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 / (1+(k * epochs));
-        };
-    } else if (strcmp(type, "linear") == 0) {
-        int max_ep = va_arg(args, double);
-        decay = [this, max_ep]() -> void {
-            learning_rate = 1 - epochs/max_ep;
-        };
-    }
-    else std::cout << "Invalid decay function." << "\n";
-    va_end(args);
-}
-
-#include "optimizers.cpp"
-
-void Network::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
+void Network::add_layer(int nodes, const char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     Expects(nodes > 0);
     length++;
@@ -152,12 +103,10 @@ void Network::softmax()
         m = (m.array() - max).matrix();
         float sum = 0;
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
-            checknan(m(0,j), "input of Softmax operation");
             sum += exp(m(0,j));
         }
         for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
-            checknan(m(0,j), "output of Softmax operation");
         }
         layers[length-1].contents->block(i,0,1,layers[length-1].contents->cols()) = m;
     }
@@ -209,12 +158,10 @@ float Network::cost()
             else truth = 0;
             if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
             tempsum += truth * log((*layers[length-1].contents)(i,j));
-            checknan(tempsum, "summation for row inside cost calculation");
         }
         sum-=tempsum;
-        checknan(tempsum, "total summation inside cost calculation");
     }
-    for (int i = 0; i < layers.size()-1; i++) {
+    for (unsigned long i = 0; i < layers.size()-1; i++) {
         if (reg_type == L2) reg += layers[i].weights->cwiseProduct(*layers[i].weights).sum();
         else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
@@ -261,7 +208,6 @@ Eigen::MatrixXf Network::backpropagate()
             if (j==(*labels)(i,0)) truth = 1;
             else truth = 0;
             error(i,j) = (*layers[length-1].contents)(i,j) - truth;
-            checknan(error(i,j), "gradient of final layer");
         }
     }
     gradients.push_back(error);
@@ -286,9 +232,9 @@ Eigen::MatrixXf Network::backpropagate()
 
 #include "data.cpp"
 
-float Network::validate(char* path)
+void Network::validate(const char* path)
 {
-    if (val_instances == 0) return 0.0;
+    if (val_instances == 0) return;
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
@@ -301,7 +247,6 @@ float Network::validate(char* path)
     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
-    return 0;
 }
 
 void Network::train()

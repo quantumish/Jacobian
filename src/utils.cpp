@@ -16,8 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <Eigen/Dense>
-#include <Eigen/MatrixFunctions>
+#include <eigen3/Eigen/Dense>
 
 // A bunch of hardcoded activation functions. Avoids much of the slowness of custom functions.
 // Although the std::function makes it not the fastest way, the functionality is worth it.

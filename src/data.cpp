@@ -12,7 +12,7 @@ inline float scan(char **p)
     return n*neg;
 }
 
-void prep(char* rname, char* wname)
+void prep(const char* rname, const char* wname)
 {
     FILE* wptr = fopen(wname, "wb");
     FILE* rptr = fopen(rname, "rb");
@@ -31,7 +31,7 @@ void prep(char* rname, char* wname)
     fclose(rptr);
 }
 
-int Network::next_batch(int fd)
+void Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
@@ -39,7 +39,7 @@ int Network::next_batch(int fd)
         if (!bytes_read) break;
         p = buf;
         while(p < buf+BUFFER_SIZE) {
-            if (lines >= 10) return 0;
+            if (lines >= 10) return;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
@@ -51,7 +51,7 @@ int Network::next_batch(int fd)
     }
     if (p < buf+BUFFER_SIZE) {
         while(p < buf+BUFFER_SIZE) {
-            if (lines >= 10) return 0;
+            if (lines >= 10) return;
             for (int i=0; i<layers[0].contents->cols(); ++i) {
                 (*layers[0].contents)(lines,i) = *(reinterpret_cast<float*>(p));
                 p += sizeof(float);
@@ -63,7 +63,7 @@ int Network::next_batch(int fd)
     }
 }
 
-int prep_file(char* path, char* out_path)
+int prep_file(const char* path, const char* out_path)
 {
     FILE* rptr = fopen(path, "r");
     if (!rptr) throw std::runtime_error{"prep_file() could not open file for shuffle/read."};
@@ -88,7 +88,7 @@ int prep_file(char* path, char* out_path)
     return count;
 }
 
-int split_file(char* path, int lines, float ratio)
+int split_file(const char* path, int lines, float ratio)
 {
     FILE* src = fopen(path, "r");
     if (!src) throw std::runtime_error{"split_file() could not open file to split."};

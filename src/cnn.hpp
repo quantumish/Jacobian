@@ -44,7 +44,7 @@ public:
     std::vector<ConvLayer> conv_layers;
     std::vector<PoolingLayer> pool_layers;
     
-    ConvNet(char* path, float learn_rate, float bias_rate, Regularization reg, float l, float ratio);
+    ConvNet(const char* path, float learn_rate, float bias_rate, Regularization reg, float l, float ratio);
     void list_net();
     void process(); // Runs the convolutional and pooling layers.
     void next_batch();
