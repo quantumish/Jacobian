@@ -11,6 +11,7 @@
 #include <chrono>
 #include <ctime>
 #include <random>
+#include <utility>
 
 #define SHUFFLED_PATH "./shuffled.txt"
 #define VAL_PATH "./test.txt"
@@ -194,7 +195,6 @@ Eigen::MatrixXf Network::softmax(Eigen::MatrixXf matrix)
     return matrix;
 }
 
-#include <utility>
 std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> Network::virtual_feedforward(Eigen::MatrixXf init)
 {
     Eigen::MatrixXf out (layers[length-1].contents->rows(), layers[length-1].contents->cols());
@@ -353,6 +353,8 @@ void Network::run(std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> batch
     }
 }
 
+#ifdef __APPLE__
+
 typedef struct cpu_set {
   uint32_t    count;
 } cpu_set_t;
@@ -385,6 +387,8 @@ int pthread_setaffinity_np(pthread_t thread, size_t cpu_size,
   return 0;
 }
 
+#endif
+
 void Network::train()
 {
     float cost_sum = 0;
@@ -405,14 +409,14 @@ void Network::train()
     std::vector<std::thread> threads;
     for (int i = 0; i < cores; i++) {
         threads.emplace_back(&Network::run, this, bunches[i]);
-        // cpu_set_t cpuset;
-        // CPU_ZERO(&cpuset);
-        // CPU_SET(i, &cpuset);
-        // int rc = pthread_setaffinity_np(threads[i].native_handle(),
-        //                                 sizeof(cpu_set_t), &cpuset);
-        // if (rc != 0) {
-        //     std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
-        // }
+        cpu_set_t cpuset;
+        CPU_ZERO(&cpuset);
+        CPU_SET(i, &cpuset);
+        int rc = pthread_setaffinity_np(threads[i].native_handle(),
+                                        sizeof(cpu_set_t), &cpuset);
+        if (rc != 0) {
+            std::cerr << "Error calling pthread_setaffinity_np: " << rc << "\n";
+        }
     }
     for (int i = 0; i < cores; i++) threads[i].join();
     //cost_sum += cost();

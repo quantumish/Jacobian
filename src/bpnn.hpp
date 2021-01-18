@@ -17,9 +17,11 @@
 #include <gsl/gsl_assert>
 #include <thread>
 #include <pthread.h>
+#ifdef __APPLE__
 #include <mach/mach_init.h>
 #include <mach/thread_policy.h>
 #include <mach/thread_act.h>
+#endif 
 #define _GNU_SOURCE
 #include <sched.h>
 
