@@ -1,7 +1,7 @@
 #ifndef BPNN_H
 #define BPNN_H
 
-#include <Eigen/Dense>
+#include <eigen3/Eigen/Dense>
 
 #include <vector>
 #include <iostream>
@@ -40,17 +40,18 @@ public:
     std::function<float(float)> activation;
     std::function<float(float)> activation_deriv;
     char activation_str[32];
-  
-    Layer(int rows, int columns, float a=0);
+    
+    Layer(int rows, int columns);
     Layer(float* vals, int rows, int columns);
     void operator=(const Layer& that);
     void init_weights(Layer next);
 };
 
 class Network {
-    int instances;
     char buf[BUFFER_SIZE];
     char* p;
+protected:
+    int instances;
     float epoch_acc;
     float epoch_cost;
     float val_acc;
@@ -65,25 +66,24 @@ public:
     int test_instances;
     std::vector<Layer> layers;
     int length = 0;
+    int batch_size;
     float learning_rate;
     float bias_lr;
+    Regularization reg_type;
     float lambda;
     bool early_stop;
     float threshold;
-    Regularization reg_type;
-    int batch_size;
     bool silenced = false;
     int epochs = 0;
     int batches = 0;
     
-    Network(char* path, int batch_sz, float learn_rate,
+    Network(const char* path, int batch_sz, float learn_rate,
             float bias_rate, Regularization regularization,
             float l, float ratio, bool early_exit=true, float cutoff=0);
     ~Network();
-    void add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
-    void add_prelu_layer(int nodes, float a);
-    void init_decay(char* type, ...);
-    void init_optimizer(char* name, ...);
+    void add_layer(int nodes, const char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
+    void init_decay(const char* type, ...);
+    void init_optimizer(const char* name, ...);
     void initialize();
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
     std::pair<std::vector<Eigen::MatrixXf>, std::vector<Eigen::MatrixXf>> virtual_feedforward(Eigen::MatrixXf init);
@@ -102,26 +102,12 @@ public:
     float get_val_cost() {return val_cost;}
 };
 
-int prep_file(char* path, char* out_path);
-int split_file(char* path, int lines, float ratio);
+int prep_file(const char* path, const char* out_path);
+int split_file(const char* path, int lines, float ratio);
 
-struct ValueError : public std::exception
-{
-    const char* message;
-    const char* location;
-    ValueError(const char* msg, const char* loc)
-        :message{msg}, location{loc}
-    {
-    }
-    const char* what() const throw () {
-        char* error;
-        sprintf(error, "%s (thrown in %s).", message, location);
-        const char* error_message = error;
-        return error_message;
-    }
-};
-void prep(char* rname, char* wname);
-void compress(char* rname, char* wname);
+void prep(const char* rname, const char* wname);
+void compress(const char* rname, const char* wname);
+Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m);
 
 #define MAXLINE 1024
 
@@ -134,5 +120,13 @@ void compress(char* rname, char* wname);
 #define Expects(cond) GSL_ASSUME(cond);
 #define Ensures(cond) GSL_ASSUME(cond);
 #endif
+
+#define SHUFFLED_PATH "./shuffled.txt"
+#define VAL_PATH "./test.txt"
+#define TRAIN_PATH "./train.txt"
+#define VAL_BIN_PATH "./test.bin"
+#define TRAIN_BIN_PATH "./train.bin"
+#define VAL_LZ4_PATH "./test.lz4"
+#define TRAIN_LZ4_PATH "./train.lz4"
 
 #endif /* MODULE_H */

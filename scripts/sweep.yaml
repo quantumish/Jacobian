@@ -1,11 +1,3 @@
-#
-#  sweep.yaml
-#  Jacobian
-#
-#  Created by David Freifeld
-#  Copyright © 2020 David Freifeld. All rights reserved.
-#
-
 program: example.py
 method: bayes
 metric:

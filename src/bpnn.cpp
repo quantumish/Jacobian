@@ -21,8 +21,7 @@
 #define VAL_LZ4_PATH "./test.lz4"
 #define TRAIN_LZ4_PATH "./train.lz4"
 
-Layer::Layer(int batch_sz, int nodes, float a)
-    :alpha(a)
+Layer::Layer(int batch_sz, int nodes)
 {
     contents = new Eigen::MatrixXf (batch_sz, nodes);
     dZ = new Eigen::MatrixXf (batch_sz, nodes);
@@ -37,20 +36,6 @@ Layer::Layer(int batch_sz, int nodes, float a)
     }
 }
 
-void Layer::operator=(const Layer& that)
-{
-    activation = that.activation;
-    activation_deriv = that.activation_deriv;
-    alpha = that.alpha;
-    strcpy(activation_str, that.activation_str);
-    *contents = *that.contents;
-    *v = *that.v;
-    *m = *that.m;
-    *weights = *that.weights;
-    *bias = *that.bias;
-    *dZ = *that.dZ;
-}
-
 void Layer::init_weights(Layer next)
 {
     v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
@@ -61,15 +46,15 @@ void Layer::init_weights(Layer next)
     std::normal_distribution<float> d(0,sqrt(1.0/n));
     for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
         std::random_device rd;
-        std::mt19937 gen(rd()); 
+        std::mt19937 gen(rd());
         (*weights)(static_cast<int>(i / nodes), i%nodes) = d(gen);
         (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
         (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
     }
 }
 
-Network::Network(char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
-    :lambda(l), learning_rate(learn_rate), bias_lr(bias_rate), batch_size(batch_sz), reg_type(regularization), early_stop(early_exit), threshold(cutoff)
+Network::Network(const char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
+    :batch_size(batch_sz), learning_rate(learn_rate), bias_lr(bias_rate), reg_type(regularization), lambda(l), early_stop(early_exit), threshold(cutoff)
 {
     Expects(batch_size > 0 && learning_rate > 0 &&
             bias_rate > 0 && l >= 0 && ratio >= 0 && ratio <= 1);
@@ -94,59 +79,7 @@ Network::~Network()
     close(val_data);
 }
 
-void Network::init_decay(char* type, ...)
-{
-    va_list args;
-    va_start(args, type);
-    if (strcmp(type, "step") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 * learning_rate/k;
-        };
-    } else if (strcmp(type, "exp") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 * exp(-k * epochs);
-        };
-    } else if (strcmp(type, "frac") == 0) {
-        float a_0 = va_arg(args, double);
-        float k = va_arg(args, double);
-        decay = [this, a_0, k]() -> void {
-            learning_rate = a_0 / (1+(k * epochs));
-        };
-    } else if (strcmp(type, "linear") == 0) {
-        int max_ep = va_arg(args, double);
-        decay = [this, max_ep]() -> void {
-            learning_rate = 1 - epochs/max_ep;
-        };
-    }
-    else std::cout << "Invalid decay function." << "\n";
-    va_end(args);
-}
-
-#include "optimizers.cpp"
-
-void Network::add_prelu_layer(int nodes, float a)
-{
-    Expects(nodes > 0);
-    length++;
-    layers.emplace_back(batch_size, nodes, a);
-    strcpy(layers[length-1].activation_str, "prelu");
-    layers[length-1].activation = [a](float x) -> float
-    {
-        if (x > 0) return x;
-        else return a * x;
-    };
-    layers[length-1].activation_deriv = [a](float x) -> float
-    {
-        if (x > 0) return 1;
-        else return a;
-    };
-}
-
-void Network::add_layer(int nodes, char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
+void Network::add_layer(int nodes, const char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     Expects(nodes > 0);
     length++;
@@ -176,18 +109,14 @@ Eigen::MatrixXf Network::softmax(Eigen::MatrixXf matrix)
         Eigen::MatrixXf::Index maxRow, maxCol;
         float max = m.maxCoeff(&maxRow, &maxCol);
         m = (m.array() - max).matrix();
-#if (AVX)
-        float sum = avx_exp(m).sum();
-        m = avx_cdiv(avx_exp(m), sum);
-#else
         float sum = 0;
         for (int j = 0; j < matrix.cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
+        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             sum += exp(m(0,j));
         }
         for (int j = 0; j < matrix.cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
-            checknan(m(0,j), "output of Softmax operation");
         }
 #endif
         matrix.block(i,0,1,matrix.cols()) = m;
@@ -233,7 +162,6 @@ void Network::list_net()
     std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
     for (int i = 1; i < length-1; i++) {
         std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str;
-        if (strcmp(layers[i].activation_str, "prelu") == 0) std::cout << "\x1B[0;37m\nAlpha (a) value: " << layers[i].alpha;
         std::cout << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
     }
     std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
@@ -249,14 +177,12 @@ float Network::cost(Eigen::MatrixXf labels, Eigen::MatrixXf out)
             float truth;
             if (j==labels(i,0)) truth = 1;
             else truth = 0;
-            if (out(i,j) == 0) out(i,j) += 0.00001;
-            tempsum += truth * log(out(i,j));
-            checknan(tempsum, "summation for row inside cost calculation");
+            if ((*layers[length-1].contents)(i,j) == 0) (*layers[length-1].contents)(i,j) += 0.00001;
+            tempsum += truth * log((*layers[length-1].contents)(i,j));
         }
         sum-=tempsum;
-        checknan(tempsum, "total summation inside cost calculation");
     }
-    for (int i = 0; i < layers.size()-1; i++) {
+    for(unsigned long i = 0; i < layers.size()-1; i++) {
         if (reg_type == L2) reg += layers[i].weights->cwiseProduct(*layers[i].weights).sum();
         else if (reg_type == L1) reg += (layers[i].weights->array().abs().matrix()).sum();
     }
@@ -311,7 +237,7 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
     int counter = 1;
     for (int i = length-2; i >= 1; i--) {
         // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
-        // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
+        // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).
         //grad_calc(gradients, counter, i)]
         gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(dZ[i]));
         deltas.push_back(virt_layers[i-1].transpose() * gradients[counter]);
@@ -321,15 +247,17 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
         update(deltas, i);
         if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-        *layers[length-1-i].bias -= bias_lr * gradients[i];       
+
+        *layers[length-1-i].bias -= bias_lr * gradients[i];
     }
+    return gradients.back();
 }
 
 #include "data.cpp"
 
-float Network::validate(char* path)
+void Network::validate(const char* path)
 {
-    if (val_instances == 0) return 0.0;
+    if (val_instances == 0) return;
     float costsum = 0;
     float accsum = 0;
     for (int i = 0; i <= val_instances-batch_size; i+=batch_size) {
@@ -342,7 +270,6 @@ float Network::validate(char* path)
     val_cost = 1.0/(static_cast<float>(val_instances/batch_size)) * costsum;
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
-    return 0;
 }
 
 void Network::run(std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> batches)

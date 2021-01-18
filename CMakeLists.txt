@@ -18,10 +18,10 @@ elseif (FASTER)
 elseif (TRADEOFFS)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -O3 -mavx -msse2 -msse3 -march=native -mfpmath=sse -DMKL_ILP64 -fno-pic -ffast-math -ffast-math")
 elseif (RECKLESS)
-  set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -O3 -mavx -msse2 -msse3 -march=native -mfpmath=sse -DMKL_ILP64 -fno-pic -ffast-math -D NDEBUG -ffast-math -D RECKLESS")
+set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -O3 -mavx -msse2 -msse3 -march=native -mfpmath=sse -DMKL_ILP64 -fno-pic -D NDEBUG -ffast-math -D RECKLESS")
 endif()
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -w -llz4")
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -fPIE")
 
 # if (PYTHON)
 #   project(jacobian)

@@ -12,7 +12,7 @@ inline float scan(char **p)
     return n*neg;
 }
 
-void prep(char* rname, char* wname)
+void prep(const char* rname, const char* wname)
 {
     FILE* wptr = fopen(wname, "wb");
     FILE* rptr = fopen(rname, "rb");
@@ -65,7 +65,7 @@ std::pair<Eigen::MatrixXf, Eigen::MatrixXf> Network::next_batch(int fd)
     }
 }
 
-int prep_file(char* path, char* out_path)
+int prep_file(const char* path, const char* out_path)
 {
     FILE* rptr = fopen(path, "r");
     if (!rptr) throw std::runtime_error{"prep_file() could not open file for shuffle/read."};
@@ -90,7 +90,7 @@ int prep_file(char* path, char* out_path)
     return count;
 }
 
-int split_file(char* path, int lines, float ratio)
+int split_file(const char* path, int lines, float ratio)
 {
     FILE* src = fopen(path, "r");
     if (!src) throw std::runtime_error{"split_file() could not open file to split."};

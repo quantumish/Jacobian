@@ -109,8 +109,8 @@ void compress()
             exit(1);
         }
         if (!bytes_read) break;
-        size_t len = LZ4_compress_default(buf, wbuf, BUFFER_SIZE, BUFFER_SIZE);
-        fwrite((void*)wbuf, len, 1, wptr); 
+        int len = LZ4_compress_default(buf, wbuf, BUFFER_SIZE, BUFFER_SIZE);
+        fwrite((void*)wbuf, (size_t)len, 1, wptr); 
     }
     close(fd);
 }
@@ -191,7 +191,7 @@ float std_read(char* path)
     return tmp;
 }
 
-float decomp_read(char* path)
+float decomp_read(const char* path)
 {
     int BUFFER_SIZE = 500*1024;
     int fd = open(path, O_RDONLY | O_NONBLOCK);
@@ -207,15 +207,16 @@ float decomp_read(char* path)
         }
         if (!bytes_read) break;
         int len = LZ4_decompress_safe(buf, rbuf, BUFFER_SIZE, BUFFER_SIZE*100);
-        printf("%d\n", len);
-        for (char* p = rbuf; p<buf+len;) {
+        printf("Decompressed into %d bytes\n", len);
+        for (char* p = rbuf; p<buf+(-len);) {
             for (int i = 0; i < 5; ++i) {
                 tmp = *(float*)p;
-                printf("%f\n", tmp);
+                printf("%f ", tmp);
                 p += sizeof(float);
             }
-            return 0.;
+            printf("\n");
         }
+        if (len < 0) lseek(fd, -(BUFFER_SIZE+len), SEEK_CUR);
     }
     return tmp;
 }
@@ -225,7 +226,7 @@ int main () {
     float tmp;
     auto start = std::chrono::high_resolution_clock::now();
     //prep();
-    // compress();
+    //compress();
     auto prep_end = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < epochs; i++) {
         tmp = decomp_read("../../data_banknote_authentication.lz4");
@@ -236,7 +237,7 @@ int main () {
     float ftmp;
     auto f_start = std::chrono::high_resolution_clock::now();
     // for (int i = 0; i < epochs; i++) {
-    //     ftmp = std_read("../../data_banknote_authentication.big.bin");
+    //      ftmp = std_read("../../data_banknote_authentication.big.bin");
     // }
     auto f_end = std::chrono::high_resolution_clock::now();
     // if (flines == lines) std::cout << "Linecount is valid!" << "\n";
@@ -244,6 +245,7 @@ int main () {
     if (ftmp == tmp) std::cout << "Final value read is valid!" << "\n";
     else std::cout << "WARN: INVALID LAST READ VAL " << tmp << " vs. " << ftmp << "\n";
     double ftime = std::chrono::duration_cast<std::chrono::nanoseconds>(f_end - f_start).count() / pow(10,9) / epochs;
-    std::cout << ftime << " " << time << ". 15.25 GB input parsed so " << 15.25/ftime << " GB/s (really " << 9.02/ftime << " GB/s) vs. " << 15.25/time << " GB/s (really " << 1.04/time << " GB/s)\n";
+    std::cout << ftime << " " << time << ". 15.25 GB input parsed so " << 15.25/ftime << " GB/s (really " <<
+        9.02/ftime << " GB/s) vs. " << 15.25/time << " GB/s (really " << 1.04/time << " GB/s)\n";
     std::cout << runtime << " (" << ftime/time * 100 << "% speedup overall, " << ftime/runtime * 100 << "% speedup runtime)\n";
 }
