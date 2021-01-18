@@ -10,7 +10,7 @@ if (DEBUG)
 else()
   set(COMPILE_FLAGS, "-w")
 endif()
-  
+
 if (FAST)
   set(COMPILE_FLAGS "${COMPILE_FLAGS} -O3")
 elseif (FASTER)
@@ -21,7 +21,14 @@ elseif (RECKLESS)
 set(COMPILE_FLAGS "${COMPILE_FLAGS} -mavx -O3 -mavx -msse2 -msse3 -march=native -mfpmath=sse -DMKL_ILP64 -fno-pic -D NDEBUG -ffast-math -D RECKLESS")
 endif()
 
-set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS} -fPIE")
+if(UNIX AND NOT APPLE)
+  set(COMPILE_FLAGS, "${COMPILE_FLAGS} -lpthread")
+else()
+  set(LINKER_FLAGS, "")
+endif()
+
+
+set(CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${COMPILE_FLAGS}  -fPIE")
 
 # if (PYTHON)
 #   project(jacobian)

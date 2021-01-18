@@ -93,7 +93,7 @@ public:
     float accuracy(Eigen::MatrixXf labels, Eigen::MatrixXf out);
     void virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::MatrixXf> virt_layers, std::vector<Eigen::MatrixXf> dZ);
     std::pair<Eigen::MatrixXf, Eigen::MatrixXf> next_batch(int fd);
-    float validate(char* path);
+    void validate(const char* path);
     void run(std::vector<std::pair<Eigen::MatrixXf, Eigen::MatrixXf>> batches);
     void train();
     float get_acc() {return epoch_acc;}
@@ -112,7 +112,7 @@ Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m);
 #define MAXLINE 1024
 
 #if (!RECKLESS)
-#define checknan(x, loc) if(x==INFINITY || x==NAN || x == -INFINITY) throw ValueError("Detected NaN in operation", loc)
+#define checknan(x, loc) 
 #define Expects(cond) assert(cond);
 #define Ensures(cond) assert(cond);
 #else

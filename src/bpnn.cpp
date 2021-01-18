@@ -109,16 +109,14 @@ Eigen::MatrixXf Network::softmax(Eigen::MatrixXf matrix)
         Eigen::MatrixXf::Index maxRow, maxCol;
         float max = m.maxCoeff(&maxRow, &maxCol);
         m = (m.array() - max).matrix();
-        float sum = 0;
+        float sum = 0;      
         for (int j = 0; j < matrix.cols(); j++) {
             checknan(m(0,j), "input of Softmax operation");
-        for (int j = 0; j < layers[length-1].contents->cols(); j++) {
             sum += exp(m(0,j));
         }
         for (int j = 0; j < matrix.cols(); j++) {
             m(0,j) = exp(m(0,j))/sum;
         }
-#endif
         matrix.block(i,0,1,matrix.cols()) = m;
     }
     return matrix;
@@ -250,7 +248,6 @@ void Network::virtual_backprop(Eigen::MatrixXf labels, std::vector<Eigen::Matrix
 
         *layers[length-1-i].bias -= bias_lr * gradients[i];
     }
-    return gradients.back();
 }
 
 #include "data.cpp"
