@@ -37,7 +37,7 @@ void Layer::init_weights(Layer next)
     std::normal_distribution<float> d(0,sqrt(1.0/n));
     for (int i = 0; i < (weights->rows()*weights->cols()); i++) {
         std::random_device rd;
-        std::mt19937 gen(rd()); 
+        std::mt19937 gen(rd());
         (*weights)(static_cast<int>(i / nodes), i%nodes) = d(gen);
         (*v)(static_cast<int>(i / nodes), i%nodes) = 0;
         (*m)(static_cast<int>(i / nodes), i%nodes) = 0;
@@ -225,7 +225,7 @@ Eigen::MatrixXf Network::backpropagate()
         update(deltas, i);
         if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
-        *layers[length-1-i].bias -= bias_lr * gradients[i];        
+        *layers[length-1-i].bias -= bias_lr * gradients[i];
     }
     return gradients.back();
 }
@@ -254,7 +254,6 @@ void Network::train()
     float cost_sum = 0;
     float acc_sum = 0;
     for (int i = 0; i <= instances-batch_size; i+=batch_size) {
-        if (early_stop == true && get_val_cost() < threshold) return;
         if (i != instances-batch_size) next_batch(data);
         feedforward();
         backpropagate();
