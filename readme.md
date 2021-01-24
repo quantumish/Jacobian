@@ -6,23 +6,8 @@
 
 ![Banner](./pictures/banner.png)
 
-<img align="left" height=35 width=300 src="https://forthebadge.com/images/badges/powered-by-electricity.svg"><img align="right" height=35 width=300 src="https://forthebadge.com/images/badges/works-on-my-machine.svg"><br/><br/><br/>
-
 ## About
-Jacobian is a work-in-progress machine learning library written in C++ designed to run as fast as possible while still being simple to use. Jacobian is accessible via Python and enables you to write models that train faster with the same amount of code. As of now, Jacobian supports feedforward neural networks and has partial support for convolutional neural networks. ***Note that as Jacobian is a work-in-progress, the latest commit is and will be largely unstable until this README specifies otherwise.***
-
-## Benchmarks
-
-One of the tradeoffs of Jacobian is that as of now it doesn't train nearly as close to perfection as other available libraries nor does it maximize accuracy as much (with the benefit being the added speed). Here's a graph of Jacobian's model metrics over epochs on a simple task (banknote dataset with batch size 16) as compared to other libraries.
-
-![Loss vs. Epochs](./pictures/metrics_updated.png)
-
-Here's a runtime comparison for a simple example task (same as before) between Jacobian and some other popular ML libraries:
-
-![Runtime Comparison](./pictures/updated_runtime.png)
-
-**Coming soon:** A more detailed and current rundown of the speed of Jacobian vs popular machine learning libraries for Python (and eventually comparisons to C++ libraries as well) as well as a handy and flexible Python script for creating benchmark graphs on the fly.
-
+Jacobian is a work-in-progress machine learning library written in C++ designed to run as fast as possible while still being simple to use. Jacobian is accessible via Python and enables you to write models that train faster with the same amount of code. As of now, Jacobian supports feedforward neural networks and has partial support for convolutional neural networks. 
 
 ## Usage
 
@@ -34,7 +19,7 @@ net.add_layer(4, "linear")
 net.add_layer(10, "lecun_tanh")
 net.add_layer(1, "linear")
 net.initialize()
-for i in range(50):sr
+for i in range(50):
   net.train()
 ```
 
@@ -68,7 +53,7 @@ In the `/scripts` directory there is an example of a neural network being used i
 
 ### Main Steps
 Note: This is all ideally the process for manual building, but it's so confusing that I'm not sure. You're better off manually copying the .so file!
-1. Install the C++ library Eigen.
+1. Install the C++ library Eigen. Ensure the that the path eigen3/Eigen/Dense is within one of your include directories.
 2. Install the C++ and python ends of the pybind11 library.
 3. Run `make` with the configuration of your choosing.
 4. Run `python setup.py bdist_wheel`
