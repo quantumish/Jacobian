@@ -1,52 +1,46 @@
 #include <functional>
 #include <vector>
 #include <iostream>
+#include <eigen3/Eigen/Dense>
 
 enum class Operation {NONE, add, multiply};
-    
+
 struct Node
 {    
     Operation op;
-    float val;
+    Eigen::MatrixXf val;
     std::vector<Node*> args;
     bool calced;
     Node(float v);
+    Node(Eigen::MatrixXf v);
     Node(Operation o, std::vector<Node*> a);
 };
 
-Node::Node(float v) : op(Operation::NONE), val(v), args{}, calced(true) {}
-Node::Node(Operation o, std::vector<Node*> a) : op(o), val(0), args(a), calced(false) {}
-
-Node* add(Node* a, Node* b)
+Node::Node(float v) : op(Operation::NONE), val(1,1), args{}, calced(true)
 {
-    Node* result = new Node(Operation::add, {a,b});
-    return result;
-    
+    val(0,0) = v;
 }
 
-Node* multiply(Node* a, Node* b)
-{
-    Node* result = new Node(Operation::multiply, {a,b});
-    return result;
-}
+Node::Node(Eigen::MatrixXf v) : op(Operation::NONE), val(v), args{}, calced(true) {}
+Node::Node(Operation o, std::vector<Node*> a) : op(o), val(Eigen::MatrixXf::Zero(1,1)), args(a), calced(false) {}
+
+Node* add(Node* a, Node* b) {return new Node(Operation::add, {a,b});}
+Node* multiply(Node* a, Node* b) {return new Node(Operation::multiply, {a,b});}
 
 class Graph
 {
 public:
     Graph();
     Node* define(float a);
+    Node* define(Eigen::MatrixXf a);
     void eval(Node* back);
 };
 
-Node* Graph::define(float a)
-{
-    Node* n = new Node(a);
-    return n;
-}
+Node* Graph::define(float a) { return new Node(a); }
+Node* Graph::define(Eigen::MatrixXf a) { return new Node(a); }
 
-Graph::Graph()
-{
-}
+
+Graph::Graph() {}
 
 void Graph::eval(Node* back)
 {
@@ -64,14 +58,18 @@ void Graph::eval(Node* back)
     case Operation::NONE:
 	break;
     case Operation::add:
-	for (Node* arg : back->args) back->val+=arg->val;
+	back->val = back->args[0]->val;
+	for (size_t i = 1; i < back->args.size(); i++) {
+	    back->val+=back->args[i]->val;
+	}
+
 	break;
     case Operation::multiply:
 	back->val = back->args[0]->val;
 	for (size_t i = 1; i < back->args.size(); i++) {
-	    back->val*=back->args[i]->val;
+	    back->val*=back->args[i]->val(0,0);
 	}
-	break;	
+	break;
     }
     std::cout << back->val << "\n";	
 }
@@ -79,8 +77,11 @@ void Graph::eval(Node* back)
 int main()
 {
     Graph g {};
-    auto a = g.define(5);
-    auto b = g.define(3.2);
+    Eigen::MatrixXf n = Eigen::MatrixXf::Constant(3,3,1);
+    auto a = g.define(n);
+    Eigen::MatrixXf m(3,3);
+    m << 1,2,3,4,5,6,7,8,9;
+    auto b = g.define(m);
     auto c = g.define(2);
     auto d = add(a, multiply(b, c));
     std::cout << "A: " << a << "\n";
