@@ -16,7 +16,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-// #include <gsl/gsl_assert>
+#include <gsl/gsl_assert>
 #include <lz4.h>
 
 #define BUFFER_SIZE 600*1024
