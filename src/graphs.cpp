@@ -1,26 +1,25 @@
 #include <functional>
 #include <vector>
+#include <iostream>
 
 enum class Operation {NONE, add, multiply};
     
 struct Node
 {    
     Operation op;
-    float value;
+    float val;
     std::vector<Node*> args;
+    bool calced;
     Node(float v);
     Node(Operation o, std::vector<Node*> a);
 };
 
-Node::Node(float v) : op(Operation::NONE), value(v), args{} {}
-Node::Node(Operation o, std::vector<Node*> a) : op(o), value(), args(a) {}
+Node::Node(float v) : op(Operation::NONE), val(v), args{}, calced(true) {}
+Node::Node(Operation o, std::vector<Node*> a) : op(o), val(0), args(a), calced(false) {}
 
 Node* add(Node* a, Node* b)
 {
     Node* result = new Node(Operation::add, {a,b});
-    result->args.push_back(a);
-    result->args.push_back(b);
-    result->op = Operation::add;
     return result;
     
 }
@@ -28,35 +27,53 @@ Node* add(Node* a, Node* b)
 Node* multiply(Node* a, Node* b)
 {
     Node* result = new Node(Operation::multiply, {a,b});
-    result->args.push_back(a);
-    result->args.push_back(b);
-    result->op = Operation::multiply;
     return result;
 }
 
 class Graph
 {
-    std::vector<Node> input;
 public:
     Graph();
     Node* define(float a);
-    void start(Node* back);
+    void eval(Node* back);
 };
 
 Node* Graph::define(float a)
 {
-    input.emplace_back(a);
-    return &input[input.size()-1];
+    Node* n = new Node(a);
+    return n;
 }
 
-
-
-void Graph::start(Node* back)
+Graph::Graph()
 {
-    Node* cur = back;
-    for (size_t i = 0; i < back->args.size(); i++) {
-	
+}
+
+void Graph::eval(Node* back)
+{
+    std::cout << back->args.size() << "\n";
+    for (Node* arg : back->args) {
+	std::cout << "At " << back << ", checking if arg " << arg << " is evaluated..."; 
+	if (arg->calced == false) {
+	    std::cout << "nope!" << "\n";
+	    eval(arg);	    
+	}
+	std::cout << "yup!" << "\n";	
     }
+    std::cout << "Calcing...";
+    switch (back->op) {
+    case Operation::NONE:
+	break;
+    case Operation::add:
+	for (Node* arg : back->args) back->val+=arg->val;
+	break;
+    case Operation::multiply:
+	back->val = back->args[0]->val;
+	for (size_t i = 1; i < back->args.size(); i++) {
+	    back->val*=back->args[i]->val;
+	}
+	break;	
+    }
+    std::cout << back->val << "\n";	
 }
 
 int main()
@@ -66,5 +83,10 @@ int main()
     auto b = g.define(3.2);
     auto c = g.define(2);
     auto d = add(a, multiply(b, c));
-    g.start(d);
+    std::cout << "A: " << a << "\n";
+    std::cout << "B: " << b << "\n";
+    std::cout << "C: " << c << "\n";
+    std::cout << "D: " << d << "\n\n";
+    g.eval(d);
+    std::cout << d->val << '\n';
 }
