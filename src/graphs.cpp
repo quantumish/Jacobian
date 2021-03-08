@@ -4,6 +4,8 @@
 #include <eigen3/Eigen/Dense>
 #include <cmath>
 
+#include "utils.hpp"
+
 enum class Operation {NONE, add, multiply, tanh};
 
 struct Node
@@ -73,7 +75,7 @@ void Graph::eval(Node* back)
     case Operation::tanh:
 	for (int i = 0; i < back->val.rows(); i++) {
             for (int j = 0; j < back->val.cols(); j++) {
-                back->val(i,j) = tanh(back->val(i,j));
+                back->val(i,j) = ftanh(back->val(i,j));
             }
         }
 	back->val = back->args[0]->val;	

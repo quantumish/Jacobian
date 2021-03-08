@@ -11,6 +11,10 @@
 #include <functional>
 #include <immintrin.h>
 
+// Some fast alternatives to math functions.
+float ftanh(float x);
+float fexp(float x);
+
 // A zoo of activation functions.
 float sigmoid(float x);
 float sigmoid_deriv(float x);
