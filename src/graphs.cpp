@@ -54,6 +54,7 @@ void Graph::eval(Node* back)
 	    eval(arg);	    
 	}
     }
+    // std::cout << back->val << "\n\n";
     switch (back->op) {
     case Operation::NONE:
 	break;
@@ -62,12 +63,11 @@ void Graph::eval(Node* back)
 	for (size_t i = 1; i < back->args.size(); i++) {
 	    back->val+=back->args[i]->val;
 	}
-
 	break;
-    case Operation::multiply:
+    case Operation::multiply:	
 	back->val = back->args[0]->val;
 	for (size_t i = 1; i < back->args.size(); i++) {
-	    back->val*=back->args[i]->val(0,0);
+	    back->val*=back->args[i]->val;
 	}
 	break;
     case Operation::tanh:
@@ -87,7 +87,7 @@ int main()
     Graph g {};
 
     // Define input biases
-    Eigen::MatrixXf _b = Eigen::MatrixXf::Constant(5,3,0);
+    Eigen::MatrixXf _b = Eigen::MatrixXf::Constant(5,4,0);
     auto b = g.define(_b);
 
     // Define input layer
@@ -100,9 +100,8 @@ int main()
     auto W = g.define(_W);
 
     // Define hidden layer output
-    auto h =add(b, multiply(W, x));
-    std::cout << "HIDDEN LAYER\n" << h->val << "\n\n";
-
+    auto h = add(b, multiply(x, W));
+    
     // Define final weights
     Eigen::MatrixXf _V = Eigen::MatrixXf::Constant(4,2,1);
     auto V = g.define(_V);
@@ -112,7 +111,7 @@ int main()
     auto a = g.define(_a);
 
     // Define output layer
-    auto y = add(a, multiply(V, h));
+    auto y = add(a, multiply(h, V));
 
     // Feedforward.
     g.eval(y);
