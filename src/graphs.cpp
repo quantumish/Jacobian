@@ -6,33 +6,62 @@
 
 #include "utils.hpp"
 
-enum class Operation {NONE, add, multiply, tanh};
+namespace Jacobian {
 
 struct Node
-{    
-    Operation op;
+{
+public:
     Eigen::MatrixXf val;
     std::vector<Node*> args;
+    std::function<void(Node&)> op;
     bool calced;
     Node(float v);
     Node(Eigen::MatrixXf v);
-    Node(Operation o, std::vector<Node*> a);
+    Node(std::function<void(Node&)> f, std::vector<Node*> a);
 };
 
-Node::Node(float v) : op(Operation::NONE), val(1,1), args{}, calced(true)
+Node::Node(float v) : op(nullptr), val(1,1), args{}, calced(true)
 {
     val(0,0) = v;
 }
 
-namespace Jacobian {
-    Node* tanh(Node* a) {return new Node(Operation::tanh, {a});}
+Node::Node(Eigen::MatrixXf v) : op(nullptr), val(v), args{}, calced(true) {}
+Node::Node(std::function<void(Node&)> f, std::vector<Node*> a)
+    :op(f), val(Eigen::MatrixXf::Zero(1,1)), args(a), calced(false) {}
+
+
+
+namespace internal {
+void multiply(Node& node)
+{
+    node.val = node.args[0]->val;
+    for (size_t i = 1; i < node.args.size(); i++) {
+        node.val*node.args[i]->val;
+    }
 }
 
-Node::Node(Eigen::MatrixXf v) : op(Operation::NONE), val(v), args{}, calced(true) {}
-Node::Node(Operation o, std::vector<Node*> a) : op(o), val(Eigen::MatrixXf::Zero(1,1)), args(a), calced(false) {}
+void add(Node& node)
+{
+    for (size_t i = 0; i < node.args.size(); i++) {
+        node.val*node.args[i]->val;
+    }
+}
 
-Node* add(Node* a, Node* b) {return new Node(Operation::add, {a,b});}
-Node* multiply(Node* a, Node* b) {return new Node(Operation::multiply, {a,b});}
+void tanh(Node& node)
+{
+    for (int i = 0; i < node.val.rows(); i++) {
+        for (int j = 0; j < node.val.cols(); j++) {
+            node.val(i,j) = ftanh(node.val(i,j));
+        }
+    }
+}
+}
+
+
+Node* multiply(Node* a, Node* b) {return new Node(internal::multiply, {a,b});}
+Node* add(Node* a, Node* b) {return new Node(internal::add, {a,b});}
+Node* tanh(Node* a) {return new Node(internal::tanh, {a});}
+
 
 class Graph
 {
@@ -49,44 +78,20 @@ Node* Graph::define(Eigen::MatrixXf a) { return new Node(a); }
 
 Graph::Graph() {}
 
-void Graph::eval(Node* back)
+void Graph::eval(Node* node)
 {
-    for (Node* arg : back->args) {
-	if (arg->calced == false) {
-	    eval(arg);	    
-	}
-    }
-    // std::cout << back->val << "\n\n";
-    switch (back->op) {
-    case Operation::NONE:
-	break;
-    case Operation::add:
-	back->val = back->args[0]->val;
-	for (size_t i = 1; i < back->args.size(); i++) {
-	    back->val+=back->args[i]->val;
-	}
-	break;
-    case Operation::multiply:	
-	back->val = back->args[0]->val;
-	for (size_t i = 1; i < back->args.size(); i++) {
-	    back->val*=back->args[i]->val;
-	}
-	break;
-    case Operation::tanh:
-	for (int i = 0; i < back->val.rows(); i++) {
-            for (int j = 0; j < back->val.cols(); j++) {
-                back->val(i,j) = ftanh(back->val(i,j));
-            }
+    for (Node* arg : node->args) {
+        if (arg->calced == false) {
+            eval(arg);
         }
-	back->val = back->args[0]->val;	
-	break;
-
     }
+    node->op(*node);
+}
 }
 
 int main()
-{    
-    Graph g {};
+{
+    Jacobian::Graph g {};
 
     // Define input biases
     Eigen::MatrixXf _b = Eigen::MatrixXf::Constant(5,4,0);
@@ -103,7 +108,7 @@ int main()
 
     // Define hidden layer output
     auto h = add(b, multiply(x, W));
-    
+
     // Define final weights
     Eigen::MatrixXf _V = Eigen::MatrixXf::Constant(4,2,1);
     auto V = g.define(_V);
@@ -117,7 +122,7 @@ int main()
 
     // Feedforward.
     g.eval(y);
-    
+
     // Get output.
     std::cout << y->val << '\n';
 }
