@@ -3,6 +3,7 @@
   <!-- Jacobian -->
 
   <!-- Created by David Freifeld -->
+  <!-- Markdown has the worst comment syntax I've ever seen. Seriously, what is this. TODO: Migrate this README to Org Mode. --> 
 
 ![Banner](./pictures/banner.png)
 
@@ -13,52 +14,34 @@ Jacobian is a work-in-progress machine learning library written in C++ designed 
 
 Initializing and training a neural network with Jacobian takes just 8 lines of code!
 ```python
-import mrbpnn
-net = mrbpnn.Network("../data_banknote_authentication.txt", 10, 0.01, 0.001, 0.5, 0.75)
-net.add_layer(4, "linear")
-net.add_layer(10, "lecun_tanh")
-net.add_layer(1, "linear")
+import jacobian as jcb
+net = jcb.Network("./data_banknote_authentication.txt", 10, 0.0155, 0.03, jcb.L2, 1, 0.9)
+net.add_layer(4, jcb.linear, jcb.linear_deriv)
+net.add_layer(5, jcb.sigmoid, jcb.sigmoid_deriv)
+net.add_layer(2, jcb.linear, jcb.linear_deriv)
+# Optional: net.init_optimizer(jcb.momentum(0.1))
+# Optional: net.init_decay(jcb.exponential(1, 0.5)) 
 net.initialize()
 for i in range(50):
   net.train()
 ```
+## Examples
 
-### Rundown
-What's happening in those seven lines?
-
-First, call the Network constructor (from henceforth all functions will be presented in their C++ form for clarity). This is where many of the hyperparameters are defined, and you'll need to pass in the path to your data, the desired batch size, learning rate, bias learning rate (which should usually be smaller), regularization strength, and train-val ratio.
-```c++
-Network(char* path, int batch_sz, float learn_rate, float bias_rate, float l, float ratio);
-```
-
-Then add your layers one by one, similar to Keras. You'll need to specify how many neurons there are in the layer and the layer's activation.
-```c++
-void add_layer(int nodes, char* activation);
-```
-Optionally, one can overwrite the activation of a layer with their own function:
-```c++
-void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
-```
-At this point could also specify a learning rate decay function as well by calling `init_decay`.
-```c++
-void init_decay(char* type, float a_0, float k);
-```
-Next, call `initialize()` to initialize the network's weights.
-Finally, train your network for one epoch with `train()`. Training one epoch at a time allows you control over the accuracy reporting (with functions like `get_cost()`, `get_accuracy()`, `get_val_cost()`, and `get_val_accuracy()`) and also allows effective use of services like W&B.
-
-### Examples
-In the `/scripts` directory there is an example of a neural network being used in conjuction with Weights & Biases, allowing for effective hyperparameter searches and accuracy reporting.
+See `example.cpp` for an example of using Jacobian from C++, and `example.py` for an example of using Jacobian from Python.
 
 ## Building
 
-### Main Steps
+### Dependencies
+Eigen 3 is the only dependency, although building the python library requires `pybind11`.
+
+<!-- ### Main Steps
 Note: This is all ideally the process for manual building, but it's so confusing that I'm not sure. You're better off manually copying the .so file!
 1. Install the C++ library Eigen. Ensure the that the path eigen3/Eigen/Dense is within one of your include directories.
 2. Install the C++ and python ends of the pybind11 library.
 3. Run `make` with the configuration of your choosing.
 4. Run `python setup.py bdist_wheel`
 5. `cd` into `dist` and run `python3 -m pip install --upgrade Jacobian-1.0-cp37-cp37m-macosx_10_13_x86_64.whl`
-6. Be unhappy when it doesn't work out and resort to just copying .so files.
+6. Be unhappy when it doesn't work out and resort to just copying .so files. -->
 
 ### Building with CMake
 
@@ -80,7 +63,6 @@ One you've selected a main optimization level, extra configurations can be passe
 
 A sample build process would look like this: 
 
-```
-cmake . -DCXX=ON -DFASTER=ON -DAVX=ON -DDEBUG=ON
-make
+```)
+rm CMakeCache.txt && cmake . -DPYTHON=ON -DFASTER=ON -DDEBUG=ON && make
 ```
