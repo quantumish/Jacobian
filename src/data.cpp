@@ -35,7 +35,7 @@ void Network::next_batch(int fd)
 {
     Expects(fd > 0); // File descriptor must be valid.
     uintmax_t lines = 0;
-    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {        
+    while(size_t bytes_read = read(fd, buf, BUFFER_SIZE)) {
         if (!bytes_read) break;
         p = buf;
         while(p < buf+BUFFER_SIZE) {

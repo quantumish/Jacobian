@@ -7,12 +7,10 @@
 
 #include "bpnn.hpp"
 #include "utils.hpp"
-#include <atomic>
-#include <chrono>
-#include <ctime>
 #include <random>
 
 Layer::Layer(int batch_sz, int nodes)
+    :weights(nullptr), v(nullptr), m(nullptr)
 {
     contents = new Eigen::MatrixXf (batch_sz, nodes);
     dZ = new Eigen::MatrixXf (batch_sz, nodes);
@@ -45,7 +43,8 @@ void Layer::init_weights(Layer next)
 }
 
 Network::Network(const char* path, int batch_sz, float learn_rate, float bias_rate, Regularization regularization, float l, float ratio, bool early_exit, float cutoff)
-    :batch_size(batch_sz), learning_rate(learn_rate), bias_lr(bias_rate), reg_type(regularization), lambda(l), early_stop(early_exit), threshold(cutoff)
+    :batch_size(batch_sz), learning_rate(learn_rate), bias_lr(bias_rate), reg_type(regularization),
+     lambda(l), early_stop(early_exit), threshold(cutoff)
 {
     Expects(batch_size > 0 && learning_rate > 0 &&
             bias_rate > 0 && l >= 0 && ratio >= 0 && ratio <= 1);
@@ -57,7 +56,7 @@ Network::Network(const char* path, int batch_sz, float learn_rate, float bias_ra
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
     decay = []() -> void {};
-    update = [](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+    update = [](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) {
         *layer.weights -= (learning_rate * delta);
     };
     // File descriptors are nonnegative integers and open() returns -1 on failure.

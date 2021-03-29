@@ -1,7 +1,7 @@
 #ifndef BPNN_H
 #define BPNN_H
 
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 #include <vector>
 #include <iostream>
@@ -9,12 +9,9 @@
 #include <cstdio>
 #include <cmath>
 #include <random>
-#include <algorithm>
 #include <sys/types.h>
-#include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-#include <lz4.h>
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
@@ -23,14 +20,13 @@ enum Regularization {L1, L2};
 class Layer {
 public:
     Eigen::MatrixXf* contents;
-    Eigen::MatrixXf* v;
-    Eigen::MatrixXf* m;
     Eigen::MatrixXf* weights;
     Eigen::MatrixXf* bias;
     Eigen::MatrixXf* dZ;
+    Eigen::MatrixXf* v;
+    Eigen::MatrixXf* m;
     std::function<float(float)> activation;
     std::function<float(float)> activation_deriv;
-    char activation_str[32];
 
     Layer(int rows, int columns);
     Layer(float* vals, int rows, int columns);

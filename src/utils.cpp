@@ -16,7 +16,7 @@
 #include <fcntl.h>
 #include <unistd.h>
 #include <sys/stat.h>
-#include <eigen3/Eigen/Dense>
+#include <Eigen/Dense>
 
 // A bunch of hardcoded activation functions. Avoids much of the slowness of custom functions.
 // Although the std::function makes it not the fastest way, the functionality is worth it.
@@ -80,9 +80,9 @@ float leaky_relu_deriv(float x)
 std::function<float(float)> rectifier(float (*activation)(float))
 {
     auto rectified = [activation](float x) -> float
-    { 
+    {
         if (x > 0) return (*activation)(x);
-        else return 0; 
+        else return 0;
     };
     return rectified;
 }

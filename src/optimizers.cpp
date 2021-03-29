@@ -7,7 +7,7 @@
 
 
 std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::momentum(float beta) {
-    return [beta](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+    return [beta](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) {
       *layer.weights -= (beta * *layer.m) + (learning_rate * delta);
       *layer.m = (learning_rate * delta);
     };
@@ -17,7 +17,7 @@ std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::demon(float beta
     float beta_init = beta;
     float prev_epoch = -1;
     float epochs = 0;
-    return [max_ep, epochs, beta_init, beta](Layer& layer, Eigen::MatrixXf delta, float learning_rate) mutable {
+    return [max_ep, epochs, beta_init, beta](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) mutable {
         beta = beta_init * (1-(epochs/max_ep)) / ((beta_init * (1-(epochs/max_ep))) + (1-beta_init));
         *layer.weights -= (beta * *layer.m) + (learning_rate * delta);
         *layer.m = (learning_rate * delta);
@@ -26,7 +26,7 @@ std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::demon(float beta
 }
 
 std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::adam(float beta1, float beta2, float epsilon) {
-    return [beta1, beta2, epsilon](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+    return [beta1, beta2, epsilon](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) {
         *layer.m = (beta1 * *layer.m) + ((1-beta1)*delta);
         *layer.v = (beta2 * *layer.v) + (1-beta2)*(delta.cwiseProduct(delta));
         *layer.weights -= learning_rate *
@@ -35,7 +35,7 @@ std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::adam(float beta1
 }
 
 std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::adamax(float beta1, float beta2, float epsilon) {
-    return [beta1, beta2, epsilon](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+    return [beta1, beta2, epsilon](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) {
         *layer.m = (beta1 * *layer.m) + ((1-beta1)*delta);
         if ((beta2 * *layer.v).sum() > delta.array().abs().sum()) *layer.v = (beta2 * *layer.v);
         else *layer.v = delta.array().abs().matrix();
