@@ -15,6 +15,7 @@
 
 #define BUFFER_SIZE 600*1024
 #define LARGE_BUF 600*1024*15
+#define MATRIX_NULL Eigen::MatrixXf::Constant(0,1,1)
 enum Regularization {L1, L2};
 
 class Layer {
@@ -32,6 +33,14 @@ public:
     Layer(float* vals, int rows, int columns);
     void operator=(const Layer& that);
     void init_weights(Layer next);
+
+    Eigen::MatrixXf get_contents() {return *contents;}
+    Eigen::MatrixXf get_weights() {if (weights == nullptr) return MATRIX_NULL; else return *weights;}
+    Eigen::MatrixXf get_bias() {return *bias;}
+    Eigen::MatrixXf get_dZ() {return *v;}
+    Eigen::MatrixXf get_v() {if (weights == nullptr) return MATRIX_NULL; else return *v;}
+    Eigen::MatrixXf get_m() {if (weights == nullptr) return MATRIX_NULL; else return *m;}
+
 };
 
 class Network {
@@ -78,6 +87,7 @@ public:
     void feedforward();
     void softmax();
     void list_net();
+    void interactive_next_batch();
     float cost();
     float accuracy();
     Eigen::MatrixXf backpropagate();

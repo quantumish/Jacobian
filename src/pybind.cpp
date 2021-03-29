@@ -6,6 +6,7 @@
 //
 
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/functional.h>
 #include <pybind11/eigen.h>
 
@@ -21,7 +22,15 @@ PYBIND11_MODULE(_jacobian, m)
         .value("L2", Regularization::L2)
         .export_values();
     py::class_<Layer>(m, "Layer")
-        .def(py::init<int, int>());
+        .def(py::init<int, int>())
+        .def("get_contents", &Layer::get_contents)
+        .def("get_weights", &Layer::get_weights)
+        .def("get_bias", &Layer::get_bias)
+        .def("get_v", &Layer::get_v)
+        .def("get_m", &Layer::get_m)
+        .def("get_dZ", &Layer::get_dZ)
+        .def_readonly("activation", &Layer::activation)
+        .def_readonly("activation_deriv", &Layer::activation);
     py::class_<Network>(m, "Network")
         .def(py::init<char *, int, float, float, Regularization, float,
                   float, bool, float>(),
@@ -40,13 +49,15 @@ PYBIND11_MODULE(_jacobian, m)
         .def("feedforward", &Network::feedforward)
         .def("backpropagate", &Network::backpropagate)
         .def("list_net", &Network::list_net)
+        .def("next_batch", &Network::interactive_next_batch)
         .def("cost", &Network::cost)
         .def("accuracy", &Network::accuracy)
         .def("train", &Network::train)
-        .def("get_acc", &Network::get_acc)
         .def("get_cost", &Network::get_cost)
+        .def("get_acc", &Network::get_acc)
+        .def("get_val_cost", &Network::get_val_cost)
         .def("get_val_acc", &Network::get_val_acc)
-        .def("get_val_cost", &Network::get_val_cost);
+        .def_readonly("layers", &Network::layers);
     m.def("linear", &linear, py::arg("x"));
     m.def("linear_deriv", &linear_deriv, py::arg("x"));
     m.def("sigmoid", &sigmoid, py::arg("x"));

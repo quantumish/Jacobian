@@ -25,6 +25,7 @@ Layer::Layer(int batch_sz, int nodes)
     }
 }
 
+
 void Layer::init_weights(Layer next)
 {
     v = new Eigen::MatrixXf (contents->cols(), next.contents->cols());
@@ -293,6 +294,17 @@ void Network::validate(const char* path)
 }
 
 #include "optimizers.cpp"
+
+void Network::interactive_next_batch()
+{
+    if (batches < instances/batch_size-batch_size) next_batch(data);
+    else {
+        batches = 0;
+        data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
+        decay(learning_rate);
+    }
+    batches++;
+}
 
 void Network::train()
 {
