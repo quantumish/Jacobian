@@ -5,68 +5,46 @@
 //  Created by David Freifeld
 //
 
-void Network::init_optimizer(const char* name, ...)
-{
-  va_list args;
-  va_start(args, name);
-  if (strcmp(name, "momentum") == 0) {
-    float beta = va_arg(args, double);
-    va_end(args);
-    update = [this, beta](std::vector<Eigen::MatrixXf> deltas, int i) {
-      *layers[length-2-i].weights -= (beta * *layers[length-2-i].m) + (learning_rate * deltas[i]);
-      *layers[length-2-i].m = (learning_rate * deltas[i]);
+
+std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::momentum(float beta) {
+    return [beta](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+      *layer.weights -= (beta * *layer.m) + (learning_rate * delta);
+      *layer.m = (learning_rate * delta);
     };
-  }
-  // TODO: Remove redundant code | -t quality -m Attempt split into functions to remove reundant code
-  if (strcmp(name, "nesterov") == 0) {
-    float beta = va_arg(args, double);
-    va_end(args);
-    grad_calc = [this](std::vector<Eigen::MatrixXf> gradients, int i, int counter) -> void {
-      gradients.push_back((gradients[counter-1] * (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()).cwiseProduct(*layers[i].dZ));
-    };
-    update = [this, beta](std::vector<Eigen::MatrixXf> deltas, int i) {
-      *layers[length-2-i].weights -= (beta * *layers[length-2-i].m) + (learning_rate * deltas[i]);
-      *layers[length-2-i].m = (learning_rate * deltas[i]);
-    };
-  }
-  else if (strcmp(name, "demon") == 0) {
-    float beta_init = va_arg(args, double);
-    float max_ep = va_arg(args, int);
-    float beta = beta_init;
-    int prev_epoch = -1;
-    update = [this, max_ep, prev_epoch, beta_init, beta](std::vector<Eigen::MatrixXf> deltas, int i) mutable {
-      if (epochs > prev_epoch) {
+}
+
+std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::demon(float beta, int max_ep) {
+    float beta_init = beta;
+    float prev_epoch = -1;
+    float epochs = 0;
+    return [max_ep, epochs, beta_init, beta](Layer& layer, Eigen::MatrixXf delta, float learning_rate) mutable {
         beta = beta_init * (1-(epochs/max_ep)) / ((beta_init * (1-(epochs/max_ep))) + (1-beta_init));
-        prev_epoch = epochs;
-      }
-      *layers[length-2-i].weights -= (beta * *layers[length-2-i].m) + (learning_rate * deltas[i]);
-      *layers[length-2-i].m = (learning_rate * deltas[i]);
+        *layer.weights -= (beta * *layer.m) + (learning_rate * delta);
+        *layer.m = (learning_rate * delta);
+        epochs++;
     };
-  }
-  else if (strcmp(name, "adam") == 0) {
-    float beta1 = va_arg(args, double);
-    float beta2 = va_arg(args, double);
-    float epsilon = va_arg(args, double);
-    // TODO: Add bias correction to adam | -t coding -m (requires figuring out measuring t)
-    // TODO: Investigate cwiseProduct in code | -t quality -m cwiseProduct here is sketchy, look into me
-    update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
-      *layers[length-2-i].m = (beta1 * *layers[length-2-i].m) + ((1-beta1)*deltas[i]);
-      *layers[length-2-i].v = (beta2 * *layers[length-2-i].v) + (1-beta2)*(deltas[i].cwiseProduct(deltas[i]));
-      *layers[length-2-i].weights -= learning_rate * ((layers[length-2-i].v->cwiseSqrt()).array()+epsilon).pow(-1).cwiseProduct(layers[length-2-i].m->array()).matrix();
+}
+
+std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::adam(float beta1, float beta2, float epsilon) {
+    return [beta1, beta2, epsilon](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+        *layer.m = (beta1 * *layer.m) + ((1-beta1)*delta);
+        *layer.v = (beta2 * *layer.v) + (1-beta2)*(delta.cwiseProduct(delta));
+        *layer.weights -= learning_rate *
+            ((layer.v->cwiseSqrt()).array()+epsilon).pow(-1).cwiseProduct(layer.m->array()).matrix();
     };
-  }
-  else if (strcmp(name, "adamax") == 0) {
-    float beta1 = va_arg(args, double);
-    float beta2 = va_arg(args, double);
-    float epsilon = va_arg(args, double);
-    // TODO: Add bias correction for adamax | -t coding -m (requires figuring out measuring t)
-    update = [this, beta1, beta2, epsilon](std::vector<Eigen::MatrixXf> deltas, int i) {
-        *layers[length-2-i].m = (beta1 * *layers[length-2-i].m) + ((1-beta1)*deltas[i]);
-      // TODO: Fix Adamax calculations | -p C -t quality -m Use of .sum() here is incredibly questionable. Do this correctly.
-      if ((beta2 * *layers[length-2-i].v).sum() > deltas[i].array().abs().sum()) *layers[length-2-i].v = (beta2 * *layers[length-2-i].v);
-      else *layers[length-2-i].v = deltas[i].array().abs().matrix();
-      *layers[length-2-i].weights -= learning_rate * (layers[length-2-i].v->array().pow(-1).cwiseProduct(layers[length-2-i].m->array())).matrix();
+}
+
+std::function<void(Layer&, Eigen::MatrixXf, float)> optimizers::adamax(float beta1, float beta2, float epsilon) {
+    return [beta1, beta2, epsilon](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+        *layer.m = (beta1 * *layer.m) + ((1-beta1)*delta);
+        if ((beta2 * *layer.v).sum() > delta.array().abs().sum()) *layer.v = (beta2 * *layer.v);
+        else *layer.v = delta.array().abs().matrix();
+        *layer.weights -= learning_rate *
+            (layer.v->array().pow(-1).cwiseProduct(layer.m->array())).matrix();
     };
-  }
-  va_end(args);
+}
+
+void Network::init_optimizer(std::function<void(Layer&, Eigen::MatrixXf, float)> f)
+{
+    update = f;
 }

@@ -20,11 +20,12 @@ double bench(int batch_sz, int epochs)
 {
     auto start = std::chrono::high_resolution_clock::now();
     Network net ("./data_banknote_authentication.txt", batch_sz, 0.0155, 0.03, L2, 0, 0.9);
-    net.add_layer(4, "linear", linear, linear_deriv);
-    net.add_layer(5, "lecun", lecun_tanh, lecun_tanh_deriv);
-    net.add_layer(2, "linear", linear, linear_deriv);
+    net.add_layer(4, linear, linear_deriv);
+    net.add_layer(5, lecun_tanh, lecun_tanh_deriv);
+    net.add_layer(2, linear, linear_deriv);
+    // net.init_optimizer(optimizers::demon(0.1, 50));
     net.initialize();
-    for (int i = 0; i < epochs; i++) {        
+    for (int i = 0; i < epochs; i++) {
         net.train();
     }
     auto end = std::chrono::high_resolution_clock::now();

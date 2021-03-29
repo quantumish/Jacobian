@@ -56,11 +56,11 @@ Network::Network(const char* path, int batch_sz, float learn_rate, float bias_ra
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
-    decay = [this]() -> void {};
-    update = [this](std::vector<Eigen::MatrixXf> deltas, int i) {
-        *layers[length-2-i].weights -= (learning_rate * deltas[i]);
+    decay = []() -> void {};
+    update = [](Layer& layer, Eigen::MatrixXf delta, float learning_rate) {
+        *layer.weights -= (learning_rate * delta);
     };
-    // File descriptors are nonnegative integers and open() returns -1 on failure. 
+    // File descriptors are nonnegative integers and open() returns -1 on failure.
     Ensures(batch_size < instances && data > 0 && val_data > 0);
 }
 
@@ -70,12 +70,11 @@ Network::~Network()
     close(val_data);
 }
 
-void Network::add_layer(int nodes, const char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
+void Network::add_layer(int nodes, std::function<float(float)> activation, std::function<float(float)> activation_deriv)
 {
     Expects(nodes > 0);
     length++;
     layers.emplace_back(batch_size, nodes);
-    strcpy(layers[length-1].activation_str, name);
     layers[length-1].activation = activation;
     layers[length-1].activation_deriv = activation_deriv;
 }
@@ -116,7 +115,6 @@ void Network::feedforward()
 {
     for (int i = 0; i < length-1; i++) {
         for (int j = 0; j < layers[i].contents->rows(); j++) {
-            if (strcmp(layers[i].activation_str, "linear") == 0) break;
             for (int k = 0; k < layers[i].contents->cols(); k++) {
                 (*layers[i].dZ)(j,k) = layers[i].activation_deriv((*layers[i].contents)(j,k));
                 (*layers[i].contents)(j,k) = layers[i].activation((*layers[i].contents)(j,k));
@@ -126,7 +124,6 @@ void Network::feedforward()
         *layers[i+1].contents += *layers[i+1].bias;
     }
     for (int j = 0; j < layers[length-1].contents->rows(); j++) {
-        if (strcmp(layers[length-1].activation_str, "linear") == 0) break;
         for (int k = 0; k < layers[length-1].contents->cols(); k++) {
             (*layers[length-1].dZ)(j,k) = layers[length-1].activation_deriv((*layers[length-1].contents)(j,k));
             (*layers[length-1].contents)(j,k) = layers[length-1].activation((*layers[length-1].contents)(j,k));
@@ -138,12 +135,19 @@ void Network::feedforward()
 void Network::list_net()
 {
     Expects(length > 1);
-    std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[0].activation_str << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
+    std::cout << "-----------------------\nINPUT LAYER (LAYER 0)\n"
+              <<  "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[0].contents
+              << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[0].weights
+              << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[0].bias << "\n\n\n";
     for (int i = 1; i < length-1; i++) {
-        std::cout << "-----------------------\nLAYER " << i << "\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[i].activation_str;
-        std::cout << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
+        std::cout << "-----------------------\nLAYER " << i
+                  << "\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[i].contents
+                  << "\n\n\u001b[31mBIASES:\x1B[0;37m\n" << *layers[i].bias
+                  << "\n\n\u001b[31mWEIGHTS:\x1B[0;37m\n" << *layers[i].weights << "\n\n\n";
     }
-    std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1 << ")\n-----------------------\n\n\u001b[31mGENERAL INFO:\x1B[0;37m\nActivation Function: " << layers[length-1].activation_str <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
+    std::cout << "-----------------------\nOUTPUT LAYER (LAYER " << length-1
+              <<"\n\n\u001b[31mACTIVATIONS:\x1B[0;37m\n" << *layers[length-1].contents
+              << "\n\n\u001b[31BIASES:\x1B[0;37m\n" << *layers[length-1].bias <<  "\n\n\n";
 }
 
 float Network::cost()
@@ -213,8 +217,8 @@ Eigen::MatrixXf Network::backpropagate()
     gradients.push_back(error);
     deltas.push_back((*layers[length-2].contents).transpose() * gradients[0]);
     int counter = 1;
-    for (int i = length-2; i >= 1; i--) { 
-        // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.        
+    for (int i = length-2; i >= 1; i--) {
+        // TODO: Add nesterov momentum | -p B -t conundrum -t coding -m Without causing segmentation faults.
         // (*layers[i].weights-((learning_rate * *layers[i].weights) + (0.9 * *layers[i].v))).transpose()
         //grad_calc(gradients, counter, i)
         gradients.push_back((gradients[counter-1] * layers[i].weights->transpose()).cwiseProduct(*layers[i].dZ));
@@ -222,7 +226,7 @@ Eigen::MatrixXf Network::backpropagate()
         counter++;
     }
     for (int i = 0; i < length-1; i++) {
-        update(deltas, i);
+        update(layers[length-2-i], deltas[i], learning_rate);
         if (reg_type == L2) *layers[length-2-i].weights -= ((lambda/batch_size) * (*layers[length-2-i].weights));
         else if (reg_type == L1) *layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(*layers[length-2-i].weights));
         *layers[length-1-i].bias -= bias_lr * gradients[i];
@@ -248,6 +252,8 @@ void Network::validate(const char* path)
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
 }
+
+#include "optimizers.cpp"
 
 void Network::train()
 {

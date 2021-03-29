@@ -3,8 +3,6 @@
 
 #include <eigen3/Eigen/Dense>
 
-//#include "../../mapreduce/mapreduce.h"
-
 #include <vector>
 #include <iostream>
 #include <string>
@@ -16,7 +14,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <unistd.h>
-// #include <gsl/gsl_assert>
 #include <lz4.h>
 
 #define BUFFER_SIZE 600*1024
@@ -34,7 +31,7 @@ public:
     std::function<float(float)> activation;
     std::function<float(float)> activation_deriv;
     char activation_str[32];
-    
+
     Layer(int rows, int columns);
     Layer(float* vals, int rows, int columns);
     void operator=(const Layer& that);
@@ -52,8 +49,8 @@ protected:
     float val_cost;
     std::function<void(void)> decay;
     std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
-    std::function<void(std::vector<Eigen::MatrixXf>, int)> update;
-	void next_batch(int fd);
+    std::function<void(Layer&, Eigen::MatrixXf, float)> update;
+    void next_batch(int fd);
 public:
     int data;
     int val_data;
@@ -72,20 +69,21 @@ public:
     int epochs = 0;
     int batches = 0;
     Eigen::MatrixXf* labels;
-    
+
     Network(const char* path, int batch_sz, float learn_rate,
             float bias_rate, Regularization regularization,
             float l, float ratio, bool early_exit=true, float cutoff=0);
     ~Network();
-    void add_layer(int nodes, const char* name, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
+    void add_layer(int nodes, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
     void initialize();
+    void init_optimizer(std::function<void(Layer&, Eigen::MatrixXf, float)> f);
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
     void feedforward();
     void softmax();
     void list_net();
     float cost();
     float accuracy();
-    Eigen::MatrixXf backpropagate();    
+    Eigen::MatrixXf backpropagate();
     void validate(const char* path);
     void train();
     float get_acc() {return epoch_acc;}
@@ -100,6 +98,13 @@ int split_file(const char* path, int lines, float ratio);
 void prep(const char* rname, const char* wname);
 void compress(const char* rname, const char* wname);
 Eigen::MatrixXf l1_deriv(Eigen::MatrixXf m);
+
+namespace optimizers {
+std::function<void(Layer&, Eigen::MatrixXf, float)> momentum(float beta);
+std::function<void(Layer&, Eigen::MatrixXf, float)> demon(float beta_init, int max_ep);
+std::function<void(Layer&, Eigen::MatrixXf, float)> adam(float beta1, float beta2, float epsilon);
+std::function<void(Layer&, Eigen::MatrixXf, float)> adamax(float beta1, float beta2, float epsilon);
+}
 
 #define MAXLINE 1024
 
