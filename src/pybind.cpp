@@ -33,6 +33,7 @@ PYBIND11_MODULE(_jacobian, m)
              py::arg("activation"), py::arg("activation_deriv"))
         .def("initialize", &Network::initialize)
         .def("init_optimizer", &Network::init_optimizer, py::arg("optimizer"))
+        .def("init_decay", &Network::init_decay, py::arg("decay"))
         .def("set_activation", &Network::set_activation,
              py::arg("index"), py::arg("custom"),
              py::arg("custom_deriv"))
@@ -54,4 +55,8 @@ PYBIND11_MODULE(_jacobian, m)
     m.def("demon", &optimizers::demon, py::arg("beta"), py::arg("max_ep"));
     m.def("adam", &optimizers::adam, py::arg("beta1"), py::arg("beta2"), py::arg("epsilon"));
     m.def("adamax", &optimizers::adamax, py::arg("beta1"), py::arg("beta2"), py::arg("epsilon"));
+    m.def("step", &decays::step, py::arg("a_0"), py::arg("k"));
+    m.def("exponential", &decays::exponential, py::arg("a_0"), py::arg("k"));
+    m.def("fractional", &decays::fractional, py::arg("a_0"), py::arg("k"));
+    m.def("linear", &decays::linear, py::arg("max_ep"));
 }

@@ -55,7 +55,7 @@ Network::Network(const char* path, int batch_sz, float learn_rate, float bias_ra
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
     val_data = open(VAL_BIN_PATH, O_RDONLY | O_NONBLOCK);
     instances = total_instances - val_instances;
-    decay = []() -> void {};
+    decay = [](float& learning_rate) -> void {};
     update = [](const Layer& layer, const Eigen::MatrixXf delta, const float learning_rate) {
         *layer.weights -= (learning_rate * delta);
     };
@@ -129,6 +129,46 @@ void Network::feedforward()
         }
     }
     softmax();
+}
+
+std::function<void(float&)> decays::step(float a_0, float k)
+{
+    return [a_0, k](float& learning_rate) -> void {
+        learning_rate = a_0 * learning_rate/k;
+    };
+}
+
+std::function<void(float&)> decays::exponential(float a_0, float k)
+{
+    int epochs = 0;
+    return [a_0, k, epochs](float& learning_rate) mutable -> void {
+        learning_rate = a_0 * exp(-k * epochs);
+        epochs++;
+    };
+}
+
+std::function<void(float&)> decays::fractional(float a_0, float k)
+{
+    int epochs = 0;
+    return [a_0, k, epochs](float& learning_rate) mutable -> void {
+        learning_rate = a_0 / (1+(k * epochs));
+        epochs++;
+    };
+}
+
+std::function<void(float&)> decays::linear(int max_ep)
+{
+    int epochs = 0;
+    return [max_ep, epochs](float& learning_rate) mutable -> void {
+        learning_rate = 1 - epochs/max_ep;
+        epochs++;
+    };
+}
+
+
+void Network::init_decay(std::function<void(float&)> f)
+{
+    decay = f;
 }
 
 void Network::list_net()
@@ -272,7 +312,7 @@ void Network::train()
     if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
     batches=1;
     data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
-    decay();
+    decay(learning_rate);
     epochs++;
     Ensures(lseek(data, 0, SEEK_CUR) == 0);
 }

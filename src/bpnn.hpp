@@ -43,7 +43,7 @@ protected:
     float epoch_cost;
     float val_acc;
     float val_cost;
-    std::function<void(void)> decay;
+    std::function<void(float&)> decay;
     std::function<void(std::vector<Eigen::MatrixXf>, int, int)> grad_calc;
     std::function<void(Layer&, Eigen::MatrixXf, float)> update;
     void next_batch(int fd);
@@ -73,6 +73,7 @@ public:
     void add_layer(int nodes, std::function<float(float)> activation, std::function<float(float)> activation_deriv);
     void initialize();
     void init_optimizer(std::function<void(Layer&, Eigen::MatrixXf, float)> f);
+    void init_decay(std::function<void(float&)> f);
     void set_activation(int index, std::function<float(float)> custom, std::function<float(float)> custom_deriv);
     void feedforward();
     void softmax();
@@ -102,6 +103,13 @@ std::function<void(Layer&, Eigen::MatrixXf, float)> adam(float beta1, float beta
 std::function<void(Layer&, Eigen::MatrixXf, float)> adamax(float beta1, float beta2, float epsilon);
 }
 
+namespace decays {
+std::function<void(float&)> step(float a_0, float k);
+std::function<void(float&)> exponential(float a_0, float k);
+std::function<void(float&)> fractional(float a_0, float k);
+std::function<void(float&)> linear(int max_ep);
+}
+
 #define MAXLINE 1024
 
 #if (!RECKLESS)
@@ -119,7 +127,5 @@ std::function<void(Layer&, Eigen::MatrixXf, float)> adamax(float beta1, float be
 #define TRAIN_PATH "./train.txt"
 #define VAL_BIN_PATH "./test.bin"
 #define TRAIN_BIN_PATH "./train.bin"
-#define VAL_LZ4_PATH "./test.lz4"
-#define TRAIN_LZ4_PATH "./train.lz4"
 
 #endif /* MODULE_H */
