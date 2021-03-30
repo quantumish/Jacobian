@@ -52,11 +52,13 @@ void add(Node& node)
 
 void tanh(Node& node)
 {
+	node.val = node.args[0]->val;
 	for (int i = 0; i < node.val.rows(); i++) {
 		for (int j = 0; j < node.val.cols(); j++) {
 			node.val(i,j) = ftanh(node.val(i,j));
 		}
 	}
+	// std::cout << node.val << "\n";
 }
 }
 
@@ -83,9 +85,15 @@ Node Node::operator*(Node&& other)
 	return Node(internal::multiply, {this, tmp});
 }
 
+Node tanh(Node& a) {
+	return Node(internal::tanh, {&a});
+}
 
-// Node add(Node* a, Node* b) {return new Node(internal::add, {a,b});}
-Node* tanh(Node* a) {return new Node(internal::tanh, {a});}
+
+Node tanh(Node&& a) {
+	Node* tmp = new Node (a);
+	return Node(internal::tanh, {tmp});
+}
 
 
 class Graph
@@ -94,7 +102,7 @@ public:
 	Graph();
 	Node& define(float a);
 	Node& define(Eigen::MatrixXf a);
-	void eval(Node* back);
+	void eval(Node& back);
 };
 
 Node& Graph::define(float a) { return *(new Node(a)); }
@@ -102,14 +110,14 @@ Node& Graph::define(Eigen::MatrixXf a) { return *(new Node(a)); }
 
 Graph::Graph() {}
 
-void Graph::eval(Node* node)
+void Graph::eval(Node& node)
 {
-	for (Node* arg : node->args) {
+	for (Node* arg : node.args) {
 		if (arg->calced == false) {
-			eval(arg);
+			eval(*arg);
 		}
 	}
-	node->op(*node);
+	node.op(node);
 }
 } // namespace Jacobian
 
@@ -130,7 +138,7 @@ int main()
 	Jacobian::Node W (_W);
 
 	// Define hidden layer output
-	auto h = b + x*W;
+	auto h = Jacobian::tanh(b + x*W);
 
 	// Define final weights
 	Eigen::MatrixXf _V = Eigen::MatrixXf::Constant(4,2,1);
@@ -141,10 +149,10 @@ int main()
 	Jacobian::Node a (_a);
 
 	// Define output layer
-	auto y = a + h*V;
+	auto y = Jacobian::tanh(a + h*V);
 
 	// Feedforward.
-	g.eval(&y);
+	g.eval(y);
 
 	// Get output.
 	std::cout << y.val << '\n';
