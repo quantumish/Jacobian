@@ -12,6 +12,7 @@
 
 #include "bpnn.hpp"
 #include "utils.hpp"
+using namespace Jacobian;
 namespace py = pybind11;
 
 PYBIND11_MODULE(_jacobian, m)
@@ -59,28 +60,28 @@ PYBIND11_MODULE(_jacobian, m)
 		.def("get_val_acc", &Network::get_val_acc)
 		.def_readonly("layers", &Network::layers);
 	auto a = m.def_submodule("activations", "Submodule supplying built-in activation functions.");
-	a.def("linear", &linear, py::arg("x"));
-	a.def("linear_deriv", &linear_deriv, py::arg("x"));
-	a.def("sigmoid", &sigmoid, py::arg("x"));
-	a.def("sigmoid_deriv", &sigmoid_deriv, py::arg("x"));
-	a.def("lecun_tanh", &lecun_tanh, py::arg("x"));
-	a.def("lecun_tanh_deriv", &lecun_tanh_deriv, py::arg("x"));
-	a.def("softplus", &softplus, py::arg("x"));
-	a.def("softplus_deriv", &softplus_deriv, py::arg("x"));
-	a.def("inverse_logit", &inverse_logit, py::arg("x"));
-	a.def("inverse_logit_deriv", &inverse_logit_deriv, py::arg("x"));
-	a.def("cloglog", &cloglog, py::arg("x"));
-	a.def("cloglog_deriv", &cloglog_deriv, py::arg("x"));
-	a.def("bipolar", &bipolar, py::arg("x"));
-	a.def("bipolar_deriv", &bipolar_deriv, py::arg("x"));
-	a.def("step", &step, py::arg("x"));
-	a.def("step_deriv", &step_deriv, py::arg("x"));
-	a.def("hard_tanh", &hard_tanh, py::arg("x"));
-	a.def("hard_tanh_deriv", &hard_tanh_deriv, py::arg("x"));
-	a.def("leaky_relu", &leaky_relu, py::arg("x"));
-	a.def("leaky_relu_deriv", &leaky_relu_deriv, py::arg("x"));
-	a.def("relu", (rectifier(linear)), py::arg("x"));
-	a.def("relu_deriv", (rectifier(linear_deriv)), py::arg("x"));
+	a.def("linear", &activations::linear, py::arg("x"));
+	a.def("linear_deriv", &activations::linear_deriv, py::arg("x"));
+	a.def("sigmoid", &activations::sigmoid, py::arg("x"));
+	a.def("sigmoid_deriv", &activations::sigmoid_deriv, py::arg("x"));
+	a.def("lecun_tanh", &activations::lecun_tanh, py::arg("x"));
+	a.def("lecun_tanh_deriv", &activations::lecun_tanh_deriv, py::arg("x"));
+	a.def("softplus", &activations::softplus, py::arg("x"));
+	a.def("softplus_deriv", &activations::softplus_deriv, py::arg("x"));
+	a.def("inverse_logit", &activations::inverse_logit, py::arg("x"));
+	a.def("inverse_logit_deriv", &activations::inverse_logit_deriv, py::arg("x"));
+	a.def("cloglog", &activations::cloglog, py::arg("x"));
+	a.def("cloglog_deriv", &activations::cloglog_deriv, py::arg("x"));
+	a.def("bipolar", &activations::bipolar, py::arg("x"));
+	a.def("bipolar_deriv", &activations::bipolar_deriv, py::arg("x"));
+	a.def("step", &activations::step, py::arg("x"));
+	a.def("step_deriv", &activations::step_deriv, py::arg("x"));
+	a.def("hard_tanh", &activations::hard_tanh, py::arg("x"));
+	a.def("hard_tanh_deriv", &activations::hard_tanh_deriv, py::arg("x"));
+	a.def("leaky_relu", &activations::leaky_relu, py::arg("x"));
+	a.def("leaky_relu_deriv", &activations::leaky_relu_deriv, py::arg("x"));
+	a.def("relu", (activations::rectifier(activations::linear)), py::arg("x"));
+	a.def("relu_deriv", (activations::rectifier(activations::linear_deriv)), py::arg("x"));
 	auto o = m.def_submodule("optimizers", "Submodule supplying built-in gradient descent optimizers.");
 	o.def("momentum", &optimizers::momentum, py::arg("beta"));
 	o.def("demon", &optimizers::demon, py::arg("beta"), py::arg("max_ep"));

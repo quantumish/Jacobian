@@ -9,6 +9,7 @@
 #include "utils.hpp"
 #include <random>
 
+namespace Jacobian {
 Layer::Layer(int batch_sz, int nodes)
 {
 	contents = Eigen::MatrixXf(batch_sz, nodes);
@@ -205,8 +206,8 @@ float Network::cost()
 		sum-=tempsum;
 	}
 	for (unsigned long i = 0; i < layers.size()-1; i++) {
-		if (reg_type == L2) reg += layers[i].weights.cwiseProduct(layers[i].weights).sum();
-		else if (reg_type == L1) reg += (layers[i].weights.array().abs().matrix()).sum();
+		if (reg_type == Regularization::L2) reg += layers[i].weights.cwiseProduct(layers[i].weights).sum();
+		else if (reg_type == Regularization::L1) reg += (layers[i].weights.array().abs().matrix()).sum();
 	}
 	return ((1.0/batch_size) * sum) + (1/2*lambda*reg);
 }
@@ -266,8 +267,8 @@ Eigen::MatrixXf Network::backpropagate()
 	}
 	for (int i = 0; i < length-1; i++) {
 		update(layers[length-2-i], deltas[i], learning_rate);
-		if (reg_type == L2) layers[length-2-i].weights -= ((lambda/batch_size) * (layers[length-2-i].weights));
-		else if (reg_type == L1) layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(layers[length-2-i].weights));
+		if (reg_type == Regularization::L2) layers[length-2-i].weights -= ((lambda/batch_size) * (layers[length-2-i].weights));
+		else if (reg_type == Regularization::L1) layers[length-2-i].weights -= ((lambda/(2*batch_size)) * l1_deriv(layers[length-2-i].weights));
 		layers[length-1-i].bias -= bias_lr * gradients[i];
 	}
 	return gradients.back();
@@ -292,8 +293,6 @@ void Network::validate(const char* path)
 	Ensures(lseek(val_data, 0, SEEK_CUR) == 0);
 }
 
-#include "optimizers.cpp"
-
 void Network::interactive_next_batch()
 {
 	if (batches < instances/batch_size-batch_size) next_batch(data);
@@ -309,21 +308,27 @@ void Network::train()
 {
 	float cost_sum = 0;
 	float acc_sum = 0;
-	for (int i = 0; i <= instances-batch_size; i+=batch_size) {
-		if (i != instances-batch_size) next_batch(data);
+	for (int i = 0; i <= instances - batch_size; i += batch_size) {
+		if (i != instances - batch_size)
+			next_batch(data);
 		feedforward();
 		backpropagate();
 		cost_sum += cost();
 		acc_sum += accuracy();
 		batches++;
 	}
-	epoch_acc = 1.0/(static_cast<float>(instances/batch_size)) * acc_sum;
-	epoch_cost = 1.0/(static_cast<float>(instances/batch_size)) * cost_sum;
+	epoch_acc =
+		1.0 / (static_cast<float>(instances / batch_size)) * acc_sum;
+	epoch_cost =
+		1.0 / (static_cast<float>(instances / batch_size)) * cost_sum;
 	validate(VAL_PATH);
-	if (silenced == false) printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n", epochs, epoch_cost, epoch_acc, val_cost, val_acc);
-	batches=1;
+	if (silenced == false)
+		printf("Epoch %i complete - cost %f - acc %f - val_cost %f - val_acc %f\n",
+			   epochs, epoch_cost, epoch_acc, val_cost, val_acc);
+	batches = 1;
 	data = open(TRAIN_BIN_PATH, O_RDONLY | O_NONBLOCK);
 	decay(learning_rate);
 	epochs++;
 	Ensures(lseek(data, 0, SEEK_CUR) == 0);
+}
 }

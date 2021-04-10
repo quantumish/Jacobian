@@ -9,9 +9,11 @@
 #define UTILS_H
 
 #include <functional>
-#include <immintrin.h>
+#include <Eigen/Dense>
+#include "bpnn.hpp"
 
-// A zoo of activation functions.
+namespace Jacobian {
+namespace activations {
 float sigmoid(float x);
 float sigmoid_deriv(float x);
 float linear(float x);
@@ -37,8 +39,24 @@ float bipolar_sigmoid_deriv(float x);
 float leaky_relu(float x);
 float leaky_relu_deriv(float x);
 std::function<float(float)> rectifier(float (*activation)(float));
+}
+
+namespace optimizers {
+std::function<void(Layer&, Eigen::MatrixXf, float)> momentum(float beta);
+std::function<void(Layer&, Eigen::MatrixXf, float)> demon(float beta_init, int max_ep);
+std::function<void(Layer&, Eigen::MatrixXf, float)> adam(float beta1, float beta2, float epsilon);
+std::function<void(Layer&, Eigen::MatrixXf, float)> adamax(float beta1, float beta2, float epsilon);
+}
+
+namespace decays {
+std::function<void(float &)> step(float a_0, float k);
+std::function<void(float &)> exponential(float a_0, float k);
+std::function<void(float &)> fractional(float a_0, float k);
+std::function<void(float &)> linear(int max_ep);
+}
 
 Eigen::MatrixXf strassen_mul(Eigen::MatrixXf a, Eigen::MatrixXf b);
 
-#endif /* MODULE_H */
+}
 
+#endif /* MODULE_H */
