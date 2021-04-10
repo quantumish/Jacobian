@@ -18,26 +18,23 @@
 #include <sys/stat.h>
 #include <Eigen/Dense>
 
-<<<<<<< HEAD
 #include "utils.hpp"
 
 namespace Jacobian {
 namespace activations {
-float sigmoid(float x) {return 1.0/(1+exp(-x));}
-float sigmoid_deriv(float x) {return 1.0/(1+exp(-x)) * (1 - 1.0/(1+exp(-x)));}
-=======
+
 inline float sgn(float val) {return (0.0f < val) - (val < 0.0f);}
 
 double fexp(double val)
-{  
-    long tmp = static_cast<long>(1512775 * val + 1072632447) << 32;
-    return *reinterpret_cast<double*>(&tmp);
+{
+	long tmp = static_cast<long>(1512775 * val + 1072632447) << 32;
+	return *reinterpret_cast<double*>(&tmp);
 }
 
 float ftanh(float x)
 {
-    return (x*(10+pow(x,2))*(60+pow(x,2)))/
-        (600+(270*pow(x,2))+(11*pow(x,4))+(pow(x,6)/24));
+	return (x*(10+pow(x,2))*(60+pow(x,2)))/
+		(600+(270*pow(x,2))+(11*pow(x,4))+(pow(x,6)/24));
 }
 
 //float ftanh(float val) {return sgn(val) * (1 - 2/(fexp(2*abs(val))+1));}
@@ -49,14 +46,13 @@ float fcosh(float val) {return (fexp(val) + fexp(-val)) * 0.5;}
 
 float sigmoid(float x) {return 1.0/(1+fexp(-x));}
 float sigmoid_deriv(float x) {return 1.0/(1+fexp(-x)) * (1 - 1.0/(1+fexp(-x)));}
->>>>>>> perf
 
 float linear(float x) {return x;}
 float linear_deriv(float x) {return 1;}
 
 float lecun_tanh(float x) {
-    //std::cout << ftanh(x) << " vs " << tanh(x) << "\n";
-    return 1.7159 * ftanh(0.66f * x);}
+	//std::cout << ftanh(x) << " vs " << tanh(x) << "\n";
+	return 1.7159 * ftanh(0.66f * x);}
 float lecun_tanh_deriv(float x) {return 1.14393 * pow(1.0/fcosh(0.66f * x), 2);}
 
 float inverse_logit(float x) {return (fexp(x)/(fexp(x)+1));}
