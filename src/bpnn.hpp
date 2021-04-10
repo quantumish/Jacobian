@@ -12,6 +12,11 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <unistd.h>
+<<<<<<< HEAD
+=======
+#include <gsl/gsl_assert>
+#include <lz4.h>
+>>>>>>> perf
 
 namespace Jacobian {
 #define BUFFER_SIZE 600*1024
